@@ -27,6 +27,7 @@ $class->new(
         'DBI'                    => '1.608',
         'DBIx::Connector'        => '0.42',
         'Exception::Class::DBI'  => '1.00',
+        'JSON::XS'               => '2.3',
         'perl'                   => 5.012,
     },
     recommends => {
