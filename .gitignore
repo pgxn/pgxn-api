@@ -1,7 +1,7 @@
-_build
-blib
-CPAN-API-*
-MANIFEST
-MANIFEST.bak
-META.*
-Build
+/_build
+/blib
+/PGXN-API-*
+/MANIFEST
+/MANIFEST.bak
+/*META.*
+/Build

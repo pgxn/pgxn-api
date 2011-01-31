@@ -1,0 +1,9 @@
+{
+    "name": "PGXN API (DEV)",
+    "dbi": {
+        "dsn": "dbi:Pg:dbname=pgxn_api_dev",
+        "username": "pgxn",
+        "password": ""
+    },
+    "mirror_root": "/tmp/pgxn-root-dev"
+}
