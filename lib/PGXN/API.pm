@@ -2,6 +2,61 @@ package PGXN::API v0.1.0;
 
 use 5.12.0;
 use utf8;
+use MooseX::Singleton;
+use DBIx::Connector;
+use DBD::Pg '2.15.1';
+use Exception::Class::DBI;
+
+=head1 Interface
+
+=head2 Constructor
+
+=head3 C<instance>
+
+  my $app = PGXN::Manager->instance;
+
+Returns the singleton instance of PGXN::Manager. This is the recommended way
+to get the PGXN::Manager object.
+
+=head2 Attributes
+
+=head3 C<config>
+
+  my $config = $pgxn->config;
+
+Returns a hash reference of configuration information. This information is
+parsed from the configuration file F<conf/test.json>, which is determined by
+the C<--context> option to C<perl Build.PL> at build time.
+
+=cut
+
+has config => (is => 'ro', isa => 'HashRef', default => sub {
+    my $fn = 'conf/test.json';
+    open my $fh, '<', $fn or die "Cannot open $fn: $!\n";
+    local $/;
+    # XXX Verify presence of required keys.
+    JSON::XS->new->decode(<$fh>);
+});
+
+=head3 C<conn>
+
+  my $conn = $pgxn->conn;
+
+Returns the database connection for the app. It's a L<DBIx::Connection>, safe
+to use pretty much anywhere.
+
+=cut
+
+has conn => (is => 'ro', lazy => 1, isa => 'DBIx::Connector', default => sub {
+    DBIx::Connector->new( @{ shift->config->{dbi} }{qw(dsn username password)}, {
+        PrintError        => 0,
+        RaiseError        => 0,
+        HandleError       => Exception::Class::DBI->handler,
+        AutoCommit        => 1,
+        pg_enable_utf8    => 1,
+        pg_server_prepare => 0,
+    });
+});
 
 1;
 
