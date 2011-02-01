@@ -5,5 +5,7 @@
         "username": "pgxn",
         "password": ""
     },
-    "mirror_root": "/tmp/pgxn-root-test"
+    "rsync_path": "t/bin/testrsync",
+    "mirror_root": "/tmp/pgxn-root-test",
+    "rsync_source": "rsync://master.pgxn.org/pgxn"
 }

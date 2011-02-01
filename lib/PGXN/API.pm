@@ -6,6 +6,7 @@ use MooseX::Singleton;
 use DBIx::Connector;
 use DBD::Pg '2.15.1';
 use Exception::Class::DBI;
+use JSON::XS;
 
 =head1 Interface
 
@@ -57,6 +58,8 @@ has conn => (is => 'ro', lazy => 1, isa => 'DBIx::Connector', default => sub {
         pg_server_prepare => 0,
     });
 });
+
+__PACKAGE__->meta->make_immutable;
 
 1;
 
