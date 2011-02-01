@@ -19,9 +19,10 @@ $class->new(
     db_client          => 'psql',
     configure_requires => { 'Module::Build::DB' => '0.10', },
     build_requires     => {
-        'Module::Build' => '0.30',
-        'Test::File'    => '1.29',
-        'Test::More'    => '0.70',
+        'Module::Build'    => '0.30',
+        'Test::File'       => '1.29',
+        'Test::MockModule' => '0.05',
+        'Test::More'       => '0.70',
     },
     requires => {
         'DBD::Pg'                      => '2.15.1',

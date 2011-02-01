@@ -77,12 +77,18 @@ sub read_templates {
 
 sub update_index {
     my $self  = shift;
-    my $regex = $self->regex_for_uri_template('dist');
+    my $regex = $self->regex_for_uri_template('meta');
+    my $fh    = $self->rsync_output;
+    while (my $line = <$fh>) {
+        $self->process_meta($1) if $line =~ $regex;
+    }
+    return $self;
 }
 
 sub regex_for_uri_template {
     my ($self, $name) = @_;
-    # Create a regular expression from the distribution template.
+
+    # Get the URI for the template.
     my $uri = URI::Template->new($self->uri_templates->{$name})->process(
         map { $_ => "{$_}" } qw(dist version owner extension tag)
     );
@@ -95,13 +101,19 @@ sub regex_for_uri_template {
         '{tag}'       => qr{[^/]+?},
     );
 
+    # Assemble the regex corresponding to the template.
     my $regex = join '', map {
         $regex_for{$_} || quotemeta $_
     } grep { defined && length } map {
         split /(\{.+?\})/
     } catfile grep { defined && length } $uri->path_segments;
 
+    # Return the regex to match new files in rsync output lines.
     return qr{^>f[+]{9}\s($regex)$};
+}
+
+sub process_meta {
+    my ($self, $fn) = @_;
 }
 
 1;

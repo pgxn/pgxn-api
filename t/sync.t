@@ -2,9 +2,10 @@
 
 use strict;
 use warnings;
-use Test::More tests => 18;
+use Test::More tests => 20;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile);
+use Test::MockModule;
 #use Test::File;
 
 my $CLASS;
@@ -21,6 +22,7 @@ can_ok $CLASS => qw(
     read_templates
     uri_templates
     update_index
+    process_meta
     _pipe
 );
 
@@ -28,6 +30,7 @@ can_ok $CLASS => qw(
 my $config = PGXN::API->config;
 $config->{rsync_path} .= '.bat' if PGXN::API::Sync::WIN32;
 
+##############################################################################
 # Test rsync.
 ok my $sync = $CLASS->new, "Construct $CLASS object";
 ok $sync->run_rsync, 'Run rsync';
@@ -53,6 +56,7 @@ is_deeply $sync->uri_templates, {
    "readme" => "/dist/{dist}/{dist}-{version}.readme"
 }, 'The templates should be there';
 
+##############################################################################
 # Test the regular expression for finding distributions.
 my $rsync_out = catfile qw(t data rsync.out);
 my @rsync_out = do {
@@ -137,3 +141,20 @@ is_deeply \@found, [
    "by/tag/pair.json",
    "by/tag/variadic function.json",
 ], 'It should recognize the tag files.';
+
+##############################################################################
+# Reset the rsync output and have it do its thing.
+open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
+$sync->rsync_output($fh);
+my $mock = Test::MockModule->new($CLASS);
+$mock->mock(process_meta => sub { push @found => $_[1] });
+@found = ();
+
+ok $sync->update_index, 'Update the index';
+is_deeply \@found, [qw(
+    dist/pair/pair-0.1.0.json
+    dist/pair/pair-0.1.1.json
+    dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
+    dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
+    dist/tinyint/tinyint-0.1.0.json
+)], 'It should have processed the meta files';
