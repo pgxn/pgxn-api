@@ -4,14 +4,19 @@ use 5.12.0;
 use utf8;
 use Moose;
 use PGXN::API;
+use JSON::XS;
+use File::Spec::Functions qw(catfile);
+use namespace::autoclean;
 
-has rsync_output => (is => 'rw', isa => 'FileHandle');
+has rsync_output  => (is => 'rw', isa => 'FileHandle');
+has uri_templates => (is => 'rw', isa => 'HashRef');
 
 use constant WIN32 => $^O eq 'MSWin32';
 
 sub run {
     my $self = shift;
     $self->run_rsync;
+    $self->read_templates;
 }
 
 sub run_rsync {
@@ -55,6 +60,18 @@ sub _pipe {
     }
 }
 
+sub read_templates {
+    my $self = shift;
+    my $config = PGXN::API->instance->config;
+    my $index = catfile $config->{mirror_root}, 'index.json';
+    open my $fh, '<', $index or die "Cannot open $index: $!\n";
+    my $templates = do {
+        local $/;
+        decode_json <$fh>;
+    };
+    close $fh;
+    $self->uri_templates($templates);
+}
 
 1;
 

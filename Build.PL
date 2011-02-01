@@ -20,6 +20,7 @@ $class->new(
     configure_requires => { 'Module::Build::DB' => '0.10', },
     build_requires     => {
         'Module::Build' => '0.30',
+        'Test::File'    => '1.29',
         'Test::More'    => '0.70',
     },
     requires => {
@@ -27,9 +28,11 @@ $class->new(
         'DBI'                          => '1.608',
         'DBIx::Connector'              => '0.42',
         'Exception::Class::DBI'        => '1.00',
+        'File::Spec'                   => '3.33',
         'JSON::XS'                     => '2.3',
         'Moose'                        => '1.15',
         'MooseX::Singleton'            => '0.25',
+        'namespace::autoclean'         => '0.11',
         'perl'                         => 5.012,
     },
     recommends => {
