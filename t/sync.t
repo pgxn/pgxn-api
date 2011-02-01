@@ -2,8 +2,9 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 2;
-use Test::More 'no_plan';
+use Test::More tests => 18;
+#use Test::More 'no_plan';
+use File::Spec::Functions qw(catfile);
 #use Test::File;
 
 my $CLASS;
@@ -19,6 +20,7 @@ can_ok $CLASS => qw(
     rsync_output
     read_templates
     uri_templates
+    update_index
     _pipe
 );
 
@@ -32,8 +34,9 @@ ok $sync->run_rsync, 'Run rsync';
 ok my $fh = $sync->rsync_output, 'Grab the output';
 is join('', <$fh>), "--archive
 --compress
---itemize-changes
 --delete
+--out-format
+%i %n
 $config->{rsync_source}
 $config->{mirror_root}
 ", 'Rsync should have been properly called';
@@ -49,3 +52,88 @@ is_deeply $sync->uri_templates, {
    "meta" => "/dist/{dist}/{dist}-{version}.json",
    "readme" => "/dist/{dist}/{dist}-{version}.readme"
 }, 'The templates should be there';
+
+# Test the regular expression for finding distributions.
+my $rsync_out = catfile qw(t data rsync.out);
+my @rsync_out = do {
+    open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
+    <$fh>;
+};
+
+# Test the dist template regex.
+ok my $regex = $sync->regex_for_uri_template('dist'),
+    'Get distribution regex';
+my @found;
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+
+is_deeply \@found, [qw(
+    dist/pair/pair-0.1.0.pgz
+    dist/pair/pair-0.1.1.pgz
+    dist/pg_french_datatypes/pg_french_datatypes-0.1.0.pgz
+    dist/pg_french_datatypes/pg_french_datatypes-0.1.1.pgz
+    dist/tinyint/tinyint-0.1.0.pgz
+)], 'It should recognize the distribution files.';
+
+# Test the meta template regex.
+ok $regex = $sync->regex_for_uri_template('meta'),
+    'Get meta regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+
+is_deeply \@found, [qw(
+    dist/pair/pair-0.1.0.json
+    dist/pair/pair-0.1.1.json
+    dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
+    dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
+    dist/tinyint/tinyint-0.1.0.json
+)], 'It should recognize the meta files.';
+
+# Test the owner template regex.
+ok $regex = $sync->regex_for_uri_template('by-owner'),
+    'Get by-owner regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+
+is_deeply \@found, [qw(
+    by/owner/daamien.json
+    by/owner/theory.json
+    by/owner/umitanuki.json
+)], 'It should recognize the owner files.';
+
+# Test the extension template regex.
+ok $regex = $sync->regex_for_uri_template('by-extension'),
+    'Get by-extension regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+
+is_deeply \@found, [qw(
+    by/extension/pair.json
+    by/extension/pg_french_datatypes.json
+    by/extension/tinyint.json
+)], 'It should recognize the extension files.';
+
+# Test the tag template regex.
+ok $regex = $sync->regex_for_uri_template('by-tag'),
+    'Get by-tag regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+
+is_deeply \@found, [
+   "by/tag/data types.json",
+   "by/tag/france.json",
+   "by/tag/key value pair.json",
+   "by/tag/key value.json",
+   "by/tag/ordered pair.json",
+   "by/tag/pair.json",
+   "by/tag/variadic function.json",
+], 'It should recognize the tag files.';

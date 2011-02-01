@@ -7,6 +7,7 @@ use PGXN::API;
 use JSON::XS;
 use File::Spec::Functions qw(catfile);
 use namespace::autoclean;
+use URI::Template;
 
 has rsync_output  => (is => 'rw', isa => 'FileHandle');
 has uri_templates => (is => 'rw', isa => 'HashRef');
@@ -17,6 +18,7 @@ sub run {
     my $self = shift;
     $self->run_rsync;
     $self->read_templates;
+    $self->update_index;
 }
 
 sub run_rsync {
@@ -25,7 +27,7 @@ sub run_rsync {
     my $fh     = $self->_pipe(
         '-|',
         $config->{rsync_path} || 'rsync',
-        qw(--archive --compress --itemize-changes --delete),
+        qw(--archive --compress --delete --out-format), '%i %n',
         $config->{rsync_source},
         $config->{mirror_root},
     );
@@ -46,7 +48,7 @@ sub _pipe {
         return $pipe;
     }
 
-    my $pid = open my $pipe, $mode;
+    my $pid = open my ($pipe), $mode;
     die "Cannot fork: $!\n" unless defined $pid;
 
     if ($pid) {
@@ -71,6 +73,35 @@ sub read_templates {
     };
     close $fh;
     $self->uri_templates($templates);
+}
+
+sub update_index {
+    my $self  = shift;
+    my $regex = $self->regex_for_uri_template('dist');
+}
+
+sub regex_for_uri_template {
+    my ($self, $name) = @_;
+    # Create a regular expression from the distribution template.
+    my $uri = URI::Template->new($self->uri_templates->{$name})->process(
+        map { $_ => "{$_}" } qw(dist version owner extension tag)
+    );
+
+    my %regex_for = (
+        '{dist}'      => qr{[^/]+?},
+        '{version}'   => qr{(?:0|[1-9][0-9]*)(?:[.][0-9]+){2,}(?:[a-zA-Z][-0-9A-Za-z]*)?},
+        '{owner}'     => qr{[a-z]([-a-z0-9]{0,61}[a-z0-9])?}i,
+        '{extension}' => qr{[^/]+?},
+        '{tag}'       => qr{[^/]+?},
+    );
+
+    my $regex = join '', map {
+        $regex_for{$_} || quotemeta $_
+    } grep { defined && length } map {
+        split /(\{.+?\})/
+    } catfile grep { defined && length } $uri->path_segments;
+
+    return qr{^>f[+]{9}\s($regex)$};
 }
 
 1;

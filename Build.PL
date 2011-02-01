@@ -34,6 +34,7 @@ $class->new(
         'MooseX::Singleton'            => '0.25',
         'namespace::autoclean'         => '0.11',
         'perl'                         => 5.012,
+        'URI::Template'                => '0.15',
     },
     recommends => {
         'Test::Pod'           => '1.20',
