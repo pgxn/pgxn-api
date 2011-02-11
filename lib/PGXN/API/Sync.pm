@@ -5,9 +5,13 @@ use utf8;
 use Moose;
 use PGXN::API;
 use Digest::SHA1;
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions qw(catfile rel2abs);
 use namespace::autoclean;
 use URI::Template;
+use Cwd;
+use File::Path qw(make_path remove_tree);
+use Archive::Zip qw(:ERROR_CODES);
+use constant WIN32 => $^O eq 'MSWin32';
 
 has rsync_output  => (is => 'rw', isa => 'FileHandle');
 has uri_templates => (is => 'rw', isa => 'HashRef', default => sub {
@@ -15,8 +19,15 @@ has uri_templates => (is => 'rw', isa => 'HashRef', default => sub {
         catfile +PGXN::API->instance->config->{mirror_root}, 'index.json'
     )
 });
-
-use constant WIN32 => $^O eq 'MSWin32';
+has source_dir => (is => 'rw', 'isa' => 'Str', default => sub {
+    my $dir =catfile +PGXN::API->instance->config->{mirror_root}, 'src';
+    if (!-e $dir) {
+        make_path $dir;
+    } elsif (!-d $dir) {
+        die "Distributions will be unzipped into $dir, but $dir is not a directory\n";
+    }
+    $dir;
+});
 
 sub run {
     my $self = shift;
@@ -114,7 +125,7 @@ sub process_meta {
     }
 
     # Unpack the distribution.
-    $self->unpack_dist($dist);
+    $self->unzip($dist) or return;
     return $self;
 }
 
@@ -138,8 +149,27 @@ sub digest_for {
     return $sha1->hexdigest;
 }
 
-sub unpack_dist {
+my $CWD = cwd;
+sub unzip {
     my ($self, $dist) = @_;
+
+    my $zip = Archive::Zip->new;
+    if ($zip->read(rel2abs $dist) != AZ_OK) {
+        warn "Error reading $dist\n";
+        return;
+    }
+
+    my $dir = $self->source_dir;
+    chdir $dir or die "Cannot cd to $dir: $!\n";
+    my $ret = $zip->extractTree;
+    chdir $CWD;
+
+    if ($ret != AZ_OK) {
+        warn "Error extracting $dist\n";
+        ## clean up the mess here.
+        return;
+    }
+    return $self;
 }
 
 1;

@@ -2,12 +2,13 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 20;
-use Test::More 'no_plan';
-use File::Spec::Functions qw(catfile);
+use Test::More tests => 43;
+#use Test::More 'no_plan';
+use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
 use Test::Output;
-#use Test::File;
+use File::Path qw(remove_tree);
+use Test::File;
 
 my $CLASS;
 BEGIN {
@@ -25,6 +26,7 @@ can_ok $CLASS => qw(
     process_meta
     dist_for
     digest_for
+    unzip
     _pipe
 );
 
@@ -167,24 +169,51 @@ is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
     'Should get expected digest from digest_for()';
 
 ##############################################################################
-# read_json_from()
-
-##############################################################################
 # Test process_meta().
 $mock->unmock('process_meta');
 
 my $json = catfile qw(t root dist pair pair-0.1.1.json);
+$mock->mock(unzip => sub {
+    is $_[1], $pgz, "unzip should be passed $pgz";
+});
 ok $sync->process_meta($json), "Process $json";
 
 # It should fail for an invalid checksum.
 CHECKSUM: {
-    $mock->mock(unpack_dist => sub {
-        fail 'unpack_dist should not be called when checksum fails'
+    $mock->mock(unzip => sub {
+        fail 'unzip should not be called when checksum fails'
     });
     my $json = catfile qw(t root dist pair pair-0.1.0.json);
     my $pgz = catfile qw(t root dist pair pair-0.1.0.json);
     stderr_is { $sync->process_meta($json ) }
         "Checksum verification failed for $pgz\n",
         'Should get warning when checksum fails.';
-    $mock->unmock('unpack_dist');
+    $mock->unmock('unzip');
 }
+
+##############################################################################
+# Test unzip.
+my @files = (qw(
+    Changes
+    META.json
+    Makefile
+    README.md
+), catfile(qw(doc pair.txt)),
+    catfile(qw(sql pair.sql)),
+    catfile(qw(sql uninstall_pair.sql)),
+    catfile(qw(test sql base.sql)),
+    catfile(qw(test expected base.out)),
+);
+
+my $base = catdir $config->{mirror_root}, 'src', 'pair-0.1.1';
+file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
+
+# Unzip it.
+END { remove_tree $sync->source_dir }
+ok $sync->unzip($pgz), "Unzip $pgz";
+file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
+
+# Now try a brokenated zip file.
+stderr_like { $sync->unzip($json) }
+    qr/format error: can't find EOCD signature/,
+    'Should get a warning for an invalid zip file';
