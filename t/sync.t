@@ -2,10 +2,11 @@
 
 use strict;
 use warnings;
-use Test::More tests => 20;
-#use Test::More 'no_plan';
+#use Test::More tests => 20;
+use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile);
 use Test::MockModule;
+use Test::Output;
 #use Test::File;
 
 my $CLASS;
@@ -19,10 +20,11 @@ can_ok $CLASS => qw(
     run
     run_rsync
     rsync_output
-    read_templates
     uri_templates
     update_index
     process_meta
+    dist_for
+    digest_for
     _pipe
 );
 
@@ -45,7 +47,6 @@ $config->{mirror_root}
 ", 'Rsync should have been properly called';
 
 # Test reading the URI templates.
-ok $sync->read_templates, 'Read the templates';
 is_deeply $sync->uri_templates, {
    "by-dist" => "/by/dist/{dist}.json",
    "by-extension" => "/by/extension/{extension}.json",
@@ -158,3 +159,32 @@ is_deeply \@found, [qw(
     dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
     dist/tinyint/tinyint-0.1.0.json
 )], 'It should have processed the meta files';
+
+##############################################################################
+# digest_for()
+my $pgz = catfile qw(t root dist pair pair-0.1.1.pgz);
+is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
+    'Should get expected digest from digest_for()';
+
+##############################################################################
+# read_json_from()
+
+##############################################################################
+# Test process_meta().
+$mock->unmock('process_meta');
+
+my $json = catfile qw(t root dist pair pair-0.1.1.json);
+ok $sync->process_meta($json), "Process $json";
+
+# It should fail for an invalid checksum.
+CHECKSUM: {
+    $mock->mock(unpack_dist => sub {
+        fail 'unpack_dist should not be called when checksum fails'
+    });
+    my $json = catfile qw(t root dist pair pair-0.1.0.json);
+    my $pgz = catfile qw(t root dist pair pair-0.1.0.json);
+    stderr_is { $sync->process_meta($json ) }
+        "Checksum verification failed for $pgz\n",
+        'Should get warning when checksum fails.';
+    $mock->unmock('unpack_dist');
+}

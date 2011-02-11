@@ -23,11 +23,13 @@ $class->new(
         'Test::File'       => '1.29',
         'Test::MockModule' => '0.05',
         'Test::More'       => '0.70',
+        'Test::Output'     => '0.16',
     },
     requires => {
         'DBD::Pg'                      => '2.15.1',
         'DBI'                          => '1.608',
         'DBIx::Connector'              => '0.42',
+        'Digest::SHA1'                 => '2.13',
         'Exception::Class::DBI'        => '1.00',
         'File::Spec'                   => '3.33',
         'JSON::XS'                     => '2.3',

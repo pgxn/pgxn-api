@@ -6,7 +6,7 @@ use MooseX::Singleton;
 use DBIx::Connector;
 use DBD::Pg '2.15.1';
 use Exception::Class::DBI;
-use JSON::XS;
+use JSON::XS ();
 
 =head1 Interface
 
@@ -32,11 +32,8 @@ the C<--context> option to C<perl Build.PL> at build time.
 =cut
 
 has config => (is => 'ro', isa => 'HashRef', default => sub {
-    my $fn = 'conf/test.json';
-    open my $fh, '<', $fn or die "Cannot open $fn: $!\n";
-    local $/;
     # XXX Verify presence of required keys.
-    JSON::XS->new->decode(<$fh>);
+    shift->read_json_from('conf/test.json');
 });
 
 =head3 C<conn>
@@ -58,6 +55,22 @@ has conn => (is => 'ro', lazy => 1, isa => 'DBIx::Connector', default => sub {
         pg_server_prepare => 0,
     });
 });
+
+=head3
+
+  my $data = $pgxn->read_json_from($filename);
+
+Loads the contents of C<$filename>, parses them as JSON, and returns the
+resulting data structure.
+
+=cut
+
+sub read_json_from {
+    my ($self, $fn) = @_;
+    open my $fh, '<:raw', $fn or die "Cannot open $fn: $!\n";
+    local $/;
+    return JSON::XS->new->utf8->decode(<$fh>);
+}
 
 __PACKAGE__->meta->make_immutable;
 

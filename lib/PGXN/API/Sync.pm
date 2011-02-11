@@ -4,20 +4,23 @@ use 5.12.0;
 use utf8;
 use Moose;
 use PGXN::API;
-use JSON::XS;
+use Digest::SHA1;
 use File::Spec::Functions qw(catfile);
 use namespace::autoclean;
 use URI::Template;
 
 has rsync_output  => (is => 'rw', isa => 'FileHandle');
-has uri_templates => (is => 'rw', isa => 'HashRef');
+has uri_templates => (is => 'rw', isa => 'HashRef', default => sub {
+    PGXN::API->instance->read_json_from(
+        catfile +PGXN::API->instance->config->{mirror_root}, 'index.json'
+    )
+});
 
 use constant WIN32 => $^O eq 'MSWin32';
 
 sub run {
     my $self = shift;
     $self->run_rsync;
-    $self->read_templates;
     $self->update_index;
 }
 
@@ -62,19 +65,6 @@ sub _pipe {
     }
 }
 
-sub read_templates {
-    my $self = shift;
-    my $config = PGXN::API->instance->config;
-    my $index = catfile $config->{mirror_root}, 'index.json';
-    open my $fh, '<', $index or die "Cannot open $index: $!\n";
-    my $templates = do {
-        local $/;
-        decode_json <$fh>;
-    };
-    close $fh;
-    $self->uri_templates($templates);
-}
-
 sub update_index {
     my $self  = shift;
     my $regex = $self->regex_for_uri_template('meta');
@@ -114,6 +104,42 @@ sub regex_for_uri_template {
 
 sub process_meta {
     my ($self, $fn) = @_;
+    my $meta = PGXN::API->instance->read_json_from($fn);
+    my $dist = $self->dist_for($meta);
+
+    # Validate it against the SHA1 checksum.
+    if ($self->digest_for($dist) ne $meta->{sha1}) {
+        warn "Checksum verification failed for $fn\n";
+        return;
+    }
+
+    # Unpack the distribution.
+    $self->unpack_dist($dist);
+    return $self;
+}
+
+
+sub dist_for {
+    my ($self, $meta) = @_;
+    my $dist_uri = URI::Template->new($self->uri_templates->{dist})->process(
+        dist => $meta->{name},
+        version => $meta->{version},
+    );
+
+    return catfile +PGXN::API->instance->config->{mirror_root},
+        $dist_uri->path_segments;
+}
+
+sub digest_for {
+    my ($self, $fn) = @_;
+    open my $fh, '<:raw', $fn or die "Cannot open $fn: $!\n";
+    my $sha1 = Digest::SHA1->new;
+    $sha1->addfile($fh);
+    return $sha1->hexdigest;
+}
+
+sub unpack_dist {
+    my ($self, $dist) = @_;
 }
 
 1;

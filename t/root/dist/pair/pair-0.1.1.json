@@ -1,0 +1,30 @@
+{
+   "name": "pair",
+   "abstract": "A key/value pair dåtå type",
+   "description": "This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.",
+   "version": "0.1.1",
+   "maintainer": [
+      "David E. Wheeler <david@justatheory.com>"
+   ],
+   "release_status": "stable",
+   "owner": "theory",
+   "sha1": "c552c961400253e852250c5d2f3def183c81adb3",
+   "license": "postgresql",
+   "provides": {
+      "pair": {
+         "file": "sql/pair.sql",
+         "version": "0.1.1"
+      }
+   },
+   "tags": ["variadic function", "ordered pair", "pair", "key value", "key value pair"],
+   "resources": {
+      "bugtracker": {
+         "web": "http://github.com/theory/kv-pair/issues/"
+      },
+      "repository": {
+         "type": "git",
+         "url": "git://github.com/theory/kv-pair.git",
+         "web": "http://github.com/theory/kv-pair/"
+      }
+   }
+}

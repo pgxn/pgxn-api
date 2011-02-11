@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 18;
+use Test::More tests => 19;
 #use Test::More 'no_plan';
 use JSON::XS;
 
@@ -21,7 +21,7 @@ isa_ok my $pgxn = $CLASS->instance, $CLASS;
 is +$CLASS->instance, $pgxn, 'instance() should return a singleton';
 is +$CLASS->instance, $pgxn, 'new() should return a singleton';
 
-open my $fh, '<', 'conf/test.json' or die "Cannot open conf/test.json: $!\n";
+open my $fh, '<:raw', 'conf/test.json' or die "Cannot open conf/test.json: $!\n";
 my $conf = do {
     local $/;
     decode_json <$fh>;
@@ -47,3 +47,7 @@ isa_ok $dbh->{HandleError}, 'CODE', 'There should be an error handler';
 is $dbh->selectrow_arrayref('SELECT 1')->[0], 1,
     'We should be able to execute a query';
 
+##############################################################################
+# read_json_from()
+is_deeply $pgxn->read_json_from('conf/test.json'), $conf,
+    'read_json_from() should work';
