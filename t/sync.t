@@ -50,13 +50,13 @@ $config->{mirror_root}
 
 # Test reading the URI templates.
 is_deeply $sync->uri_templates, {
-   "by-dist" => "/by/dist/{dist}.json",
-   "by-extension" => "/by/extension/{extension}.json",
-   "by-owner" => "/by/owner/{owner}.json",
-   "by-tag" => "/by/tag/{tag}.json",
-   "dist" => "/dist/{dist}/{dist}-{version}.pgz",
-   "meta" => "/dist/{dist}/{dist}-{version}.json",
-   "readme" => "/dist/{dist}/{dist}-{version}.readme"
+    'by-dist'      => '/by/dist/{dist}.json',
+    'by-extension' => '/by/extension/{extension}.json',
+    'by-owner'     => '/by/owner/{owner}.json',
+    'by-tag'       => '/by/tag/{tag}.json',
+    'dist'         => '/dist/{dist}/{dist}-{version}.pgz',
+    'meta'         => '/dist/{dist}/{dist}-{version}.json',
+    'readme'       => '/dist/{dist}/{dist}-{version}.readme'
 }, 'The templates should be there';
 
 ##############################################################################
