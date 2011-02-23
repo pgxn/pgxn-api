@@ -7,5 +7,6 @@
     },
     "rsync_path": "t/bin/testrsync",
     "mirror_root": "t/root",
-    "rsync_source": "rsync://master.pgxn.org/pgxn"
+    "rsync_source": "rsync://master.pgxn.org/pgxn",
+    "index_path": "t/index"
 }
