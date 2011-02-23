@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 43;
-#use Test::More 'no_plan';
+#xuse Test::More tests => 43;
+use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
 use Test::Output;
@@ -21,7 +21,6 @@ can_ok $CLASS => qw(
     run
     run_rsync
     rsync_output
-    uri_templates
     update_index
     process_meta
     dist_for
@@ -47,17 +46,6 @@ is join('', <$fh>), "--archive
 $config->{rsync_source}
 $config->{mirror_root}
 ", 'Rsync should have been properly called';
-
-# Test reading the URI templates.
-is_deeply $sync->uri_templates, {
-    'by-dist'      => '/by/dist/{dist}.json',
-    'by-extension' => '/by/extension/{extension}.json',
-    'by-owner'     => '/by/owner/{owner}.json',
-    'by-tag'       => '/by/tag/{tag}.json',
-    'dist'         => '/dist/{dist}/{dist}-{version}.pgz',
-    'meta'         => '/dist/{dist}/{dist}-{version}.json',
-    'readme'       => '/dist/{dist}/{dist}-{version}.readme'
-}, 'The templates should be there';
 
 ##############################################################################
 # Test the regular expression for finding distributions.
@@ -198,7 +186,7 @@ my @files = (qw(
     META.json
     Makefile
     README.md
-), catfile(qw(doc pair.txt)),
+),  catfile(qw(doc pair.txt)),
     catfile(qw(sql pair.sql)),
     catfile(qw(sql uninstall_pair.sql)),
     catfile(qw(test sql base.sql)),

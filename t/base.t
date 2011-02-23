@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 28;
 #use Test::More 'no_plan';
 use JSON::XS;
 
@@ -15,6 +15,8 @@ BEGIN {
 can_ok $CLASS => qw(
     instance
     config
+    uri_templates
+    read_json_from
 );
 
 isa_ok my $pgxn = $CLASS->instance, $CLASS;
@@ -51,3 +53,9 @@ is $dbh->selectrow_arrayref('SELECT 1')->[0], 1,
 # read_json_from()
 is_deeply $pgxn->read_json_from('conf/test.json'), $conf,
     'read_json_from() should work';
+
+# Make sure the URI templates are created.
+ok my $tmpl = $pgxn->uri_templates, 'Get URI templates';
+isa_ok $tmpl, 'HASH', 'Their storage';
+isa_ok $tmpl->{$_}, 'URI::Template', "Template $_" for keys %{ $tmpl };
+

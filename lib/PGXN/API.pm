@@ -4,6 +4,9 @@ use 5.12.0;
 use utf8;
 use MooseX::Singleton;
 use DBIx::Connector;
+use File::Spec::Functions qw(catfile);
+use URI::Template;
+use namespace::autoclean;
 use DBD::Pg '2.15.1';
 use Exception::Class::DBI;
 use JSON::XS ();
@@ -36,6 +39,24 @@ has config => (is => 'ro', isa => 'HashRef', default => sub {
     shift->read_json_from('conf/test.json');
 });
 
+=head3 C<uri_templates>
+
+  my $templates = $pgxn->uri_templates;
+
+Returns a hash reference of the URI templates for the various files stored in
+the mirror root. The keys are the names of the templates, and the values are
+L<URI::Template> objects.
+
+=cut
+
+has uri_templates => (is => 'rw', isa => 'HashRef', lazy => 1, default => sub {
+    my $self = shift;
+    my $tmpl = $self->read_json_from(
+        catfile $self->config->{mirror_root}, 'index.json'
+    );
+    return { map { $_ => URI::Template->new($tmpl->{$_}) } keys %{ $tmpl } };
+});
+
 =head3 C<conn>
 
   my $conn = $pgxn->conn;
@@ -56,7 +77,7 @@ has conn => (is => 'ro', lazy => 1, isa => 'DBIx::Connector', default => sub {
     });
 });
 
-=head3
+=head3 C<read_json_from>
 
   my $data = $pgxn->read_json_from($filename);
 

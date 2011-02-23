@@ -7,20 +7,14 @@ use PGXN::API;
 use Digest::SHA1;
 use File::Spec::Functions qw(catfile rel2abs);
 use namespace::autoclean;
-use URI::Template;
 use Cwd;
-use File::Path qw(make_path remove_tree);
+use File::Path qw(make_path);
 use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
 
 has rsync_output  => (is => 'rw', isa => 'FileHandle');
-has uri_templates => (is => 'rw', isa => 'HashRef', default => sub {
-    PGXN::API->instance->read_json_from(
-        catfile +PGXN::API->instance->config->{mirror_root}, 'index.json'
-    )
-});
 has source_dir => (is => 'rw', 'isa' => 'Str', default => sub {
-    my $dir =catfile +PGXN::API->instance->config->{mirror_root}, 'src';
+    my $dir = catfile +PGXN::API->instance->config->{mirror_root}, 'src';
     if (!-e $dir) {
         make_path $dir;
     } elsif (!-d $dir) {
@@ -90,7 +84,7 @@ sub regex_for_uri_template {
     my ($self, $name) = @_;
 
     # Get the URI for the template.
-    my $uri = URI::Template->new($self->uri_templates->{$name})->process(
+    my $uri = PGXN::API->instance->uri_templates->{$name}->process(
         map { $_ => "{$_}" } qw(dist version owner extension tag)
     );
 
@@ -129,11 +123,10 @@ sub process_meta {
     return $self;
 }
 
-
 sub dist_for {
     my ($self, $meta) = @_;
-    my $dist_uri = URI::Template->new($self->uri_templates->{dist})->process(
-        dist => $meta->{name},
+    my $dist_uri = PGXN::API->instance->uri_templates->{dist}->process(
+        dist    => $meta->{name},
         version => $meta->{version},
     );
 
@@ -166,9 +159,10 @@ sub unzip {
 
     if ($ret != AZ_OK) {
         warn "Error extracting $dist\n";
-        ## clean up the mess here.
+        ## XXX clean up the mess here.
         return;
     }
+
     return $self;
 }
 
