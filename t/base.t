@@ -2,7 +2,10 @@
 
 use strict;
 use warnings;
-use Test::More tests => 28;
+use File::Spec::Functions qw(catdir);
+use File::Path qw(remove_tree);
+use Test::File;
+use Test::More tests => 32;
 #use Test::More 'no_plan';
 use JSON::XS;
 
@@ -16,6 +19,7 @@ can_ok $CLASS => qw(
     instance
     config
     uri_templates
+    source_dir
     read_json_from
 );
 
@@ -59,3 +63,10 @@ ok my $tmpl = $pgxn->uri_templates, 'Get URI templates';
 isa_ok $tmpl, 'HASH', 'Their storage';
 isa_ok $tmpl->{$_}, 'URI::Template', "Template $_" for keys %{ $tmpl };
 
+# Test source_dir().
+my $src_dir = catdir $pgxn->config->{mirror_root}, 'src';
+file_not_exists_ok $src_dir, 'Source dir should not yet exist';
+END { remove_tree $src_dir }
+is $pgxn->source_dir, $src_dir, 'Should have expected source directory';
+file_exists_ok $src_dir, 'Source dir should now exist';
+ok -d $src_dir, 'Source dir should be a directory';

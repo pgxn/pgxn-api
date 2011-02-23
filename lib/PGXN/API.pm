@@ -5,6 +5,7 @@ use utf8;
 use MooseX::Singleton;
 use DBIx::Connector;
 use File::Spec::Functions qw(catfile);
+use File::Path qw(make_path);
 use URI::Template;
 use namespace::autoclean;
 use DBD::Pg '2.15.1';
@@ -49,12 +50,30 @@ L<URI::Template> objects.
 
 =cut
 
-has uri_templates => (is => 'rw', isa => 'HashRef', lazy => 1, default => sub {
+has uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
     my $self = shift;
     my $tmpl = $self->read_json_from(
         catfile $self->config->{mirror_root}, 'index.json'
     );
     return { map { $_ => URI::Template->new($tmpl->{$_}) } keys %{ $tmpl } };
+});
+
+=head3 C<source_dir>
+
+  my $source_dir = $pgxn->source_dir;
+
+Returns the directory on the file system where sources should be unzipped.
+
+=cut
+
+has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
+    my $dir = catfile shift->config->{mirror_root}, 'src';
+    if (!-e $dir) {
+        make_path $dir;
+    } elsif (!-d $dir) {
+        die qq{Location for source files "$dir" is not a directory\n};
+    }
+    $dir;
 });
 
 =head3 C<conn>

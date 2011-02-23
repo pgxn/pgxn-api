@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#xuse Test::More tests => 43;
-use Test::More 'no_plan';
+use Test::More tests => 42;
+#use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
 use Test::Output;
@@ -193,11 +193,12 @@ my @files = (qw(
     catfile(qw(test expected base.out)),
 );
 
-my $base = catdir $config->{mirror_root}, 'src', 'pair-0.1.1';
+my $src_dir = PGXN::API->instance->source_dir;
+my $base = catdir $src_dir, 'pair-0.1.1';
 file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
 
 # Unzip it.
-END { remove_tree $sync->source_dir }
+END { remove_tree $src_dir }
 ok $sync->unzip($pgz), "Unzip $pgz";
 file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 

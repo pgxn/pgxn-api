@@ -8,20 +8,10 @@ use Digest::SHA1;
 use File::Spec::Functions qw(catfile rel2abs);
 use namespace::autoclean;
 use Cwd;
-use File::Path qw(make_path);
 use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
 
 has rsync_output  => (is => 'rw', isa => 'FileHandle');
-has source_dir => (is => 'rw', 'isa' => 'Str', default => sub {
-    my $dir = catfile +PGXN::API->instance->config->{mirror_root}, 'src';
-    if (!-e $dir) {
-        make_path $dir;
-    } elsif (!-d $dir) {
-        die "Distributions will be unzipped into $dir, but $dir is not a directory\n";
-    }
-    $dir;
-});
 
 sub run {
     my $self = shift;
@@ -152,7 +142,7 @@ sub unzip {
         return;
     }
 
-    my $dir = $self->source_dir;
+    my $dir = PGXN::API->instance->source_dir;
     chdir $dir or die "Cannot cd to $dir: $!\n";
     my $ret = $zip->extractTree;
     chdir $CWD;
