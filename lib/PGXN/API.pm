@@ -76,6 +76,31 @@ has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
     $dir;
 });
 
+=head3 C<doc_root>
+
+  my $doc_root = $pgxn->doc_root;
+
+Returns the document root for the API server. This value is specified via the
+C<doc_root> key in the config file. If not provided, the default will be the
+F<www> directory in the root directory of this distribution.
+
+=cut
+
+has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+     my $dir = PGXN::API->instance->config->{doc_root} || do {
+         my $file = quotemeta catfile qw(lib PGXN API.pm);
+         my $blib = quotemeta catfile 'blib', '';
+         (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
+         $dir;
+     };
+     if (!-e $dir) {
+         make_path $dir;
+     } elsif (!-d $dir) {
+         die qq{Location for document root "$dir" is not a directory\n};
+     }
+     $dir;
+});
+
 =head3 C<conn>
 
   my $conn = $pgxn->conn;

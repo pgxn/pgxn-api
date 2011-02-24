@@ -5,9 +5,10 @@ use warnings;
 use File::Spec::Functions qw(catdir);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 32;
+use Test::More tests => 35;
 #use Test::More 'no_plan';
 use JSON::XS;
+use Cwd;
 
 my $CLASS;
 BEGIN {
@@ -70,3 +71,10 @@ END { remove_tree $src_dir }
 is $pgxn->source_dir, $src_dir, 'Should have expected source directory';
 file_exists_ok $src_dir, 'Source dir should now exist';
 ok -d $src_dir, 'Source dir should be a directory';
+
+# Test doc_root().
+file_not_exists_ok 'www', 'Doc root should not yet exist';
+END { remove_tree 'www' }
+is $pgxn->doc_root, catdir(cwd, 'www'),
+    'Should have default doc root';
+file_exists_ok 'www', 'Doc root should now exist';

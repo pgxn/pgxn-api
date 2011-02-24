@@ -9,55 +9,59 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use namespace::autoclean;
 
-(my $def_doc_root = __FILE__) =~ s{(?:blib/)?lib/PGXN/API/Indexer[.]pm$}{www};
-
-has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
-     PGXN::API->instance->config->{doc_root} || do {
-         my $file = quotemeta catfile qw(lib PGXN API Indexer.pm);
-         my $blib = quotemeta catfile 'blib', '';
-         (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
-         $dir;
-     };
-});
-
 sub add_distribution {
     my ($self, $params) = @_;
 
     my $src_dir = $params->{src_dir};
     my $meta    = $params->{meta};
-    my $idx_dir = catdir +PGXN::API->instance->config->{index_path};
 
+    $self->copy_files($meta);
     $self->merge_metadata($meta);
 
     return $self;
+}
+
+sub copy_files {
+    # Need to copy the README, zip file, and dist meta file.
+    
 }
 
 sub merge_distmeta {
     my ($self, $meta) = @_;
 
     # Merge the list of versions into the meta file.
-    my $by_dist_file = $self->file_for('by-dist' => $meta);
+    my $by_dist_file = $self->mirror_file_for('by-dist' => $meta);
     my $by_dist = PGXN::API->instance->read_json_from($by_dist_file);
     $meta->{releases} = $by_dist->{releases};
 
     # Write the merge metadata to the file.
-    my $fn = $self->file_for(meta => $meta);
+    my $fn = $self->mirror_file_for(meta => $meta);
     open my $fh, '>:utf8', $fn or die "Cannot open $fn: $!\n";
     print $fh JSON->new->pretty->encode($meta);
     close $fh or die "Cannot close $fn: $!\n";
     return $self;
 }
 
-sub file_for {
-    my ($self, $name, $meta) = @_;
-    my $dist_uri = PGXN::API->instance->uri_templates->{$name}->process(
-        dist    => $meta->{name},
-        version => $meta->{version},
-    );
-
+sub mirror_file_for {
+    my $self = shift;
     return catfile +PGXN::API->instance->config->{mirror_root},
-        $dist_uri->path_segments;
+        $self->_uri_for(@_)->path_segments;
 }
+
+sub doc_root_file_for {
+    my $self = shift;
+    return catfile +PGXN::API->instance->doc_root,
+        $self->_uri_for(@_)->path_segments;
+}
+
+sub _uri_for {
+    my ($self, $name, $meta) = @_;
+    PGXN::API->instance->uri_templates->{$name}->process(
+        dist => $meta->{name},
+        %{ $meta }
+    );
+}
+
 
 1;
 
