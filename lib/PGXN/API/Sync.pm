@@ -21,13 +21,14 @@ sub run {
 
 sub run_rsync {
     my $self   = shift;
-    my $config = PGXN::API->instance->config;
+    my $pgxn   = PGXN::API->instance;
+    my $config = $pgxn->config;
     my $fh     = $self->_pipe(
         '-|',
         $config->{rsync_path} || 'rsync',
         qw(--archive --compress --delete --out-format), '%i %n',
         $config->{rsync_source},
-        $config->{mirror_root},
+        $pgxn->mirror_root,
     );
     $self->rsync_output($fh);
 }
@@ -120,7 +121,7 @@ sub dist_for {
         version => $meta->{version},
     );
 
-    return catfile +PGXN::API->instance->config->{mirror_root},
+    return catfile +PGXN::API->instance->mirror_root,
         $dist_uri->path_segments;
 }
 

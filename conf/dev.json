@@ -5,7 +5,6 @@
         "username": "pgxn",
         "password": ""
     },
-    "mirror_root": "/tmp/pgxn-root-dev",
     "rsync_source": "rsync://master.pgxn.org/pgxn",
     "index_path": "/tmp/pgxn_index"
 }}

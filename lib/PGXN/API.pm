@@ -53,7 +53,7 @@ L<URI::Template> objects.
 has uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
     my $self = shift;
     my $tmpl = $self->read_json_from(
-        catfile $self->config->{mirror_root}, 'index.json'
+        catfile $self->mirror_root, 'index.json'
     );
     return { map { $_ => URI::Template->new($tmpl->{$_}) } keys %{ $tmpl } };
 });
@@ -94,6 +94,25 @@ which is just the F<src> subdirectory of C<doc_root>.
 
 has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
     my $dir = catdir shift->doc_root, 'src';
+    if (!-e $dir) {
+        make_path $dir;
+    } elsif (!-d $dir) {
+        die qq{Location for source files "$dir" is not a directory\n};
+    }
+    $dir;
+});
+
+=head3 C<mirror_root>
+
+  my $mirror_root = $pgxn->mirror_root;
+
+Returns the directory on the file system where the PGXN mirror lives, which is
+just the F<pgxn> subdirectory of C<doc_root>.
+
+=cut
+
+has mirror_root => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
+    my $dir = catdir shift->doc_root, 'pgxn';
     if (!-e $dir) {
         make_path $dir;
     } elsif (!-d $dir) {

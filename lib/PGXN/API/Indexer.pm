@@ -44,7 +44,7 @@ sub merge_distmeta {
 
 sub mirror_file_for {
     my $self = shift;
-    return catfile +PGXN::API->instance->config->{mirror_root},
+    return catfile +PGXN::API->instance->mirror_root,
         $self->_uri_for(@_)->path_segments;
 }
 

@@ -8,6 +8,7 @@ use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
 use Test::Output;
 use File::Path qw(remove_tree);
+use File::Copy::Recursive qw(dircopy);
 use Test::File;
 
 my $CLASS;
@@ -30,22 +31,29 @@ can_ok $CLASS => qw(
 );
 
 # Set up for Win32.
-my $config = PGXN::API->config;
+my $pgxn   = PGXN::API->instance;
+my $config = $pgxn->config;
 $config->{rsync_path} .= '.bat' if PGXN::API::Sync::WIN32;
+END { remove_tree $pgxn->doc_root }
 
 ##############################################################################
 # Test rsync.
 ok my $sync = $CLASS->new, "Construct $CLASS object";
 ok $sync->run_rsync, 'Run rsync';
 ok my $fh = $sync->rsync_output, 'Grab the output';
+my $mirror_root = $pgxn->mirror_root;
 is join('', <$fh>), "--archive
 --compress
 --delete
 --out-format
 %i %n
 $config->{rsync_source}
-$config->{mirror_root}
+$mirror_root
 ", 'Rsync should have been properly called';
+
+# Rsync our "mirror" to the mirror root.
+remove_tree $mirror_root;
+dircopy catdir(qw(t root)), $mirror_root;
 
 ##############################################################################
 # Test the regular expression for finding distributions.
@@ -152,7 +160,7 @@ is_deeply \@found, [qw(
 
 ##############################################################################
 # digest_for()
-my $pgz = catfile qw(t root dist pair pair-0.1.1.pgz);
+my $pgz = catfile $mirror_root, qw(dist pair pair-0.1.1.pgz);
 is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
     'Should get expected digest from digest_for()';
 
@@ -160,7 +168,7 @@ is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
 # Test process_meta().
 $mock->unmock('process_meta');
 
-my $json = catfile qw(t root dist pair pair-0.1.1.json);
+my $json = catfile $mirror_root, qw(dist pair pair-0.1.1.json);
 $mock->mock(unzip => sub {
     is $_[1], $pgz, "unzip should be passed $pgz";
 });
@@ -198,7 +206,6 @@ my $base = catdir $src_dir, 'pair-0.1.1';
 file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
 
 # Unzip it.
-END { remove_tree +PGXN::API->instance->doc_root }
 ok $sync->unzip($pgz), "Unzip $pgz";
 file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 

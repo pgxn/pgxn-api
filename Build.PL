@@ -19,11 +19,12 @@ $class->new(
     db_client          => 'psql',
     configure_requires => { 'Module::Build::DB' => '0.10', },
     build_requires     => {
-        'Module::Build'    => '0.30',
-        'Test::File'       => '1.29',
-        'Test::MockModule' => '0.05',
-        'Test::More'       => '0.70',
-        'Test::Output'     => '0.16',
+        'Module::Build'         => '0.30',
+        'Test::File'            => '1.29',
+        'Test::MockModule'      => '0.05',
+        'Test::More'            => '0.70',
+        'Test::Output'          => '0.16',
+        'File::Copy::Recursive' => '0.38',
     },
     requires => {
         'Archive::Zip'                 => '1.30',
