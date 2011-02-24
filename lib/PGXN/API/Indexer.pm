@@ -35,8 +35,9 @@ sub merge_distmeta {
     my ($self, $meta) = @_;
 
     # Merge the list of versions into the meta file.
+    my $api = PGXN::API->instance;
     my $by_dist_file = $self->mirror_file_for('by-dist' => $meta);
-    my $by_dist = PGXN::API->instance->read_json_from($by_dist_file);
+    my $by_dist = $api->read_json_from($by_dist_file);
     $meta->{releases} = $by_dist->{releases};
 
     # Write the merge metadata to the file.
@@ -48,6 +49,23 @@ sub merge_distmeta {
     # Now copy it to its by-dist home.
     $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );
     fcopy $fn, $by_dist_file or die "Cannot copy $fn to $by_dist_file: $!\n";
+
+    # Now update all older versions with the complete list of verions.
+    for my $versions ( values %{ $meta->{releases} }) {
+        for my $version (@{ $versions}) {
+            next if $version eq $meta->{version};
+            local $meta->{version} = $version;
+
+            my $vmeta_file = $self->doc_root_file_for( meta => $meta);
+            my $vmeta = $api->read_json_from($vmeta_file);
+            $vmeta->{releases} = $meta->{releases};
+
+            open my $fh, '>:utf8', $vmeta_file
+                or die "Cannot open $vmeta_file: $!\n";
+            print $fh JSON->new->pretty->encode($vmeta);
+            close $fh or die "Cannot close $fn: $!\n";
+        }
+    }
 
     return $self;
 }

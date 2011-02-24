@@ -4,7 +4,7 @@ use strict;
 use warnings;
 #use Test::More tests => 2;
 use Test::More 'no_plan';
-use File::Copy::Recursive qw(dircopy);
+use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir);
 use PGXN::API::Sync;
@@ -87,3 +87,30 @@ ok my $dist_meta = $api->read_json_from($dist_file),
 $meta->{releases} = { stable => ['0.1.0'] };
 is_deeply $dist_meta, $meta, 'And it should be the merged metadata';
 
+# Now update with 0.1.1. "Sync" the updated pair.json.
+fcopy catfile(qw(t data pair-updated.json)),
+      catfile($api->mirror_root, qw(by dist pair.json));
+
+my $meta_011 = $api->read_json_from(
+    catfile $api->mirror_root, qw(dist pair pair-0.1.1.json)
+);
+my $dist_011_file = catfile $api->doc_root, qw(dist pair pair-0.1.1.json);
+file_not_exists_ok $dist_011_file, 'pair-0.1.1.json should not yet exist';
+ok $indexer->merge_distmeta($meta_011), 'Merge the distmeta';
+file_exists_ok $dist_011_file, 'pair-0.1.1.json should now exist';
+
+files_eq_or_diff $dist_011_file, $by_dist,
+    'pair-0.1.1.json and pair.json should be the same';
+
+ok $dist_meta = $api->read_json_from($dist_011_file),
+    'Read the 0.1.1 merged distmeta';
+$meta_011->{releases} = { stable => ['0.1.1', '0.1.0'] };
+is_deeply $dist_meta, $meta_011,
+    'And it should be the merged with all version info';
+
+# Meanwhile, the old file should be the same as before, except that it should
+# now also have a list of all releases.
+ok $dist_meta = $api->read_json_from($dist_file),
+    'Read the older version distmeta';
+$meta->{releases} = { stable => ['0.1.1', '0.1.0'] };
+is_deeply $dist_meta, $meta, 'It should be updated with all versions';
