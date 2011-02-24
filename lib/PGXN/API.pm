@@ -4,7 +4,7 @@ use 5.12.0;
 use utf8;
 use MooseX::Singleton;
 use DBIx::Connector;
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use URI::Template;
 use namespace::autoclean;
@@ -58,24 +58,6 @@ has uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
     return { map { $_ => URI::Template->new($tmpl->{$_}) } keys %{ $tmpl } };
 });
 
-=head3 C<source_dir>
-
-  my $source_dir = $pgxn->source_dir;
-
-Returns the directory on the file system where sources should be unzipped.
-
-=cut
-
-has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
-    my $dir = catfile shift->config->{mirror_root}, 'src';
-    if (!-e $dir) {
-        make_path $dir;
-    } elsif (!-d $dir) {
-        die qq{Location for source files "$dir" is not a directory\n};
-    }
-    $dir;
-});
-
 =head3 C<doc_root>
 
   my $doc_root = $pgxn->doc_root;
@@ -99,6 +81,25 @@ has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
          die qq{Location for document root "$dir" is not a directory\n};
      }
      $dir;
+});
+
+=head3 C<source_dir>
+
+  my $source_dir = $pgxn->source_dir;
+
+Returns the directory on the file system where sources should be unzipped,
+which is just the F<src> subdirectory of C<doc_root>.
+
+=cut
+
+has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
+    my $dir = catdir shift->doc_root, 'src';
+    if (!-e $dir) {
+        make_path $dir;
+    } elsif (!-d $dir) {
+        die qq{Location for source files "$dir" is not a directory\n};
+    }
+    $dir;
 });
 
 =head3 C<conn>

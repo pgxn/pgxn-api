@@ -64,17 +64,18 @@ ok my $tmpl = $pgxn->uri_templates, 'Get URI templates';
 isa_ok $tmpl, 'HASH', 'Their storage';
 isa_ok $tmpl->{$_}, 'URI::Template', "Template $_" for keys %{ $tmpl };
 
-# Test source_dir().
-my $src_dir = catdir $pgxn->config->{mirror_root}, 'src';
-file_not_exists_ok $src_dir, 'Source dir should not yet exist';
-END { remove_tree $src_dir }
-is $pgxn->source_dir, $src_dir, 'Should have expected source directory';
-file_exists_ok $src_dir, 'Source dir should now exist';
-ok -d $src_dir, 'Source dir should be a directory';
-
 # Test doc_root().
 file_not_exists_ok 'www', 'Doc root should not yet exist';
 END { remove_tree 'www' }
 is $pgxn->doc_root, catdir(cwd, 'www'),
     'Should have default doc root';
 file_exists_ok 'www', 'Doc root should now exist';
+
+# Test source_dir().
+my $src_dir = catdir $pgxn->doc_root, 'src';
+file_not_exists_ok $src_dir, 'Source dir should not yet exist';
+END { remove_tree $src_dir }
+is $pgxn->source_dir, $src_dir, 'Should have expected source directory';
+file_exists_ok $src_dir, 'Source dir should now exist';
+ok -d $src_dir, 'Source dir should be a directory';
+

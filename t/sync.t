@@ -198,7 +198,7 @@ my $base = catdir $src_dir, 'pair-0.1.1';
 file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
 
 # Unzip it.
-END { remove_tree $src_dir }
+END { remove_tree +PGXN::API->instance->doc_root }
 ok $sync->unzip($pgz), "Unzip $pgz";
 file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 
