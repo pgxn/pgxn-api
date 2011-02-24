@@ -7,23 +7,27 @@ use PGXN::API;
 use XML::LibXML;
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
+use File::Copy::Recursive qw(fcopy);
 use namespace::autoclean;
 
 sub add_distribution {
-    my ($self, $params) = @_;
+    my ($self, $meta) = @_;
 
-    my $src_dir = $params->{src_dir};
-    my $meta    = $params->{meta};
-
-    $self->copy_files($meta);
-    $self->merge_metadata($meta);
+    $self->copy_files($meta) or return;
+#    $self->merge_metadata($meta);
 
     return $self;
 }
 
 sub copy_files {
+    my ($self, $meta) = @_;
     # Need to copy the README, zip file, and dist meta file.
-    
+    for my $file (qw(dist meta readme)) {
+        my $src = $self->mirror_file_for($file => $meta);
+        my $dest = $self->doc_root_file_for($file => $meta);
+        fcopy $src, $dest or die "Cannot copy $src to $dest: $!\n";
+    }
+    return $self;
 }
 
 sub merge_distmeta {
@@ -55,10 +59,11 @@ sub doc_root_file_for {
 }
 
 sub _uri_for {
-    my ($self, $name, $meta) = @_;
+    my ($self, $name, $meta, @params) = @_;
     PGXN::API->instance->uri_templates->{$name}->process(
-        dist => $meta->{name},
-        %{ $meta }
+        dist    => $meta->{name},
+        version => $meta->{version},
+        @params,
     );
 }
 
