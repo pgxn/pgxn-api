@@ -9,6 +9,17 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use namespace::autoclean;
 
+(my $def_doc_root = __FILE__) =~ s{(?:blib/)?lib/PGXN/API/Indexer[.]pm$}{www};
+
+has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+     PGXN::API->instance->config->{doc_root} || do {
+         my $file = quotemeta catfile qw(lib PGXN API Indexer.pm);
+         my $blib = quotemeta catfile 'blib', '';
+         (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
+         $dir;
+     };
+});
+
 sub add_distribution {
     my ($self, $params) = @_;
 
