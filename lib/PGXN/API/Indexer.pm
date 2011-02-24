@@ -9,12 +9,13 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy);
 use namespace::autoclean;
+use JSON;
 
 sub add_distribution {
     my ($self, $meta) = @_;
 
-    $self->copy_files($meta) or return;
-#    $self->merge_metadata($meta);
+    $self->copy_files($meta)     or return;
+    $self->merge_distmeta($meta) or return;
 
     return $self;
 }
@@ -22,7 +23,7 @@ sub add_distribution {
 sub copy_files {
     my ($self, $meta) = @_;
     # Need to copy the README, zip file, and dist meta file.
-    for my $file (qw(dist meta readme)) {
+    for my $file (qw(dist readme)) {
         my $src = $self->mirror_file_for($file => $meta);
         my $dest = $self->doc_root_file_for($file => $meta);
         fcopy $src, $dest or die "Cannot copy $src to $dest: $!\n";
@@ -39,10 +40,15 @@ sub merge_distmeta {
     $meta->{releases} = $by_dist->{releases};
 
     # Write the merge metadata to the file.
-    my $fn = $self->mirror_file_for(meta => $meta);
+    my $fn = $self->doc_root_file_for(meta => $meta);
     open my $fh, '>:utf8', $fn or die "Cannot open $fn: $!\n";
     print $fh JSON->new->pretty->encode($meta);
     close $fh or die "Cannot close $fn: $!\n";
+
+    # Now copy it to its by-dist home.
+    $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );
+    fcopy $fn, $by_dist_file or die "Cannot copy $fn to $by_dist_file: $!\n";
+
     return $self;
 }
 
