@@ -34,7 +34,7 @@ the C<--context> option to C<perl Build.PL> at build time.
 
 has config => (is => 'ro', isa => 'HashRef', default => sub {
     # XXX Verify presence of required keys.
-    shift->read_json_from('conf/test.json');
+    shift->read_json_from(catfile 'conf', ($ENV{PLACK_ENV} || 'test') . '.json');
 });
 
 =head3 C<uri_templates>
