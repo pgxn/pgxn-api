@@ -18,7 +18,7 @@ sub add_distribution {
 
     $self->copy_files($meta)      or return;
     $self->merge_distmeta($meta)  or return;
-    $self->update_owner($meta) or return;
+    $self->update_owner($meta)    or return;
 
     return $self;
 }
@@ -85,16 +85,17 @@ sub update_owner {
     my $doc_file = $self->doc_root_file_for('by-owner' => $meta);
     my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
 
-    # Copy the release metadata into the mirrored data.
-    $mir_meta->{releases} = $doc_meta->{releases};
-
     # Update *this* release with version info, abstract, and date.
-    $mir_meta->{releases}{$meta->{name}} = {
-        %{ $mir_meta->{releases}{$meta->{name}} },
+    $doc_meta->{releases}{$meta->{name}} = {
         %{ $meta->{releases} },
+        %{ $doc_meta->{releases}{$meta->{name}} },
+        %{ $mir_meta->{releases}{$meta->{name}} },
         abstract                       => $meta->{abstract},
         "$meta->{release_status}_date" => $meta->{release_date},
     };
+
+    # Copy the release metadata into the mirrored data.
+    $mir_meta->{releases} = $doc_meta->{releases};
 
     # Now write out the file again.
     open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
