@@ -3,15 +3,11 @@ package PGXN::API v0.1.0;
 use 5.12.0;
 use utf8;
 use MooseX::Singleton;
-use DBIx::Connector;
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use URI::Template;
 use JSON;
 use namespace::autoclean;
-use DBD::Pg '2.15.1';
-use Exception::Class::DBI;
-
 
 =head1 Interface
 
@@ -122,26 +118,6 @@ has mirror_root => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
         die qq{Location for source files "$dir" is not a directory\n};
     }
     $dir;
-});
-
-=head3 C<conn>
-
-  my $conn = $pgxn->conn;
-
-Returns the database connection for the app. It's a L<DBIx::Connection>, safe
-to use pretty much anywhere.
-
-=cut
-
-has conn => (is => 'ro', lazy => 1, isa => 'DBIx::Connector', default => sub {
-    DBIx::Connector->new( @{ shift->config->{dbi} }{qw(dsn username password)}, {
-        PrintError        => 0,
-        RaiseError        => 0,
-        HandleError       => Exception::Class::DBI->handler,
-        AutoCommit        => 1,
-        pg_enable_utf8    => 1,
-        pg_server_prepare => 0,
-    });
 });
 
 =head3 C<read_json_from>
