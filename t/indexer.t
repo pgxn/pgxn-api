@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 33;
+use Test::More tests => 38;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -147,7 +147,23 @@ $mir_data->{releases}{pair}{stable} = ['0.1.0'];
 $mir_data->{releases}{pair}{testing} = ['0.1.1'];
 $mir_data->{releases}{pair}{testing_date} = '2010-10-29T22:46:45Z';
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
-$doc_data = $api->read_json_from($owner_file),
+ok $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file again';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.1';
+
+# Now do another stable release.
+fcopy catfile(qw(t data theory-updated2.json)),
+      catfile($api->mirror_root, qw(by owner theory.json));
+my $meta_012 = $api->read_json_from(
+    catfile $api->mirror_root, qw(dist pair pair-0.1.2.json)
+);
+ok $indexer->merge_distmeta($meta_012), 'Merge the 0.1.2 distmeta';
+ok $indexer->update_owner($meta_012),
+    'Update the owner metadata for pair 0.1.2';
+$mir_data->{releases}{pair}{stable} = ['0.1.2', '0.1.0'];
+$mir_data->{releases}{pair}{stable_date} = '2010-11-10T12:18:03Z';
+ok $doc_data = $api->read_json_from($owner_file),
+    'Read the doc root owner data file once more';
+is_deeply $doc_data, $mir_data,
+    'The doc root data should have the the metadata for 0.1.2';
