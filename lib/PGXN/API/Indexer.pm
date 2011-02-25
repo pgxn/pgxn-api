@@ -19,6 +19,7 @@ sub add_distribution {
     $self->copy_files($meta)      or return;
     $self->merge_distmeta($meta)  or return;
     $self->update_owner($meta)    or return;
+    $self->update_tags($meta)     or return;
 
     return $self;
 }
@@ -94,14 +95,39 @@ sub update_owner {
         "$meta->{release_status}_date" => $meta->{release_date},
     };
 
-    # Copy the release metadata into the mirrored data.
-    $mir_meta->{releases} = $doc_meta->{releases};
+    # Copy the release metadata into the mirrored data and the core metadata.
+    $mir_meta->{releases}  = $doc_meta->{releases};
+    $meta->{releases_plus} = $doc_meta->{releases}{$meta->{name}};
 
     # Now write out the file again.
     open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
     print $fh $encoder->encode($mir_meta);
     close $fh or die "Cannot close $doc_file: $!\n";
 
+    return $self;
+}
+
+sub update_tags {
+    my ($self, $meta) = @_;
+    my $api = PGXN::API->instance;
+
+    my $tags = $meta->{tags} or return $self;
+
+    for my $tag (@{ $tags }) {
+        # Read in tag metadata from the doc root.
+        my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
+        my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : do {
+            # Fall back on the mirror file.
+            my $mir_file = $self->mirror_file_for('by-tag' => $meta, tag => $tag);
+            $api->read_json_from($mir_file);
+        };
+
+        # Copy the release metadata into the doc data and write it back out.
+        $doc_meta->{releases} = $meta->{releases_plus};
+        open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
+        print $fh $encoder->encode($doc_meta);
+        close $fh or die "Cannot close $doc_file: $!\n";
+    }
     return $self;
 }
 

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 38;
+use Test::More tests => 64;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -25,6 +25,7 @@ can_ok $CLASS => qw(
     copy_files
     merge_distmeta
     update_owner
+    update_tags
     mirror_file_for
     doc_root_file_for
     _uri_for
@@ -167,3 +168,81 @@ ok $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file once more';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.2';
+
+##############################################################################
+# Now update the tag metadata.
+my $pairkw_file = catfile qw(www by tag pair.json);
+my $orderedkw_file = catfile qw(www by tag), 'ordered pair.json';
+my $keyvalkw_file = catfile qw(www by tag), 'key value.json';
+file_not_exists_ok $pairkw_file, "$pairkw_file should not yet exist";
+file_not_exists_ok $orderedkw_file, "$orderedkw_file should not yet exist";
+file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should not yet exist";
+ok $indexer->update_tags($meta), 'Update the tags';
+file_exists_ok $pairkw_file, "$pairkw_file should now exist";
+file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
+file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
+
+my $exp = {
+    tag => 'pair',
+    releases => {
+        abstract => 'A key/value pair data type',
+        stable   => ['0.1.0'],
+        stable_date => '2010-10-18T15:24:21Z',
+    },
+};
+
+# Check the contents of the two keywords on the doc root.
+ok my $pair_data = $api->read_json_from($pairkw_file),
+    "Read JSON from $pairkw_file";
+is_deeply $pair_data, $exp, "$pairkw_file should have the release data";
+
+$exp->{tag} = 'ordered pair';
+ok my $ord_data = $api->read_json_from($orderedkw_file),
+    "Read JSON from $orderedkw_file";
+is_deeply $ord_data, $exp, "$orderedkw_file should have the release data";
+
+# Now update with 0.1.1.
+ok $indexer->update_tags($meta_011), 'Update the tags to 0.1.1';
+file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
+
+# Check the JSON data.
+$exp->{tag} = 'pair';
+$exp->{releases}{testing} = ['0.1.1'];
+$exp->{releases}{testing_date} = '2010-10-29T22:46:45Z';
+$exp->{releases}{abstract} = 'A key/value pair dåtå type';
+
+ok $pair_data = $api->read_json_from($pairkw_file),
+    "Read JSON from $pairkw_file again";
+is_deeply $pair_data, $exp, "$pairkw_file should be updated for 0.1.1";
+
+$exp->{tag} = 'ordered pair';
+ok $ord_data = $api->read_json_from($orderedkw_file),
+    "Read JSON from $orderedkw_file again";
+is_deeply $ord_data, $exp, "$orderedkw_file should be updated for 0.1.1";
+
+$exp->{tag} = 'key value';
+ok my $keyval_data = $api->read_json_from($keyvalkw_file),
+    "Read JSON from $keyvalkw_file";
+is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.1 data";
+
+# And finally, update to 0.1.2.
+ok $indexer->update_tags($meta_012), 'Update the tags to 0.1.2';
+
+# Make sure all tags are updated.
+$exp->{tag} = 'pair';
+$exp->{releases}{stable} = ['0.1.2', '0.1.0'];
+$exp->{releases}{stable_date} = '2010-11-10T12:18:03Z';
+
+ok $pair_data = $api->read_json_from($pairkw_file),
+    "Read JSON from $pairkw_file once more";
+is_deeply $pair_data, $exp, "$pairkw_file should be updated for 0.1.2";
+
+$exp->{tag} = 'ordered pair';
+ok $ord_data = $api->read_json_from($orderedkw_file),
+    "Read JSON from $orderedkw_file once more";
+is_deeply $ord_data, $exp, "$orderedkw_file should be updated for 0.1.2";
+
+$exp->{tag} = 'key value';
+ok $keyval_data = $api->read_json_from($keyvalkw_file),
+    "Read JSON from $keyvalkw_file again";
+is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.2 data";
