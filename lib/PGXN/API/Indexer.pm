@@ -89,8 +89,8 @@ sub update_owner {
     # Update *this* release with version info, abstract, and date.
     $mir_meta->{releases}{$meta->{name}} = {
         %{ $meta->{releases} },
-        abstract => $meta->{abstract},
-        date     => $meta->{date},
+        abstract     => $meta->{abstract},
+        release_date => $meta->{release_date},
     };
 
     # Now write out the file again.
