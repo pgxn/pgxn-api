@@ -17,7 +17,7 @@
          "version": "0.1.1"
       }
    },
-   "tags": ["variadic function", "ordered pair", "pair", "key value", "key value pair"],
+   "tags": ["ordered pair", "pair", "key value"],
    "resources": {
       "bugtracker": {
          "web": "http://github.com/theory/kv-pair/issues/"
