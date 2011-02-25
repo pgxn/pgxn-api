@@ -122,24 +122,24 @@ is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 # Now update the owner metadata.
 my $owner_file = catfile qw(www by owner theory.json);
 file_not_exists_ok $owner_file, "$owner_file should not yet exist";
-ok $indexer->update_owner($meta), 'Uprelease_date the owner metadata';
+ok $indexer->update_owner($meta), 'Upstable_date the owner metadata';
 file_exists_ok $owner_file, "$owner_file should now exist";
 
-# Now make sure that it has the uprelease_dated release metadata.
+# Now make sure that it has the upstable_dated release metadata.
 ok my $mir_data = $api->read_json_from(
     catfile qw(www pgxn by owner theory.json)
 ),'Read the mirror owner data file';
 ok my $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file';
-$mir_data->{releases}{pair}{release_date} = '2010-10-18T15:24:21Z';
+$mir_data->{releases}{pair}{stable_date} = '2010-10-18T15:24:21Z';
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair data type';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for this release';
 
-# Great, now uprelease_date it.
+# Great, now upstable_date it.
 ok $indexer->update_owner($meta_011),
-    'Uprelease_date the owner metadata for pair 0.1.1';
-$mir_data->{releases}{pair}{release_date} = '2010-10-29T22:46:45Z';
+    'Upstable_date the owner metadata for pair 0.1.1';
+$mir_data->{releases}{pair}{testing_date} = '2010-10-29T22:46:45Z';
 $mir_data->{releases}{pair}{stable} = [qw(0.1.1 0.1.0)];
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
 $doc_data = $api->read_json_from($owner_file),
