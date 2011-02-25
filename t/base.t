@@ -8,7 +8,7 @@ use Test::File;
 use Test::More tests => 39;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(fcopy);
-use JSON::XS;
+use JSON;
 use Cwd;
 
 my $CLASS;

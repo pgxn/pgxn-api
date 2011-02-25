@@ -38,6 +38,7 @@ $class->new(
         'File::Path'                   => '2.08',
         'File::Copy::Recursive'        => '0.38',
         'File::Spec'                   => '3.33',
+        'JSON'                         => '2.27',
         'JSON::XS'                     => '2.3',
         'Moose'                        => '1.15',
         'MooseX::Singleton'            => '0.25',

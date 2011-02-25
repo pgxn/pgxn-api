@@ -11,6 +11,8 @@ use File::Copy::Recursive qw(fcopy);
 use namespace::autoclean;
 use JSON;
 
+my $encoder = JSON->new->space_after->allow_nonref->indent->canonical;
+
 sub add_distribution {
     my ($self, $meta) = @_;
 
@@ -44,7 +46,7 @@ sub merge_distmeta {
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
     open my $fh, '>:utf8', $fn or die "Cannot open $fn: $!\n";
-    print $fh JSON->new->pretty->encode($meta);
+    print $fh $encoder->encode($meta);
     close $fh or die "Cannot close $fn: $!\n";
 
     # Now copy it to its by-dist home.
@@ -63,7 +65,7 @@ sub merge_distmeta {
 
             open my $fh, '>:utf8', $vmeta_file
                 or die "Cannot open $vmeta_file: $!\n";
-            print $fh JSON->new->pretty->encode($vmeta);
+            print $fh $encoder->encode($vmeta);
             close $fh or die "Cannot close $vmeta_file: $!\n";
         }
     }
@@ -95,7 +97,7 @@ sub update_owner {
 
     # Now write out the file again.
     open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
-    print $fh JSON->new->pretty->encode($mir_meta);
+    print $fh $encoder->encode($mir_meta);
     close $fh or die "Cannot close $doc_file: $!\n";
 
     return $self;

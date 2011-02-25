@@ -7,10 +7,11 @@ use DBIx::Connector;
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use URI::Template;
+use JSON;
 use namespace::autoclean;
 use DBD::Pg '2.15.1';
 use Exception::Class::DBI;
-use JSON::XS ();
+
 
 =head1 Interface
 
@@ -156,7 +157,7 @@ sub read_json_from {
     my ($self, $fn) = @_;
     open my $fh, '<:raw', $fn or die "Cannot open $fn: $!\n";
     local $/;
-    return JSON::XS->new->utf8->decode(<$fh>);
+    return JSON->new->utf8->decode(<$fh>);
 }
 
 __PACKAGE__->meta->make_immutable;
