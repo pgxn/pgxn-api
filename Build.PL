@@ -13,7 +13,6 @@ $class->new(
     module_name        => 'PGXN::API',
     license            => 'postgresql',
     # script_files       => 'bin',
-    # replace_config     => 'conf/test.json',
     configure_requires => { 'Module::Build' => '0.30', },
     build_requires     => {
         'Module::Build'        => '0.30',
