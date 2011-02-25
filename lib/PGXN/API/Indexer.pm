@@ -14,8 +14,9 @@ use JSON;
 sub add_distribution {
     my ($self, $meta) = @_;
 
-    $self->copy_files($meta)     or return;
-    $self->merge_distmeta($meta) or return;
+    $self->copy_files($meta)      or return;
+    $self->merge_distmeta($meta)  or return;
+    $self->update_owner($meta) or return;
 
     return $self;
 }
@@ -37,8 +38,8 @@ sub merge_distmeta {
     # Merge the list of versions into the meta file.
     my $api = PGXN::API->instance;
     my $by_dist_file = $self->mirror_file_for('by-dist' => $meta);
-    my $by_dist = $api->read_json_from($by_dist_file);
-    $meta->{releases} = $by_dist->{releases};
+    my $by_dist_meta = $api->read_json_from($by_dist_file);
+    $meta->{releases} = $by_dist_meta->{releases};
 
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
@@ -63,9 +64,39 @@ sub merge_distmeta {
             open my $fh, '>:utf8', $vmeta_file
                 or die "Cannot open $vmeta_file: $!\n";
             print $fh JSON->new->pretty->encode($vmeta);
-            close $fh or die "Cannot close $fn: $!\n";
+            close $fh or die "Cannot close $vmeta_file: $!\n";
         }
     }
+
+    return $self;
+}
+
+sub update_owner {
+    my ($self, $meta) = @_;
+    my $api = PGXN::API->instance;
+
+    # Read in owner metadata from the mirror.
+    my $mir_file = $self->mirror_file_for('by-owner' => $meta);
+    my $mir_meta = $api->read_json_from($mir_file);
+
+    # Read in owner metadata from the doc root.
+    my $doc_file = $self->doc_root_file_for('by-owner' => $meta);
+    my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
+
+    # Copy the release metadata into the mirrored data.
+    $mir_meta->{releases} = $doc_meta->{releases};
+
+    # Update *this* release with version info, abstract, and date.
+    $mir_meta->{releases}{$meta->{name}} = {
+        %{ $meta->{releases} },
+        abstract => $meta->{abstract},
+        date     => $meta->{date},
+    };
+
+    # Now write out the file again.
+    open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
+    print $fh JSON->new->pretty->encode($mir_meta);
+    close $fh or die "Cannot close $doc_file: $!\n";
 
     return $self;
 }
@@ -87,6 +118,7 @@ sub _uri_for {
     PGXN::API->instance->uri_templates->{$name}->process(
         dist    => $meta->{name},
         version => $meta->{version},
+        owner   => $meta->{owner},
         @params,
     );
 }

@@ -77,6 +77,8 @@ has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
      };
      if (!-e $dir) {
          make_path $dir;
+         # Pre-generate the by/ directories.
+         make_path catdir $dir, 'by', $_ for qw(owner tag dist extension);
      } elsif (!-d $dir) {
          die qq{Location for document root "$dir" is not a directory\n};
      }

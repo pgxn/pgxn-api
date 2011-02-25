@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 2;
-use Test::More 'no_plan';
+use Test::More tests => 30;
+#use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir);
@@ -11,6 +11,7 @@ use PGXN::API::Sync;
 use Test::File;
 use Test::Exception;
 use Test::File::Contents;
+use utf8;
 
 my $CLASS;
 BEGIN {
@@ -42,6 +43,7 @@ my $meta = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair pair-0.1.0.json)
 );
 
+##############################################################################
 # Let's index pair-0.1.0.
 file_not_exists_ok(
     catfile($api->doc_root, qw(dist pair), "pair-0.1.0.$_"),
@@ -65,6 +67,7 @@ throws_ok { $indexer->copy_files($meta ) }
     'Should get exception with file names for bad copy';
 $meta->{name} = 'pair';
 
+##############################################################################
 # Now merge the distribution metadata files.
 my $dist_file = catfile $api->doc_root, qw(dist pair pair-0.1.0.json);
 my $by_dist   = catfile $api->doc_root, qw(by dist pair.json);
@@ -114,3 +117,31 @@ ok $dist_meta = $api->read_json_from($dist_file),
     'Read the older version distmeta';
 $meta->{releases} = { stable => ['0.1.1', '0.1.0'] };
 is_deeply $dist_meta, $meta, 'It should be updated with all versions';
+
+##############################################################################
+# Now update the owner metadata.
+my $owner_file = catfile qw(www by owner theory.json);
+file_not_exists_ok $owner_file, "$owner_file should not yet exist";
+$indexer->update_owner($meta), 'Update the owner metadata';
+file_exists_ok $owner_file, "$owner_file should now exist";
+
+# Now make sure that it has the updated release metadata.
+my $mir_data = $api->read_json_from(catfile qw(www pgxn by owner theory.json)),
+    'Read the mirror owner data file';
+my $doc_data = $api->read_json_from($owner_file),
+    'Read the doc root owner data file';
+$mir_data->{releases}{pair}{date} = '2010-10-18T15:24:21Z';
+$mir_data->{releases}{pair}{abstract} = 'A key/value pair data type';
+is_deeply $doc_data, $mir_data,
+    'The doc root data should have the the metadata for this release';
+
+# Great, now update it.
+ok $indexer->update_owner($meta_011),
+    'Update the owner metadata for pair 0.1.1';
+$mir_data->{releases}{pair}{date} = '2010-10-29T22:46:45Z';
+$mir_data->{releases}{pair}{stable} = [qw(0.1.1 0.1.0)];
+$mir_data->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
+$doc_data = $api->read_json_from($owner_file),
+    'Read the doc root owner data file again';
+is_deeply $doc_data, $mir_data,
+    'The doc root data should have the the metadata for 0.1.1';
