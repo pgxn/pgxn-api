@@ -4,7 +4,7 @@
       "pair": {
          "stable": [ "0.1.0" ]
       },
-      "ptTAP": {
+      "pgTAP": {
          "stable": [ "0.25.0" ]
       }
    }

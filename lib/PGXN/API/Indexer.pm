@@ -123,7 +123,7 @@ sub update_tags {
         };
 
         # Copy the release metadata into the doc data and write it back out.
-        $doc_meta->{releases} = $meta->{releases_plus};
+        $doc_meta->{releases}{$meta->{name}} = $meta->{releases_plus};
         open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
         print $fh $encoder->encode($doc_meta);
         close $fh or die "Cannot close $doc_file: $!\n";

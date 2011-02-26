@@ -182,12 +182,16 @@ file_exists_ok $pairkw_file, "$pairkw_file should now exist";
 file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
 
+my $pgtap = { stable => ["0.25.0"] };
 my $exp = {
-    tag => 'pair',
+    tag => "pair",
     releases => {
-        abstract => 'A key/value pair data type',
-        stable   => ['0.1.0'],
-        stable_date => '2010-10-18T15:24:21Z',
+        pair  => {
+            abstract    => "A key/value pair data type",
+            stable      => ["0.1.0"],
+            stable_date => "2010-10-18T15:24:21Z",
+        },
+        pgTAP => $pgtap,
     },
 };
 
@@ -197,6 +201,7 @@ ok my $pair_data = $api->read_json_from($pairkw_file),
 is_deeply $pair_data, $exp, "$pairkw_file should have the release data";
 
 $exp->{tag} = 'ordered pair';
+delete $exp->{releases}{pgTAP};
 ok my $ord_data = $api->read_json_from($orderedkw_file),
     "Read JSON from $orderedkw_file";
 is_deeply $ord_data, $exp, "$orderedkw_file should have the release data";
@@ -207,15 +212,17 @@ file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 
 # Check the JSON data.
 $exp->{tag} = 'pair';
-$exp->{releases}{testing} = ['0.1.1'];
-$exp->{releases}{testing_date} = '2010-10-29T22:46:45Z';
-$exp->{releases}{abstract} = 'A key/value pair dåtå type';
+$exp->{releases}{pair}{testing} = ['0.1.1'];
+$exp->{releases}{pair}{testing_date} = '2010-10-29T22:46:45Z';
+$exp->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
+$exp->{releases}{pgTAP} = $pgtap;
 
 ok $pair_data = $api->read_json_from($pairkw_file),
     "Read JSON from $pairkw_file again";
 is_deeply $pair_data, $exp, "$pairkw_file should be updated for 0.1.1";
 
 $exp->{tag} = 'ordered pair';
+delete $exp->{releases}{pgTAP};
 ok $ord_data = $api->read_json_from($orderedkw_file),
     "Read JSON from $orderedkw_file again";
 is_deeply $ord_data, $exp, "$orderedkw_file should be updated for 0.1.1";
@@ -230,14 +237,16 @@ ok $indexer->update_tags($meta_012), 'Update the tags to 0.1.2';
 
 # Make sure all tags are updated.
 $exp->{tag} = 'pair';
-$exp->{releases}{stable} = ['0.1.2', '0.1.0'];
-$exp->{releases}{stable_date} = '2010-11-10T12:18:03Z';
+$exp->{releases}{pair}{stable} = ['0.1.2', '0.1.0'];
+$exp->{releases}{pair}{stable_date} = '2010-11-10T12:18:03Z';
+$exp->{releases}{pgTAP} = $pgtap;
 
 ok $pair_data = $api->read_json_from($pairkw_file),
     "Read JSON from $pairkw_file once more";
 is_deeply $pair_data, $exp, "$pairkw_file should be updated for 0.1.2";
 
 $exp->{tag} = 'ordered pair';
+delete $exp->{releases}{pgTAP};
 ok $ord_data = $api->read_json_from($orderedkw_file),
     "Read JSON from $orderedkw_file once more";
 is_deeply $ord_data, $exp, "$orderedkw_file should be updated for 0.1.2";
