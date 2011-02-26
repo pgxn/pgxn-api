@@ -1,0 +1,10 @@
+{
+   "extension": "pair",
+   "latest": "stable",
+   "stable": { "dist": "pair", "version": "0.1.0" },
+   "versions": {
+      "0.1.0": [
+         { "dist": "pair", "version": "0.1.0" }
+      ]
+   }
+}

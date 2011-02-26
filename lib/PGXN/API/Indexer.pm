@@ -16,10 +16,11 @@ my $encoder = JSON->new->space_after->allow_nonref->indent->canonical;
 sub add_distribution {
     my ($self, $meta) = @_;
 
-    $self->copy_files($meta)      or return;
-    $self->merge_distmeta($meta)  or return;
-    $self->update_owner($meta)    or return;
-    $self->update_tags($meta)     or return;
+    $self->copy_files($meta)        or return;
+    $self->merge_distmeta($meta)    or return;
+    $self->update_owner($meta)      or return;
+    $self->update_tags($meta)       or return;
+    $self->update_extensions($meta) or return;
 
     return $self;
 }
@@ -128,6 +129,71 @@ sub update_tags {
         print $fh $encoder->encode($doc_meta);
         close $fh or die "Cannot close $doc_file: $!\n";
     }
+    return $self;
+}
+
+sub update_extensions {
+    my ($self, $meta) = @_;
+    my $api = PGXN::API->instance;
+
+    while (my ($ext, $data) = each %{ $meta->{provides} }) {
+        # Read in extension metadata from the mirror.
+        my $mir_file = $self->mirror_file_for(
+            'by-extension' => $meta,
+            extension      => $ext,
+        );
+        my $mir_meta = $api->read_json_from($mir_file);
+
+        # Read in extension metadata from the doc root.
+        my $doc_file = $self->doc_root_file_for(
+            'by-extension' => $meta,
+            extension      => $ext,
+        );
+        my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : {};
+
+        # Add the abstract to the mirror data.
+        my $status = $meta->{release_status};
+        $mir_meta->{$status}{abstract} = $data->{abstract};
+        $mir_meta->{$_} = $doc_meta->{$_} for grep {
+            $doc_meta->{$_} && $_ ne $status
+        } qw(stable testing unstable);
+
+        # Copy the version info from the doc to the mirror and add the date.
+        $doc_meta->{versions} ||= {};
+         my $version   = $data->{version};
+        my $mir_dists = $mir_meta->{versions}{$version};
+        my $doc_dists = $doc_meta->{versions}{$version} ||= [];
+
+        # Copy the doc root versions.
+        $mir_meta->{versions} = $doc_meta->{versions};
+
+        # Find the current release distribution in the versions.
+        for my $i (0..$#$mir_dists) {
+            my $dist = $mir_dists->[$i];
+            # Make sure the doc dists are in sync.
+            if (!$doc_dists->[$i]
+                || $dist->{dist} ne $doc_dists->[$i]{dist}
+                || $dist->{version} ne $doc_dists->[$i]{version}
+            ) {
+                splice @{ $doc_dists }, $i, 0, $dist;
+            }
+
+            # Is this the distribution we're currently updating?
+            if ($dist->{dist} eq $meta->{name}
+                && $dist->{version} eq $meta->{version}
+            ) {
+                # We got it. Add the releae date and copy it to the mirror data.
+                $dist->{release_date} = $meta->{release_date};
+                last;
+            }
+        }
+
+        # Write it back out.
+        open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
+        print $fh $encoder->encode($mir_meta);
+        close $fh or die "Cannot close $doc_file: $!\n";
+    }
+
     return $self;
 }
 

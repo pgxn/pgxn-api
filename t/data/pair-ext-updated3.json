@@ -1,0 +1,18 @@
+{
+   "extension": "pair",
+   "latest": "stable",
+   "stable": { "dist": "pair", "version": "0.1.2" },
+   "testing": { "dist": "pair", "version": "0.1.1" },
+   "versions": {
+      "0.1.2": [
+         { "dist": "pair", "version": "0.1.2" }
+      ],
+      "0.1.1": [
+         { "dist": "otherdist", "version": "0.3.0" },
+         { "dist": "pair", "version": "0.1.1" }
+      ],
+      "0.1.0": [
+         { "dist": "pair", "version": "0.1.0" }
+      ]
+   }
+}

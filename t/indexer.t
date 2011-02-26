@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 64;
+use Test::More tests => 78;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -184,7 +184,7 @@ file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
 
 my $pgtap = { stable => ["0.25.0"] };
 my $exp = {
-    tag => "pair",
+    tag => 'pair',
     releases => {
         pair  => {
             abstract    => "A key/value pair data type",
@@ -255,3 +255,93 @@ $exp->{tag} = 'key value';
 ok $keyval_data = $api->read_json_from($keyvalkw_file),
     "Read JSON from $keyvalkw_file again";
 is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.2 data";
+
+##############################################################################
+# Now update the extension metadata.
+my $ext_file = catfile qw(www by extension pair.json);
+file_not_exists_ok $ext_file, "$ext_file should not yet exist";
+ok $indexer->update_extensions($meta), 'Update the extension metadata';
+file_exists_ok $ext_file, "$ext_file should now exist";
+
+# Now make sure that it has the updated release metadata.
+$exp = {
+    extension => 'pair',
+    latest    => 'stable',
+    stable    => {
+        abstract => 'A key/value pair data type',
+        dist     => 'pair',
+        version => '0.1.0',
+    },
+    versions  => {
+        '0.1.0' => [
+            {
+                dist         => 'pair',
+                release_date => '2010-10-18T15:24:21Z',
+                version      => '0.1.0',
+            },
+        ],
+    },
+};
+ok $doc_data = $api->read_json_from($ext_file),
+    'Read the doc root extension data file';
+is_deeply $doc_data, $exp,
+    'The extension metadata should include the abstract and release date';
+
+# Okay, update it with the testing release.
+fcopy catfile(qw(t data pair-ext-updated.json)),
+      catfile($api->mirror_root, qw(by extension pair.json));
+ok $indexer->update_extensions($meta_011),
+    'Update the extension metadata to 0.1.1';
+
+$exp->{latest} = 'testing';
+$exp->{testing} = {
+    abstract => 'A key/value pair dåtå type',
+    dist     => 'pair',
+    version  => '0.1.1',
+};
+$exp->{versions}{'0.1.1'} = [{
+    dist         => 'pair',
+    release_date => '2010-10-29T22:46:45Z',
+    version      => '0.1.1',
+}];
+
+ok $doc_data = $api->read_json_from($ext_file),
+    'Read the doc root extension data file again';
+is_deeply $doc_data, $exp,
+    'The extension metadata should include the testing data';
+
+# Add this version to a different distribution.
+$meta_011->{name} = 'otherdist';
+$meta_011->{version} = '0.3.0';
+
+fcopy catfile(qw(t data pair-ext-updated2.json)),
+      catfile($api->mirror_root, qw(by extension pair.json));
+ok $indexer->update_extensions($meta_011),
+    'Add the extension to another distribution';
+
+ok $doc_data = $api->read_json_from($ext_file),
+    'Read the doc root extension data file once again';
+unshift @{ $exp->{versions}{'0.1.1'} } => {
+    dist =>'otherdist',
+    release_date => '2010-10-29T22:46:45Z',
+    version => '0.3.0'
+};
+is_deeply $doc_data, $exp,
+    "The second distribution's metadata should new be present";
+
+# Great! Now update it to 0.1.2.
+fcopy catfile(qw(t data pair-ext-updated3.json)),
+      catfile($api->mirror_root, qw(by extension pair.json));
+ok $indexer->update_extensions($meta_012),
+    'Update the extension to 0.1.2.';
+$exp->{latest} = 'stable';
+$exp->{stable}{version} = '0.1.2';
+$exp->{stable}{abstract} = 'A key/value pair dåtå type';
+$exp->{versions}{'0.1.2'} =  [{
+    dist         => 'pair',
+    release_date => '2010-11-10T12:18:03Z',
+    version      => '0.1.2',
+}];
+ok $doc_data = $api->read_json_from($ext_file),
+    'Read the doc root extension data file one more time';
+is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';

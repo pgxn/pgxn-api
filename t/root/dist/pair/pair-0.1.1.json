@@ -13,6 +13,7 @@
    "license": "postgresql",
    "provides": {
       "pair": {
+         "abstract": "A key/value pair dåtå type",
          "file": "sql/pair.sql",
          "version": "0.1.1"
       }
