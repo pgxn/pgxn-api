@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 78;
+use Test::More tests => 85;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -11,6 +11,7 @@ use PGXN::API::Sync;
 use Test::File;
 use Test::Exception;
 use Test::File::Contents;
+use Test::MockModule;
 use utf8;
 
 my $CLASS;
@@ -345,3 +346,25 @@ $exp->{versions}{'0.1.2'} =  [{
 ok $doc_data = $api->read_json_from($ext_file),
     'Read the doc root extension data file one more time';
 is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
+
+##############################################################################
+# Make sure that add_document() calls all the necessary methods.
+my $mock = Test::MockModule->new($CLASS);
+my @called;
+my @meths = qw(
+    copy_files
+    merge_distmeta
+    update_owner
+    update_tags
+    update_extensions
+);
+for my $meth (@meths) {
+    $mock->mock($meth => sub {
+        push @called => $meth;
+        is $_[1], $meta, "Meta should have been passed to $meth";
+    })
+}
+
+ok $indexer->add_distribution($meta), 'Call add_distribution()';
+is_deeply \@called, \@meths, 'The proper meths should have been called in order';
+$mock->unmock_all;
