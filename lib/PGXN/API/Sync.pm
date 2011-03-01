@@ -20,7 +20,8 @@ subtype Executable => as 'Str', where {
 };
 
 has rsync_output => (is => 'rw', isa => 'FileHandle');
-has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync');
+has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync', required => 1);
+has source       => (is => 'rw', isa => 'Str', required => 1);
 
 sub run {
     my $self = shift;
@@ -31,12 +32,11 @@ sub run {
 sub run_rsync {
     my $self   = shift;
     my $pgxn   = PGXN::API->instance;
-    my $config = $pgxn->config;
     my $fh     = $self->_pipe(
         '-|',
         $self->rsync_path,
         qw(--archive --compress --delete --out-format), '%i %n',
-        $config->{rsync_source},
+        $self->source,
         $pgxn->mirror_root,
     );
     $self->rsync_output($fh);
