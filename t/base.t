@@ -5,9 +5,10 @@ use warnings;
 use File::Spec::Functions qw(catdir catfile);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 26;
+use Test::More tests => 28;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(fcopy);
+use File::Temp;
 use JSON;
 use Cwd;
 
@@ -29,17 +30,24 @@ is +$CLASS->instance, $pgxn, 'instance() should return a singleton';
 is +$CLASS->instance, $pgxn, 'new() should return a singleton';
 
 ##############################################################################
-# read_json_from()
+# Test read_json_from()
 my $file = catfile qw(t root by tag pair.json);
 open my $fh, '<:raw', $file or die "Cannot open $file: $!\n";
-my $conf = do {
+my $data = do {
     local $/;
     decode_json <$fh>;
 };
 close $fh;
-is_deeply $pgxn->read_json_from($file), $conf,
+is_deeply $pgxn->read_json_from($file), $data,
     'read_json_from() should work';
 
+##############################################################################
+# Test write_json_to()
+my $tmpfile = 'tmp.json';
+END { unlink $tmpfile }
+ok $pgxn->write_json_to($tmpfile => $data), 'Write JSON';
+is_deeply $pgxn->read_json_from($tmpfile), $data,
+    'It should read back in properly';
 
 # Test doc_root().
 file_not_exists_ok 'www', 'Doc root should not yet exist';

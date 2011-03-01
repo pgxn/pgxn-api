@@ -118,6 +118,22 @@ sub read_json_from {
     return JSON->new->utf8->decode(<$fh>);
 }
 
+=head3 C<write_json_to>
+
+  my $data = $pgxn->write_json_to($filename, $data);
+
+Writes C<$data> to C<$filename> as JSON.
+
+=cut
+
+sub write_json_to {
+    my ($self, $fn, $data) = @_;
+    my $encoder = JSON->new->space_after->allow_nonref->indent->canonical;
+    open my $fh, '>:utf8', $fn or die "Cannot open $fn: $!\n";
+    print $fh $encoder->encode($data);
+    close $fh or die "Cannot close $fn: $!\n";
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;

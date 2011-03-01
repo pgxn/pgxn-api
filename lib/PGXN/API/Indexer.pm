@@ -4,7 +4,6 @@ use 5.12.0;
 use utf8;
 use Moose;
 use PGXN::API;
-use XML::LibXML;
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy);

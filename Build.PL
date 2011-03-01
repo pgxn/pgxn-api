@@ -12,7 +12,7 @@ my $class = Module::Build->subclass(
 $class->new(
     module_name        => 'PGXN::API',
     license            => 'postgresql',
-    # script_files       => 'bin',
+    script_files       => 'bin',
     configure_requires => { 'Module::Build' => '0.30', },
     build_requires     => {
         'Module::Build'        => '0.30',
