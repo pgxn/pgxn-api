@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 42;
+use Test::More tests => 44;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
@@ -23,7 +23,7 @@ can_ok $CLASS => qw(
     run_rsync
     rsync_output
     update_index
-    process_meta
+    validate_distribution
     dist_for
     digest_for
     unzip
@@ -146,8 +146,11 @@ is_deeply \@found, [
 open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
 $sync->rsync_output($fh);
 my $mock = Test::MockModule->new($CLASS);
-$mock->mock(process_meta => sub { push @found => $_[1] });
+$mock->mock(validate_distribution => sub { push @found => $_[1] });
 @found = ();
+
+my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
+$idx_mock->mock(add_distribution => 1);
 
 ok $sync->update_index, 'Update the index';
 is_deeply \@found, [qw(
@@ -158,6 +161,8 @@ is_deeply \@found, [qw(
     dist/tinyint/tinyint-0.1.0.json
 )], 'It should have processed the meta files';
 
+close $fh;
+
 ##############################################################################
 # digest_for()
 my $pgz = catfile $mirror_root, qw(dist pair pair-0.1.1.pgz);
@@ -165,14 +170,14 @@ is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
     'Should get expected digest from digest_for()';
 
 ##############################################################################
-# Test process_meta().
-$mock->unmock('process_meta');
+# Test validate_distribution().
+$mock->unmock('validate_distribution');
 
 my $json = catfile $mirror_root, qw(dist pair pair-0.1.1.json);
 $mock->mock(unzip => sub {
     is $_[1], $pgz, "unzip should be passed $pgz";
 });
-ok $sync->process_meta($json), "Process $json";
+ok $sync->validate_distribution($json), "Process $json";
 
 # It should fail for an invalid checksum.
 CHECKSUM: {
@@ -181,7 +186,7 @@ CHECKSUM: {
     });
     my $json = catfile qw(t root dist pair pair-0.1.0.json);
     my $pgz = catfile qw(t root dist pair pair-0.1.0.json);
-    stderr_is { $sync->process_meta($json ) }
+    stderr_is { $sync->validate_distribution($json ) }
         "Checksum verification failed for $pgz\n",
         'Should get warning when checksum fails.';
     $mock->unmock('unzip');
@@ -213,3 +218,20 @@ file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 stderr_like { $sync->unzip($json) }
     qr/format error: can't find EOCD signature/,
     'Should get a warning for an invalid zip file';
+
+##############################################################################
+# Make sure each distribution is indexed.
+my @distros;
+$idx_mock->mock(add_distribution => sub { push @distros => $_[1] });
+
+my @valids = qw(foo bar baz);
+$mock->mock(validate_distribution => sub { shift @valids });
+
+open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
+$sync->rsync_output($fh);
+ok $sync->update_index, 'Update the index';
+
+is_deeply \@distros, [qw(foo bar baz)],
+    'The distributions should have been passed to an indexer';
+
+close $fh;

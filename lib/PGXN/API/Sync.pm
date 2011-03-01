@@ -4,6 +4,7 @@ use 5.12.0;
 use utf8;
 use Moose;
 use PGXN::API;
+use PGXN::API::Indexer;
 use Digest::SHA1;
 use File::Spec::Functions qw(catfile rel2abs);
 use namespace::autoclean;
@@ -62,11 +63,14 @@ sub _pipe {
 }
 
 sub update_index {
-    my $self  = shift;
-    my $regex = $self->regex_for_uri_template('meta');
-    my $fh    = $self->rsync_output;
+    my $self    = shift;
+    my $regex   = $self->regex_for_uri_template('meta');
+    my $fh      = $self->rsync_output;
+    my $indexer = PGXN::API::Indexer->new;
     while (my $line = <$fh>) {
-        $self->process_meta($1) if $line =~ $regex;
+        next if $line !~ $regex;
+        my $meta = $self->validate_distribution($1) or next;
+        $indexer->add_distribution($meta);
     }
     return $self;
 }
@@ -98,7 +102,7 @@ sub regex_for_uri_template {
     return qr{^>f[+]{9}\s($regex)$};
 }
 
-sub process_meta {
+sub validate_distribution {
     my ($self, $fn) = @_;
     my $meta = PGXN::API->instance->read_json_from($fn);
     my $dist = $self->dist_for($meta);
@@ -111,7 +115,7 @@ sub process_meta {
 
     # Unpack the distribution.
     $self->unzip($dist) or return;
-    return $self;
+    return $meta;
 }
 
 sub dist_for {
