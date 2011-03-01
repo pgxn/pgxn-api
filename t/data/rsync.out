@@ -28,9 +28,9 @@ cd+++++++++ dist/pair/
 >f+++++++++ dist/pair/pair-0.1.0.json
 >f+++++++++ dist/pair/pair-0.1.0.pgz
 >f+++++++++ dist/pair/pair-0.1.0.readme
->f+++++++++ dist/pair/pair-0.1.1.json
->f+++++++++ dist/pair/pair-0.1.1.pgz
->f+++++++++ dist/pair/pair-0.1.1.readme
+>f+++++++ dist/pair/pair-0.1.1.json
+>f+++++++ dist/pair/pair-0.1.1.pgz
+>f+++++++ dist/pair/pair-0.1.1.readme
 cd+++++++++ dist/pg_french_datatypes/
 >f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
 >f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.pgz

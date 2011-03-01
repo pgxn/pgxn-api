@@ -99,7 +99,7 @@ sub regex_for_uri_template {
     } catfile grep { defined && length } $uri->path_segments;
 
     # Return the regex to match new files in rsync output lines.
-    return qr{^>f[+]{9}\s($regex)$};
+    return qr{^>f[+]+\s($regex)$};
 }
 
 sub validate_distribution {
