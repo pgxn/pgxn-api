@@ -27,6 +27,7 @@
 
 # Avoid build files.
 ^PGXN-API
+^www
 
 # Avoid spelling test.
 pod-spelling.t$

@@ -1,0 +1,98 @@
+#!/usr/local/bin/perl -w
+
+use 5.12.0;
+use utf8;
+
+use lib 'lib';
+use PGXN::API::Sync;
+use Getopt::Long;
+Getopt::Long::Configure( qw(bundling) );
+
+GetOptions(
+    'rsync|r=s'  => \my $rsync,
+    'help|h'     => \my $help,
+    'man|m'      => \my $man,
+    'version|v'  => \my $version,
+) or _pod2usage();
+
+_pod2usage(
+    ( $man ? ( '-sections' => '.+' ) : ()),
+    '-exitval' => 0,
+) if $help or $man;
+
+if ($version) {
+    require File::Basename;
+    say File::Basename::basename($0), ' ', PGXN::API->VERSION;
+    exit;
+}
+
+my $source = shift or _pod2usage();
+
+PGXN::API::Sync->new(
+    source => $source,
+    ($rsync ? (rsync_path => $rsync) : ()),
+)->run;
+
+sub _pod2usage {
+    require Pod::Usage;
+    Pod::Usage::pod2usage(
+        '-verbose'  => 99,
+        '-sections' => '(?i:(Usage|Options))',
+        '-exitval'  => 1,
+        @_
+    );
+}
+
+=head1 Name
+
+pgxn_api_sync - Sync the PGXN API server to a PGXN mirror
+
+=head1 Usage
+
+  pgxn_api_sync rsync://master.pgxn.org/pgxn/
+
+=head1 Description
+
+This program syncs the PGXN API server to a PGXN mirror, unpacking all of the
+synced distributions and indexing them for the API. It's meant to be run on a
+cron job, so that the API server can be regularly updated with the most recent
+additions to the network. For example, to run it hourly at 42 minutes past the
+hour, put this in your crontab:
+
+  * * * * 42 pgxn_api_sync rsync://master.pgxn.org/pgxn/
+
+=head1 Options
+
+  -r --rsync          Location of rsync if it's not in your path.
+  -h --help           Print a usage statement and exit.
+  -m --man            Print the complete documentation and exit.
+  -v --version        Print the version number and exit.
+
+=head1 Author
+
+David E. Wheeler <david.wheeler@pgexperts.com>
+
+=head1 Copyright and License
+
+Copyright (c) 2011 David E. Wheeler.
+
+This module is free software; you can redistribute it and/or modify it under
+the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose, without fee, and without a written agreement is
+hereby granted, provided that the above copyright notice and this paragraph
+and the following two paragraphs appear in all copies.
+
+In no event shall David E. Wheeler be liable to any party for direct,
+indirect, special, incidental, or consequential damages, including lost
+profits, arising out of the use of this software and its documentation, even
+if David E. Wheeler has been advised of the possibility of such damage.
+
+David E. Wheeler specifically disclaims any warranties, including, but not
+limited to, the implied warranties of merchantability and fitness for a
+particular purpose. The software provided hereunder is on an "as is" basis,
+and David E. Wheeler has no obligations to provide maintenance, support,
+updates, enhancements, or modifications.
+
+=cut
