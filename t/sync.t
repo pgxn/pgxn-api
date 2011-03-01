@@ -75,6 +75,8 @@ rsync://localhost/pgxn
 $mirror_root
 ", 'Rsync should have been properly called';
 
+$mock->unmock('_pipe');
+
 # Rsync our "mirror" to the mirror root.
 remove_tree $mirror_root;
 dircopy catdir(qw(t root)), $mirror_root;
@@ -188,7 +190,7 @@ close $fh;
 
 ##############################################################################
 # digest_for()
-my $pgz = catfile $mirror_root, qw(dist pair pair-0.1.1.pgz);
+my $pgz = catfile qw(dist pair pair-0.1.1.pgz);
 is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
     'Should get expected digest from digest_for()';
 
@@ -196,7 +198,7 @@ is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
 # Test validate_distribution().
 $mock->unmock('validate_distribution');
 
-my $json = catfile $mirror_root, qw(dist pair pair-0.1.1.json);
+my $json = catfile qw(dist pair pair-0.1.1.json);
 $mock->mock(unzip => sub {
     is $_[1], $pgz, "unzip should be passed $pgz";
 });
@@ -207,10 +209,11 @@ CHECKSUM: {
     $mock->mock(unzip => sub {
         fail 'unzip should not be called when checksum fails'
     });
-    my $json = catfile qw(t root dist pair pair-0.1.0.json);
-    my $pgz = catfile qw(t root dist pair pair-0.1.0.json);
+    my $json = catfile qw( dist pair pair-0.1.0.json);
+    my $pgz  = catfile qw( dist pair pair-0.1.0.json);
+    my $pgzp = catfile $pgxn->mirror_root, $pgz;
     stderr_is { $sync->validate_distribution($json ) }
-        "Checksum verification failed for $pgz\n",
+        "Checksum verification failed for $pgzp\n",
         'Should get warning when checksum fails.';
     $mock->unmock('unzip');
 }

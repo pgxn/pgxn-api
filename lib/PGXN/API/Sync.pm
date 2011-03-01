@@ -7,7 +7,7 @@ use PGXN::API;
 use PGXN::API::Indexer;
 use Digest::SHA1;
 use List::Util qw(first);
-use File::Spec::Functions qw(catfile rel2abs path);
+use File::Spec::Functions qw(catfile path);
 use namespace::autoclean;
 use Cwd;
 use Archive::Zip qw(:ERROR_CODES);
@@ -119,7 +119,7 @@ sub regex_for_uri_template {
 }
 
 sub validate_distribution {
-    my ($self, $fn) = @_;
+    my ($self, $fn) = shift->_rel_to_mirror(@_);
     my $meta = PGXN::API->instance->read_json_from($fn);
     my $dist = $self->dist_for($meta);
 
@@ -141,12 +141,12 @@ sub dist_for {
         version => $meta->{version},
     );
 
-    return catfile +PGXN::API->instance->mirror_root,
-        $dist_uri->path_segments;
+    my (undef, @segments) = $dist_uri->path_segments;
+    return catfile @segments;
 }
 
 sub digest_for {
-    my ($self, $fn) = @_;
+    my ($self, $fn) = shift->_rel_to_mirror(@_);
     open my $fh, '<:raw', $fn or die "Cannot open $fn: $!\n";
     my $sha1 = Digest::SHA1->new;
     $sha1->addfile($fh);
@@ -155,10 +155,10 @@ sub digest_for {
 
 my $CWD = cwd;
 sub unzip {
-    my ($self, $dist) = @_;
+    my ($self, $dist) = shift->_rel_to_mirror(@_);
 
     my $zip = Archive::Zip->new;
-    if ($zip->read(rel2abs $dist) != AZ_OK) {
+    if ($zip->read($dist) != AZ_OK) {
         warn "Error reading $dist\n";
         return;
     }
@@ -175,6 +175,10 @@ sub unzip {
     }
 
     return $self;
+}
+
+sub _rel_to_mirror {
+    return shift, catfile +PGXN::API->instance->mirror_root, shift;
 }
 
 1;
