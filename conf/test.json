@@ -1,11 +1,5 @@
 {
     "name": "PGXN API (TEST)",
-    "dbi": {
-        "dsn": "dbi:Pg:dbname=pgxn_api_test",
-        "username": "pgxn",
-        "password": ""
-    },
     "rsync_path": "t/bin/testrsync",
-    "rsync_source": "rsync://master.pgxn.org/pgxn",
-    "index_path": "t/index"
+    "rsync_source": "rsync://master.pgxn.org/pgxn"
 }

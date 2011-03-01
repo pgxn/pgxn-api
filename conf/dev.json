@@ -1,10 +1,4 @@
 {
     "name": "PGXN API (DEV)",
-    "dbi": {
-        "dsn": "dbi:Pg:dbname=pgxn_api_dev",
-        "username": "pgxn",
-        "password": ""
-    },
-    "rsync_source": "rsync://master.pgxn.org/pgxn",
-    "index_path": "/tmp/pgxn_index"
-}}
+    "rsync_source": "rsync://master.pgxn.org/pgxn"
+}
