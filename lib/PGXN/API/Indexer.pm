@@ -8,9 +8,6 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy);
 use namespace::autoclean;
-use JSON;
-
-my $encoder = JSON->new->space_after->allow_nonref->indent->canonical;
 
 sub add_distribution {
     my ($self, $meta) = @_;
@@ -46,9 +43,7 @@ sub merge_distmeta {
 
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
-    open my $fh, '>:utf8', $fn or die "Cannot open $fn: $!\n";
-    print $fh $encoder->encode($meta);
-    close $fh or die "Cannot close $fn: $!\n";
+    $api->write_json_to($fn, $meta);
 
     # Now copy it to its by-dist home.
     $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );
@@ -63,11 +58,7 @@ sub merge_distmeta {
             my $vmeta_file = $self->doc_root_file_for( meta => $meta);
             my $vmeta = $api->read_json_from($vmeta_file);
             $vmeta->{releases} = $meta->{releases};
-
-            open my $fh, '>:utf8', $vmeta_file
-                or die "Cannot open $vmeta_file: $!\n";
-            print $fh $encoder->encode($vmeta);
-            close $fh or die "Cannot close $vmeta_file: $!\n";
+            $api->write_json_to($vmeta_file => $vmeta);
         }
     }
 
@@ -99,11 +90,8 @@ sub update_owner {
     $mir_meta->{releases}  = $doc_meta->{releases};
     $meta->{releases_plus} = $doc_meta->{releases}{$meta->{name}};
 
-    # Now write out the file again.
-    open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
-    print $fh $encoder->encode($mir_meta);
-    close $fh or die "Cannot close $doc_file: $!\n";
-
+    # Now write out the file again and go home.
+    $api->write_json_to($doc_file => $mir_meta);
     return $self;
 }
 
@@ -124,9 +112,7 @@ sub update_tags {
 
         # Copy the release metadata into the doc data and write it back out.
         $doc_meta->{releases}{$meta->{name}} = $meta->{releases_plus};
-        open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
-        print $fh $encoder->encode($doc_meta);
-        close $fh or die "Cannot close $doc_file: $!\n";
+        $api->write_json_to($doc_file => $doc_meta);
     }
     return $self;
 }
@@ -188,9 +174,7 @@ sub update_extensions {
         }
 
         # Write it back out.
-        open my $fh, '>:utf8', $doc_file or die "Cannot open $doc_file: $!\n";
-        print $fh $encoder->encode($mir_meta);
-        close $fh or die "Cannot close $doc_file: $!\n";
+        $api->write_json_to($doc_file => $mir_meta);
     }
 
     return $self;
