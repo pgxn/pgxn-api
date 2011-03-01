@@ -34,7 +34,6 @@ can_ok $CLASS => qw(
 
 my $api = PGXN::API->instance;
 END {
-    remove_tree +PGXN::API->instance->config->{index_path};
     remove_tree $api->doc_root;
 }
 
