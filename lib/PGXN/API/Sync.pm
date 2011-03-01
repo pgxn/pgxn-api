@@ -6,13 +6,21 @@ use Moose;
 use PGXN::API;
 use PGXN::API::Indexer;
 use Digest::SHA1;
-use File::Spec::Functions qw(catfile rel2abs);
+use List::Util qw(first);
+use File::Spec::Functions qw(catfile rel2abs path);
 use namespace::autoclean;
 use Cwd;
 use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
+use Moose::Util::TypeConstraints;
 
-has rsync_output  => (is => 'rw', isa => 'FileHandle');
+subtype Executable => as 'Str', where {
+    my $exe = $_;
+    first { -f $_ && -x _ } $exe, map { catfile $_, $exe } path;
+};
+
+has rsync_output => (is => 'rw', isa => 'FileHandle');
+has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync');
 
 sub run {
     my $self = shift;
@@ -26,7 +34,7 @@ sub run_rsync {
     my $config = $pgxn->config;
     my $fh     = $self->_pipe(
         '-|',
-        $config->{rsync_path} || 'rsync',
+        $self->rsync_path,
         qw(--archive --compress --delete --out-format), '%i %n',
         $config->{rsync_source},
         $pgxn->mirror_root,

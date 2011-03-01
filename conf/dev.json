@@ -1,4 +1,3 @@
 {
-    "name": "PGXN API (DEV)",
     "rsync_source": "rsync://master.pgxn.org/pgxn"
 }

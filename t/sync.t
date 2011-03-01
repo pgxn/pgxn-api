@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 44;
+use Test::More tests => 45;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
@@ -20,8 +20,9 @@ BEGIN {
 can_ok $CLASS => qw(
     new
     run
-    run_rsync
+    rsync_path
     rsync_output
+    run_rsync
     update_index
     validate_distribution
     dist_for
@@ -33,12 +34,14 @@ can_ok $CLASS => qw(
 # Set up for Win32.
 my $pgxn   = PGXN::API->instance;
 my $config = $pgxn->config;
-$config->{rsync_path} .= '.bat' if PGXN::API::Sync::WIN32;
 END { remove_tree $pgxn->doc_root }
 
 ##############################################################################
 # Test rsync.
 ok my $sync = $CLASS->new, "Construct $CLASS object";
+is $sync->rsync_path, 'rsync', 'Default rsync_path should be "rsync"';
+$sync->rsync_path(catfile qw(t bin), 'testrsync' . (PGXN::API::Sync::WIN32 ? '.bat' : ''));
+
 ok $sync->run_rsync, 'Run rsync';
 ok my $fh = $sync->rsync_output, 'Grab the output';
 my $mirror_root = $pgxn->mirror_root;
