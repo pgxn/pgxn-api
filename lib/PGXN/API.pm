@@ -22,21 +22,6 @@ to get the PGXN::Manager object.
 
 =head2 Attributes
 
-=head3 C<config>
-
-  my $config = $pgxn->config;
-
-Returns a hash reference of configuration information. This information is
-parsed from the configuration file F<conf/test.json>, which is determined by
-the C<--context> option to C<perl Build.PL> at build time.
-
-=cut
-
-has config => (is => 'ro', isa => 'HashRef', default => sub {
-    # XXX Verify presence of required keys.
-    shift->read_json_from(catfile 'conf', ($ENV{PLACK_ENV} || 'test') . '.json');
-});
-
 =head3 C<uri_templates>
 
   my $templates = $pgxn->uri_templates;
@@ -59,19 +44,16 @@ has uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 
   my $doc_root = $pgxn->doc_root;
 
-Returns the document root for the API server. This value is specified via the
-C<doc_root> key in the config file. If not provided, the default will be the
-F<www> directory in the root directory of this distribution.
+Returns the document root for the API server. The default is be the F<www>
+directory in the root directory of this distribution.
 
 =cut
 
 has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
-     my $dir = PGXN::API->instance->config->{doc_root} || do {
-         my $file = quotemeta catfile qw(lib PGXN API.pm);
-         my $blib = quotemeta catfile 'blib', '';
-         (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
-         $dir;
-     };
+     my $file = quotemeta catfile qw(lib PGXN API.pm);
+     my $blib = quotemeta catfile 'blib', '';
+     (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
+
      if (!-e $dir) {
          make_path $dir;
          # Pre-generate the by/ directories.

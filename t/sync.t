@@ -33,7 +33,6 @@ can_ok $CLASS => qw(
 
 # Set up for Win32.
 my $pgxn   = PGXN::API->instance;
-my $config = $pgxn->config;
 END { remove_tree $pgxn->doc_root }
 
 ##############################################################################

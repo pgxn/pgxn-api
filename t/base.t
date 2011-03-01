@@ -5,7 +5,7 @@ use warnings;
 use File::Spec::Functions qw(catdir catfile);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 27;
+use Test::More tests => 26;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(fcopy);
 use JSON;
@@ -19,7 +19,6 @@ BEGIN {
 
 can_ok $CLASS => qw(
     instance
-    config
     uri_templates
     source_dir
     read_json_from
@@ -29,18 +28,18 @@ isa_ok my $pgxn = $CLASS->instance, $CLASS;
 is +$CLASS->instance, $pgxn, 'instance() should return a singleton';
 is +$CLASS->instance, $pgxn, 'new() should return a singleton';
 
-open my $fh, '<:raw', 'conf/test.json' or die "Cannot open conf/test.json: $!\n";
+##############################################################################
+# read_json_from()
+my $file = catfile qw(t root by tag pair.json);
+open my $fh, '<:raw', $file or die "Cannot open $file: $!\n";
 my $conf = do {
     local $/;
     decode_json <$fh>;
 };
 close $fh;
-is_deeply $pgxn->config, $conf, 'The configuration should be loaded';
-
-##############################################################################
-# read_json_from()
-is_deeply $pgxn->read_json_from('conf/test.json'), $conf,
+is_deeply $pgxn->read_json_from($file), $conf,
     'read_json_from() should work';
+
 
 # Test doc_root().
 file_not_exists_ok 'www', 'Doc root should not yet exist';
