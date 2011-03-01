@@ -32,31 +32,39 @@ sub run {
 sub run_rsync {
     my $self   = shift;
     my $pgxn   = PGXN::API->instance;
-    my $fh     = $self->_pipe(
-        '-|',
+
+    # Assemble the rsync command.
+    my @command = (
         $self->rsync_path,
         qw(--archive --compress --delete --out-format), '%i %n',
-        $self->source,
-        $pgxn->mirror_root,
     );
+
+    # Make sure we have index.json.
+    unless (-e catfile $pgxn->mirror_root, 'index.json') {
+        (my $source = $self->source) =~ s{/?$}{/index.json};
+        my $fh = $self->_pipe(@command, $source, $pgxn->mirror_root);
+        local $/;
+        <$fh>;
+    }
+
+    # Okay, now sync the whole thing.
+    my $fh = $self->_pipe(@command, $self->source, $pgxn->mirror_root);
     $self->rsync_output($fh);
 }
 
 # Stolen from SVN::Notify.
 sub _pipe {
-    my ($self, $mode) = (shift, shift);
+    my $self = shift;
 
     # Safer version of backtick (see perlipc(1)).
     if (WIN32) {
-        my $cmd = $mode eq '-|'
-            ? q{"}  . join(q{" "}, @_) . q{"|}
-            : q{|"} . join(q{" "}, @_) . q{"};
+        my $cmd = q{"}  . join(q{" "}, @_) . q{"|};
         open my $pipe, $cmd or die "Cannot fork: $!\n";
         binmode $pipe, ':encoding(utf-8)';
         return $pipe;
     }
 
-    my $pid = open my ($pipe), $mode;
+    my $pid = open my ($pipe), '-|';
     die "Cannot fork: $!\n" unless defined $pid;
 
     if ($pid) {

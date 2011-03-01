@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 45;
+use Test::More tests => 47;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use Test::MockModule;
@@ -41,10 +41,31 @@ ok my $sync = $CLASS->new(source => 'rsync://localhost/pgxn'),
     "Construct $CLASS object";
 is $sync->rsync_path, 'rsync', 'Default rsync_path should be "rsync"';
 $sync->rsync_path(catfile qw(t bin), 'testrsync' . (PGXN::API::Sync::WIN32 ? '.bat' : ''));
+my $mirror_root = $pgxn->mirror_root;
+
+my @exp_args = (
+    [
+        $sync->rsync_path,
+        qw(--archive --compress --delete --out-format), '%i %n',
+        $sync->source . '/index.json',
+        $mirror_root,
+    ],
+    [
+        $sync->rsync_path,
+        qw(--archive --compress --delete --out-format), '%i %n',
+        $sync->source,
+        $mirror_root,
+    ],
+);
+my $mock = Test::MockModule->new($CLASS);
+$mock->mock(_pipe => sub {
+    my $self = shift;
+    is_deeply \@_, shift @exp_args, 'Should have proper args to _pipe';
+    $mock->original('_pipe')->($self, @_);
+});
 
 ok $sync->run_rsync, 'Run rsync';
 ok my $fh = $sync->rsync_output, 'Grab the output';
-my $mirror_root = $pgxn->mirror_root;
 is join('', <$fh>), "--archive
 --compress
 --delete
@@ -148,7 +169,6 @@ is_deeply \@found, [
 # Reset the rsync output and have it do its thing.
 open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
 $sync->rsync_output($fh);
-my $mock = Test::MockModule->new($CLASS);
 $mock->mock(validate_distribution => sub { push @found => $_[1] });
 @found = ();
 
