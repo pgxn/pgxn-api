@@ -32,7 +32,6 @@ sub run {
     $self->update_index;
 }
 
-
 sub DESTROY { unlink shift->log_file }
 
 sub run_rsync {
