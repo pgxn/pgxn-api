@@ -1,46 +1,48 @@
-cd+++++++++ ./
->f+++++++++ README
->f+++++++++ index.html
->f+++++++++ index.json
-cd+++++++++ by/
-cd+++++++++ by/dist/
->f+++++++++ by/dist/pair.json
->f+++++++++ by/dist/pg_french_datatypes.json
->f+++++++++ by/dist/tinyint.json
-cd+++++++++ by/extension/
->f+++++++++ by/extension/pair.json
->f+++++++++ by/extension/pg_french_datatypes.json
->f+++++++++ by/extension/tinyint.json
-cd+++++++++ by/owner/
->f+++++++++ by/owner/daamien.json
->f+++++++++ by/owner/theory.json
->f+++++++++ by/owner/umitanuki.json
-cd+++++++++ by/tag/
->f+++++++++ by/tag/data types.json
->f+++++++++ by/tag/france.json
->f+++++++++ by/tag/key value pair.json
->f+++++++++ by/tag/key value.json
->f+++++++++ by/tag/ordered pair.json
->f+++++++++ by/tag/pair.json
->f+++++++++ by/tag/variadic function.json
-cd+++++++++ dist/
-cd+++++++++ dist/pair/
->f+++++++++ dist/pair/pair-0.1.0.json
->f+++++++++ dist/pair/pair-0.1.0.pgz
->f+++++++++ dist/pair/pair-0.1.0.readme
->f+++++++ dist/pair/pair-0.1.1.json
->f+++++++ dist/pair/pair-0.1.1.pgz
->f+++++++ dist/pair/pair-0.1.1.readme
-cd+++++++++ dist/pg_french_datatypes/
->f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
->f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.pgz
->f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.readme
->f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
->f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.1.pgz
->f+++++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.1.readme
-cd+++++++++ dist/tinyint/
->f+++++++++ dist/tinyint/tinyint-0.1.0.json
->f+++++++++ dist/tinyint/tinyint-0.1.0.pgz
-cd+++++++++ meta/
->f+++++++++ meta/mirrors.json
->f+++++++++ meta/timestamp
+2011/03/01 15:55:18 [49405] receiving file list
+2011/03/01 15:55:18 [49406] cd+++++++ ./
+2011/03/01 15:55:18 [49406] >f+++++++ README
+2011/03/01 15:55:18 [49406] >f+++++++ index.html
+2011/03/01 15:55:18 [49406] >f+++++++ index.json
+2011/03/01 15:55:18 [49406] cd+++++++ by/
+2011/03/01 15:55:18 [49406] cd+++++++ by/dist/
+2011/03/01 15:55:18 [49406] >f+++++++ by/dist/pair.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/dist/pg_french_datatypes.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/dist/tinyint.json
+2011/03/01 15:55:18 [49406] cd+++++++ by/extension/
+2011/03/01 15:55:18 [49406] >f+++++++ by/extension/pair.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/extension/pg_french_datatypes.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/extension/tinyint.json
+2011/03/01 15:55:18 [49406] cd+++++++ by/owner/
+2011/03/01 15:55:18 [49406] >f+++++++ by/owner/daamien.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/owner/theory.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/owner/umitanuki.json
+2011/03/01 15:55:18 [49406] cd+++++++ by/tag/
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/data types.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/france.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/key value pair.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/key value.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/ordered pair.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/pair.json
+2011/03/01 15:55:18 [49406] >f+++++++ by/tag/variadic function.json
+2011/03/01 15:55:18 [49406] cd+++++++ dist/
+2011/03/01 15:55:19 [49406] cd+++++++ dist/pair/
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pair/pair-0.1.0.json
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pair/pair-0.1.0.pgz
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pair/pair-0.1.0.readme
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pair/pair-0.1.1.json
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pair/pair-0.1.1.pgz
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pair/pair-0.1.1.readme
+2011/03/01 15:55:19 [49406] cd+++++++ dist/pg_french_datatypes/
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.pgz
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.0.readme
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.1.pgz
+2011/03/01 15:55:19 [49406] >f+++++++ dist/pg_french_datatypes/pg_french_datatypes-0.1.1.readme
+2011/03/01 15:55:19 [49406] cd+++++++ dist/tinyint/
+2011/03/01 15:55:19 [49406] >f+++++++ dist/tinyint/tinyint-0.1.0.json
+2011/03/01 15:55:19 [49406] >f+++++++ dist/tinyint/tinyint-0.1.0.pgz
+2011/03/01 15:55:19 [49406] cd+++++++ meta/
+2011/03/01 15:55:19 [49406] >f+++++++ meta/mirrors.json
+2011/03/01 15:55:19 [49406] >f+++++++ meta/timestamp
+2011/03/01 15:55:19 [49405] sent 1556 bytes  received 1868 bytes  total size 302398

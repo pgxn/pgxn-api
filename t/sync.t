@@ -2,9 +2,9 @@
 
 use strict;
 use warnings;
-use Test::More tests => 47;
-#use Test::More 'no_plan';
-use File::Spec::Functions qw(catfile catdir);
+#use Test::More tests => 47;
+use Test::More 'no_plan';
+use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
 use Test::Output;
 use File::Path qw(remove_tree);
@@ -21,14 +21,13 @@ can_ok $CLASS => qw(
     new
     run
     rsync_path
-    rsync_output
+    log_file
     run_rsync
     update_index
     validate_distribution
     dist_for
     digest_for
     unzip
-    _pipe
 );
 
 # Set up for Win32.
@@ -41,41 +40,36 @@ ok my $sync = $CLASS->new(source => 'rsync://localhost/pgxn'),
     "Construct $CLASS object";
 is $sync->rsync_path, 'rsync', 'Default rsync_path should be "rsync"';
 $sync->rsync_path(catfile qw(t bin), 'testrsync' . (PGXN::API::Sync::WIN32 ? '.bat' : ''));
-my $mirror_root = $pgxn->mirror_root;
 
-my @exp_args = (
-    [
-        $sync->rsync_path,
-        qw(--archive --compress --delete --out-format), '%i %n',
-        $sync->source . '/index.json',
-        $mirror_root,
-    ],
-    [
-        $sync->rsync_path,
-        qw(--archive --compress --delete --out-format), '%i %n',
-        $sync->source,
-        $mirror_root,
-    ],
-);
-my $mock = Test::MockModule->new($CLASS);
-$mock->mock(_pipe => sub {
-    my $self = shift;
-    is_deeply \@_, shift @exp_args, 'Should have proper args to _pipe';
-    $mock->original('_pipe')->($self, @_);
-});
+my $rsync_out   = catfile qw(t data rsync.out);
+my $mirror_root = $pgxn->mirror_root;
+my $log_file    = $sync->log_file;
+is $log_file, catfile(tmpdir, "pgxn-api-sync-$$.txt"),
+    'Log file name should include PID';
+$sync->log_file($rsync_out);
+is $sync->log_file, $rsync_out, 'Should have updated log_file';
+
+END {
+    unlink 'test.tmp';   # written by testrsync
+    $sync->log_file(''); # Prevent deleting fixtures
+}
 
 ok $sync->run_rsync, 'Run rsync';
-ok my $fh = $sync->rsync_output, 'Grab the output';
-is join('', <$fh>), "--archive
+is do {
+    open my $fh, '<', 'test.tmp';
+    local $/;
+    <$fh>
+}, "--archive
 --compress
 --delete
---out-format
+--quiet
+--log-file-format
 %i %n
+--log-file
+$rsync_out
 rsync://localhost/pgxn
 $mirror_root
 ", 'Rsync should have been properly called';
-
-$mock->unmock('_pipe');
 
 # Rsync our "mirror" to the mirror root.
 remove_tree $mirror_root;
@@ -83,9 +77,8 @@ dircopy catdir(qw(t root)), $mirror_root;
 
 ##############################################################################
 # Test the regular expression for finding distributions.
-my $rsync_out = catfile qw(t data rsync.out);
 my @rsync_out = do {
-    open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
+    open my $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
     <$fh>;
 };
 
@@ -169,8 +162,7 @@ is_deeply \@found, [
 
 ##############################################################################
 # Reset the rsync output and have it do its thing.
-open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
-$sync->rsync_output($fh);
+my $mock = Test::MockModule->new($CLASS);
 $mock->mock(validate_distribution => sub { push @found => $_[1] });
 @found = ();
 
@@ -185,8 +177,6 @@ is_deeply \@found, [qw(
     dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
     dist/tinyint/tinyint-0.1.0.json
 )], 'It should have processed the meta files';
-
-close $fh;
 
 ##############################################################################
 # digest_for()
@@ -253,11 +243,7 @@ $idx_mock->mock(add_distribution => sub { push @distros => $_[1] });
 my @valids = qw(foo bar baz);
 $mock->mock(validate_distribution => sub { shift @valids });
 
-open $fh, '<', $rsync_out or die "Cannot open $rsync_out: $!\n";
-$sync->rsync_output($fh);
 ok $sync->update_index, 'Update the index';
 
 is_deeply \@distros, [qw(foo bar baz)],
     'The distributions should have been passed to an indexer';
-
-close $fh;

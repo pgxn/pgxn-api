@@ -2,4 +2,5 @@
 
 use 5.12.0;
 
-say for @ARGV;
+open my $fh, '>', 'test.tmp' or die "Cannot open test.tmp: $!\n";
+say $fh $_ for @ARGV;

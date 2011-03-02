@@ -7,7 +7,7 @@ use PGXN::API;
 use PGXN::API::Indexer;
 use Digest::SHA1;
 use List::Util qw(first);
-use File::Spec::Functions qw(catfile path);
+use File::Spec::Functions qw(catfile path tmpdir);
 use namespace::autoclean;
 use Cwd;
 use Archive::Zip qw(:ERROR_CODES);
@@ -19,9 +19,11 @@ subtype Executable => as 'Str', where {
     first { -f $_ && -x _ } $exe, map { catfile $_, $exe } path;
 };
 
-has rsync_output => (is => 'rw', isa => 'FileHandle');
 has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync', required => 1);
 has source       => (is => 'rw', isa => 'Str', required => 1);
+has log_file     => (is => 'rw', isa => 'Str', required =>1, default => sub {
+    catfile tmpdir, "pgxn-api-sync-$$.txt"
+});
 
 sub run {
     my $self = shift;
@@ -29,65 +31,36 @@ sub run {
     $self->update_index;
 }
 
+
+sub DESTROY { unlink shift->log_file }
+
 sub run_rsync {
-    my $self   = shift;
-    my $pgxn   = PGXN::API->instance;
-
-    # Assemble the rsync command.
-    my @command = (
-        $self->rsync_path,
-        qw(--archive --compress --delete --out-format), '%i %n',
-    );
-
-    # Make sure we have index.json.
-    unless (-e catfile $pgxn->mirror_root, 'index.json') {
-        (my $source = $self->source) =~ s{/?$}{/index.json};
-        my $fh = $self->_pipe(@command, $source, $pgxn->mirror_root);
-        local $/;
-        <$fh>;
-    }
-
-    # Okay, now sync the whole thing.
-    my $fh = $self->_pipe(@command, $self->source, $pgxn->mirror_root);
-    $self->rsync_output($fh);
-}
-
-# Stolen from SVN::Notify.
-sub _pipe {
     my $self = shift;
 
-    # Safer version of backtick (see perlipc(1)).
-    if (WIN32) {
-        my $cmd = q{"}  . join(q{" "}, @_) . q{"|};
-        open my $pipe, $cmd or die "Cannot fork: $!\n";
-        binmode $pipe, ':encoding(utf-8)';
-        return $pipe;
-    }
-
-    my $pid = open my ($pipe), '-|';
-    die "Cannot fork: $!\n" unless defined $pid;
-
-    if ($pid) {
-        # Parent process. Set the encoding layer and return the file handle.
-        binmode $pipe, ':encoding(utf-8)';
-        return $pipe;
-    } else {
-        # Child process. Execute the commands.
-        exec @_ or die "Cannot exec $_[0]: $!\n";
-        # Not reached.
-    }
+    # Sync the mirror.
+    system (
+        $self->rsync_path,
+        qw(--archive --compress --delete --quiet),
+        '--log-file-format' => '%i %n',
+        '--log-file'        => $self->log_file,
+        $self->source,
+        PGXN::API->instance->mirror_root,
+    ) == 0 or die;
 }
 
 sub update_index {
     my $self    = shift;
     my $regex   = $self->regex_for_uri_template('meta');
-    my $fh      = $self->rsync_output;
     my $indexer = PGXN::API::Indexer->new;
+    my $log     = $self->log_file;
+
+    open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
         next if $line !~ $regex;
         my $meta = $self->validate_distribution($1) or next;
         $indexer->add_distribution($meta);
     }
+    close $fh or die "Cannot close $log: $!\n";
     return $self;
 }
 
@@ -115,7 +88,7 @@ sub regex_for_uri_template {
     } catfile grep { defined && length } $uri->path_segments;
 
     # Return the regex to match new files in rsync output lines.
-    return qr{^>f[+]+\s($regex)$};
+    return qr{\s>f[+]+\s($regex)$};
 }
 
 sub validate_distribution {
