@@ -10,6 +10,7 @@ Getopt::Long::Configure( qw(bundling) );
 
 GetOptions(
     'rsync|r=s'  => \my $rsync,
+    'verbose|V+' => \my $verbose,
     'help|h'     => \my $help,
     'man|m'      => \my $man,
     'version|v'  => \my $version,
@@ -31,6 +32,7 @@ my $source = shift or _pod2usage();
 PGXN::API::Sync->new(
     source => $source,
     ($rsync ? (rsync_path => $rsync) : ()),
+    verbose => $verbose,
 )->run;
 
 sub _pod2usage {
@@ -64,6 +66,7 @@ hour, put this in your crontab:
 =head1 Options
 
   -r --rsync          Location of rsync if it's not in your path.
+  -V --verbose        Incremental verbosity to STDOUT.
   -h --help           Print a usage statement and exit.
   -m --man            Print the complete documentation and exit.
   -v --version        Print the version number and exit.

@@ -9,6 +9,8 @@ use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy);
 use namespace::autoclean;
 
+has verbose => (is => 'rw', isa => 'Int', default => 0);
+
 sub add_distribution {
     my ($self, $meta) = @_;
 
@@ -23,11 +25,14 @@ sub add_distribution {
 
 sub copy_files {
     my ($self, $meta) = @_;
+    say "  Copying $meta->{name}-$meta->{version} files" if $self->verbose;
+
     # Need to copy the README, zip file, and dist meta file.
     for my $file (qw(dist readme)) {
         my $src = $self->mirror_file_for($file => $meta);
         my $dest = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
+        say "    $meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
         fcopy $src, $dest or die "Cannot copy $src to $dest: $!\n";
     }
     return $self;
@@ -35,6 +40,7 @@ sub copy_files {
 
 sub merge_distmeta {
     my ($self, $meta) = @_;
+    say "  Merging $meta->{name}-$meta->{version} META.json" if $self->verbose;
 
     # Merge the list of versions into the meta file.
     my $api = PGXN::API->instance;
@@ -79,6 +85,8 @@ sub update_owner {
     my $doc_file = $self->doc_root_file_for('by-owner' => $meta);
     my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
 
+    say "  Updating owner $meta->{owner}" if $self->verbose;
+
     # Update *this* release with version info, abstract, and date.
     $doc_meta->{releases}{$meta->{name}} = {
         %{ $meta->{releases} },
@@ -100,12 +108,14 @@ sub update_owner {
 sub update_tags {
     my ($self, $meta) = @_;
     my $api = PGXN::API->instance;
+    say "  Updating $meta->{name}-$meta->{version} tags" if $self->verbose;
 
     my $tags = $meta->{tags} or return $self;
 
     for my $tag (@{ $tags }) {
         # Read in tag metadata from the doc root.
         my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
+        say "    $tag" if $self->verbose > 1;
         my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : do {
             # Fall back on the mirror file.
             my $mir_file = $self->mirror_file_for('by-tag' => $meta, tag => $tag);
@@ -122,8 +132,11 @@ sub update_tags {
 sub update_extensions {
     my ($self, $meta) = @_;
     my $api = PGXN::API->instance;
+    say "  Updating $meta->{name}-$meta->{version} extensions"
+        if $self->verbose;
 
     while (my ($ext, $data) = each %{ $meta->{provides} }) {
+        say "    $ext" if $self->verbose > 1;
         # Read in extension metadata from the mirror.
         my $mir_file = $self->mirror_file_for(
             'by-extension' => $meta,

@@ -21,6 +21,7 @@ subtype Executable => as 'Str', where {
 
 has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync', required => 1);
 has source       => (is => 'rw', isa => 'Str', required => 1);
+has verbose      => (is => 'rw', isa => 'Int', default => 0);
 has log_file     => (is => 'rw', isa => 'Str', required =>1, default => sub {
     catfile tmpdir, "pgxn-api-sync-$$.txt"
 });
@@ -38,6 +39,7 @@ sub run_rsync {
     my $self = shift;
 
     # Sync the mirror.
+    say "Updating the mirror from ", $self->source if $self->verbose;
     system (
         $self->rsync_path,
         qw(--archive --compress --delete --quiet),
@@ -51,9 +53,10 @@ sub run_rsync {
 sub update_index {
     my $self    = shift;
     my $regex   = $self->regex_for_uri_template('meta');
-    my $indexer = PGXN::API::Indexer->new;
+    my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
     my $log     = $self->log_file;
 
+    say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
         next if $line !~ $regex;
@@ -61,6 +64,7 @@ sub update_index {
         $indexer->add_distribution($meta);
     }
     close $fh or die "Cannot close $log: $!\n";
+    say 'Sync complete' if $self->verbose;
     return $self;
 }
 
@@ -97,6 +101,7 @@ sub validate_distribution {
     my $dist = $self->dist_for($meta);
 
     # Validate it against the SHA1 checksum.
+    say '  Checksumming ', $dist if $self->verbose;
     if ($self->digest_for($dist) ne $meta->{sha1}) {
         warn "Checksum verification failed for $fn\n";
         return;
@@ -128,6 +133,7 @@ sub digest_for {
 
 my $CWD = cwd;
 sub unzip {
+    say '  Extracting ', $_[1] if $_[0]->verbose;
     my ($self, $dist) = shift->_rel_to_mirror(@_);
 
     my $zip = Archive::Zip->new;
