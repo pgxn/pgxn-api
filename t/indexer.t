@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 85;
+use Test::More tests => 93;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -22,6 +22,7 @@ BEGIN {
 
 can_ok $CLASS => qw(
     new
+    update_mirror_meta
     add_distribution
     copy_files
     merge_distmeta
@@ -372,3 +373,17 @@ for my $meth (@meths) {
 ok $indexer->add_distribution($meta), 'Call add_distribution()';
 is_deeply \@called, \@meths, 'The proper meths should have been called in order';
 $mock->unmock_all;
+
+##############################################################################
+# Test update_mirror_meta().
+file_not_exists_ok catfile(qw(www index.json)), 'index.json should not exist';
+file_not_exists_ok catfile(qw(www meta/mirrors.json)), 'mirrors.json should not exist';
+ok $indexer->update_mirror_meta, 'Update from the mirror';
+file_exists_ok catfile(qw(www index.json)), 'index.json should now exist';
+file_exists_ok catfile(qw(www meta/mirrors.json)), 'mirrors.json should now exist';
+
+# Do it again, just for good measure.
+ok $indexer->update_mirror_meta, 'Update from the mirror';
+file_exists_ok catfile(qw(www index.json)), 'index.json should now exist';
+file_exists_ok catfile(qw(www meta/mirrors.json)), 'mirrors.json should now exist';
+

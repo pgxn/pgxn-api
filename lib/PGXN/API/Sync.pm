@@ -55,6 +55,9 @@ sub update_index {
     my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
     my $log     = $self->log_file;
 
+    # Update the mirror metadata.
+    $indexer->update_mirror_meta;
+
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {

@@ -6,10 +6,29 @@ use Moose;
 use PGXN::API;
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
-use File::Copy::Recursive qw(fcopy);
+use File::Copy::Recursive qw(fcopy dircopy);
 use namespace::autoclean;
 
 has verbose => (is => 'rw', isa => 'Int', default => 0);
+
+sub update_mirror_meta {
+    my $self = shift;
+    my $api  = PGXN::API->instance;
+    say "Updating mirror metadata" if $self->verbose;
+
+    # Copy index.json.
+    # XXX Will likely modify to add doc and directory URI templates.
+    my $src = catfile $api->mirror_root, 'index.json';
+    my $dst = catfile $api->doc_root, 'index.json';
+    fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
+
+    # Copy meta.
+    $src = catdir $api->mirror_root, 'meta';
+    $dst = catdir $api->doc_root, 'meta';
+    dircopy $src, $dst or die "Cannot copy directory $src to $dst: $!\n";
+
+    return $self;
+}
 
 sub add_distribution {
     my ($self, $meta) = @_;
@@ -30,10 +49,10 @@ sub copy_files {
     # Need to copy the README, zip file, and dist meta file.
     for my $file (qw(dist readme)) {
         my $src = $self->mirror_file_for($file => $meta);
-        my $dest = $self->doc_root_file_for($file => $meta);
+        my $dst = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
         say "    $meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
-        fcopy $src, $dest or die "Cannot copy $src to $dest: $!\n";
+        fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
     }
     return $self;
 }

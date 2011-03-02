@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 47;
-use Test::More 'no_plan';
+use Test::More tests => 49;
+#use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
 use Test::Output;
@@ -163,11 +163,13 @@ is_deeply \@found, [
 ##############################################################################
 # Reset the rsync output and have it do its thing.
 my $mock = Test::MockModule->new($CLASS);
-$mock->mock(validate_distribution => sub { push @found => $_[1] });
+$mock->mock(validate_distribution => sub { push @found => $_[1]; $_[1] });
 @found = ();
 
 my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
-$idx_mock->mock(add_distribution => 1);
+my @dists;
+$idx_mock->mock(add_distribution => sub { push @dists => $_[1] });
+$idx_mock->mock(update_mirror_meta => sub { pass 'Should update mirror meta' });
 
 ok $sync->update_index, 'Update the index';
 is_deeply \@found, [qw(
@@ -177,6 +179,7 @@ is_deeply \@found, [qw(
     dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
     dist/tinyint/tinyint-0.1.0.json
 )], 'It should have processed the meta files';
+is_deeply \@dists, \@found, 'And it should have passed them to the indexer';
 
 ##############################################################################
 # digest_for()
