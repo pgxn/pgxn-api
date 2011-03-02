@@ -5,7 +5,7 @@ use warnings;
 use File::Spec::Functions qw(catdir catfile);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 28;
+use Test::More tests => 32;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(fcopy);
 use File::Temp;
@@ -50,11 +50,16 @@ is_deeply $pgxn->read_json_from($tmpfile), $data,
     'It should read back in properly';
 
 # Test doc_root().
-file_not_exists_ok 'www', 'Doc root should not yet exist';
-END { remove_tree 'www' }
-is $pgxn->doc_root, catdir(cwd, 'www'),
-    'Should have default doc root';
-file_exists_ok 'www', 'Doc root should now exist';
+my $doc_root = catdir 't', 'test_doc_root';
+file_not_exists_ok $doc_root, 'Doc root should not yet exist';
+$pgxn->doc_root($doc_root);
+END { remove_tree $doc_root }
+is $pgxn->doc_root, $doc_root,  'Should have doc root';
+file_exists_ok $doc_root, 'Doc root should now exist';
+file_exists_ok(
+    catdir($doc_root, 'by', $_),
+    "Subdiretory by/$_ should have been created"
+) for qw(owner tag dist extension);
 
 # Test source_dir().
 my $src_dir = catdir $pgxn->doc_root, 'src';

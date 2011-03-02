@@ -34,9 +34,9 @@ can_ok $CLASS => qw(
 );
 
 my $api = PGXN::API->instance;
-END {
-    remove_tree $api->doc_root;
-}
+my $doc_root = catdir 't', 'test_doc_root';
+$api->doc_root($doc_root);
+END { remove_tree $doc_root }
 
 # "Sync" from a "mirror."
 dircopy catdir(qw(t root)), $api->mirror_root;
@@ -128,14 +128,14 @@ is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 
 ##############################################################################
 # Now update the owner metadata.
-my $owner_file = catfile qw(www by owner theory.json);
+my $owner_file = catfile $doc_root, qw(by owner theory.json);
 file_not_exists_ok $owner_file, "$owner_file should not yet exist";
 ok $indexer->update_owner($meta), 'Update the owner metadata';
 file_exists_ok $owner_file, "$owner_file should now exist";
 
 # Now make sure that it has the updated release metadata.
 ok my $mir_data = $api->read_json_from(
-    catfile qw(www pgxn by owner theory.json)
+    catfile $doc_root, qw(pgxn by owner theory.json)
 ),'Read the mirror owner data file';
 ok my $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file';
@@ -177,9 +177,9 @@ is_deeply $doc_data, $mir_data,
 
 ##############################################################################
 # Now update the tag metadata.
-my $pairkw_file = catfile qw(www by tag pair.json);
-my $orderedkw_file = catfile qw(www by tag), 'ordered pair.json';
-my $keyvalkw_file = catfile qw(www by tag), 'key value.json';
+my $pairkw_file = catfile $doc_root, qw(by tag pair.json);
+my $orderedkw_file = catfile $doc_root, qw(by tag), 'ordered pair.json';
+my $keyvalkw_file = catfile $doc_root, qw(by tag), 'key value.json';
 file_not_exists_ok $pairkw_file, "$pairkw_file should not yet exist";
 file_not_exists_ok $orderedkw_file, "$orderedkw_file should not yet exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should not yet exist";
@@ -264,7 +264,7 @@ is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.2 data";
 
 ##############################################################################
 # Now update the extension metadata.
-my $ext_file = catfile qw(www by extension pair.json);
+my $ext_file = catfile $doc_root, qw(by extension pair.json);
 file_not_exists_ok $ext_file, "$ext_file should not yet exist";
 ok $indexer->update_extensions($meta), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
@@ -376,14 +376,14 @@ $mock->unmock_all;
 
 ##############################################################################
 # Test update_mirror_meta().
-file_not_exists_ok catfile(qw(www index.json)), 'index.json should not exist';
-file_not_exists_ok catfile(qw(www meta/mirrors.json)), 'mirrors.json should not exist';
+file_not_exists_ok catfile($doc_root, qw(index.json)), 'index.json should not exist';
+file_not_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should not exist';
 ok $indexer->update_mirror_meta, 'Update from the mirror';
-file_exists_ok catfile(qw(www index.json)), 'index.json should now exist';
-file_exists_ok catfile(qw(www meta/mirrors.json)), 'mirrors.json should now exist';
+file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
+file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
 
 # Do it again, just for good measure.
 ok $indexer->update_mirror_meta, 'Update from the mirror';
-file_exists_ok catfile(qw(www index.json)), 'index.json should now exist';
-file_exists_ok catfile(qw(www meta/mirrors.json)), 'mirrors.json should now exist';
+file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
+file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
 

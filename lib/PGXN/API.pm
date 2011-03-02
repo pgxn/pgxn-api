@@ -44,16 +44,13 @@ has uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 
   my $doc_root = $pgxn->doc_root;
 
-Returns the document root for the API server. The default is be the F<www>
+Returns the document root for the API server. The default is the F<www>
 directory in the root directory of this distribution.
 
 =cut
 
-has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
-     my $file = quotemeta catfile qw(lib PGXN API.pm);
-     my $blib = quotemeta catfile 'blib', '';
-     (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
-
+my $trig = sub {
+    my ($self, $dir) = @_;
      if (!-e $dir) {
          make_path $dir;
          # Pre-generate the by/ directories.
@@ -61,6 +58,13 @@ has doc_root => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
      } elsif (!-d $dir) {
          die qq{Location for document root "$dir" is not a directory\n};
      }
+};
+
+has doc_root => (is => 'rw', isa => 'Str', lazy => 1, trigger => $trig, default => sub {
+     my $file = quotemeta catfile qw(lib PGXN API.pm);
+     my $blib = quotemeta catfile 'blib', '';
+     (my $dir = __FILE__) =~ s{(?:$blib)?$file$}{www};
+     $trig->(shift, $dir);
      $dir;
 });
 
