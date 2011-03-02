@@ -32,7 +32,7 @@ my $source = shift or _pod2usage();
 PGXN::API::Sync->new(
     source => $source,
     ($rsync ? (rsync_path => $rsync) : ()),
-    verbose => $verbose,
+    verbose => $verbose || 0,
 )->run;
 
 sub _pod2usage {

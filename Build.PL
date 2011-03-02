@@ -16,6 +16,7 @@ $class->new(
     configure_requires => { 'Module::Build' => '0.30', },
     build_requires     => {
         'Module::Build'        => '0.30',
+        'Software::License'    => '0.102340',
         'Test::Exception'      => '0.31',
         'Test::File'           => '1.29',
         'Test::File::Contents' => '0.20',
