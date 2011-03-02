@@ -27,6 +27,7 @@ sub copy_files {
     for my $file (qw(dist readme)) {
         my $src = $self->mirror_file_for($file => $meta);
         my $dest = $self->doc_root_file_for($file => $meta);
+        next if $file eq 'readme' && !-e $src;
         fcopy $src, $dest or die "Cannot copy $src to $dest: $!\n";
     }
     return $self;
@@ -56,6 +57,7 @@ sub merge_distmeta {
             local $meta->{version} = $version;
 
             my $vmeta_file = $self->doc_root_file_for( meta => $meta);
+            next unless -e $vmeta_file;
             my $vmeta = $api->read_json_from($vmeta_file);
             $vmeta->{releases} = $meta->{releases};
             $api->write_json_to($vmeta_file => $vmeta);

@@ -7,7 +7,7 @@ use PGXN::API;
 use PGXN::API::Indexer;
 use Digest::SHA1;
 use List::Util qw(first);
-use File::Spec::Functions qw(catfile path tmpdir);
+use File::Spec::Functions qw(catfile path rel2abs tmpdir);
 use namespace::autoclean;
 use Cwd;
 use Archive::Zip qw(:ERROR_CODES);
@@ -131,7 +131,7 @@ sub unzip {
     my ($self, $dist) = shift->_rel_to_mirror(@_);
 
     my $zip = Archive::Zip->new;
-    if ($zip->read($dist) != AZ_OK) {
+    if ($zip->read(rel2abs $dist) != AZ_OK) {
         warn "Error reading $dist\n";
         return;
     }

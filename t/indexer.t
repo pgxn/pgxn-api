@@ -56,9 +56,13 @@ my $indexer = new_ok $CLASS;
 ok $indexer->copy_files($meta), 'Copy files';
 
 file_exists_ok(
-    catfile($api->doc_root, qw(dist pair), "pair-0.1.0.$_"),
-    "pair-0.1.0.$_ should now exist"
-) for qw(pgz readme);
+    catfile($api->doc_root, qw(dist pair), "pair-0.1.0.pgz"),
+    "pair-0.1.0.pgz should now exist"
+);
+file_not_exists_ok(
+    catfile($api->doc_root, qw(dist pair), "pair-0.1.0.readme"),
+    "pair-0.1.0.readme still should not exist"
+);
 
 # Make sure we get an error when we try to copy a file that does't exist.
 $meta->{name} = 'nonexistent';
@@ -109,7 +113,8 @@ files_eq_or_diff $dist_011_file, $by_dist,
 
 ok $dist_meta = $api->read_json_from($dist_011_file),
     'Read the 0.1.1 merged distmeta';
-$meta_011->{releases} = { stable => ['0.1.1', '0.1.0'] };
+# 0.1.2 has been released but we haven't copied it to the doc root yet.
+$meta_011->{releases} = { stable => ['0.1.2', '0.1.1', '0.1.0'] };
 is_deeply $dist_meta, $meta_011,
     'And it should be the merged with all version info';
 
@@ -117,7 +122,7 @@ is_deeply $dist_meta, $meta_011,
 # now also have a list of all releases.
 ok $dist_meta = $api->read_json_from($dist_file),
     'Read the older version distmeta';
-$meta->{releases} = { stable => ['0.1.1', '0.1.0'] };
+$meta->{releases} = { stable => ['0.1.2', '0.1.1', '0.1.0'] };
 is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 
 ##############################################################################
