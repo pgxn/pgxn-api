@@ -2,3 +2,6 @@ Revision history for Perl extension PGXN::API
 
 0.1.0 
       - Initial version.
+      - Syncs to mirror.
+      - Merges metadata to API doc root.
+      - Has PSGI to serve static files from the doc root.

@@ -2,11 +2,31 @@ package PGXN::API::Router;
 
 use 5.12.0;
 use utf8;
-use Plack::App::File;
 use PGXN::API;
+use Plack::Builder;
+use Plack::App::Directory;
+use File::Spec::Functions qw(catdir);
+use namespace::autoclean;
 
 sub app {
-    Plack::App::File->new(root => PGXN::API->instance->doc_root)->to_app;
+    my $root = PGXN::API->instance->doc_root;
+    builder {
+        mount '/' => Plack::App::Directory->new(root => $root)->to_app;
+
+        # Disable HTML in /src.
+        my $mimes = { %{ $Plack::MIME::MIME_TYPES } };
+        for my $ext (keys %{ $mimes }) {
+            $mimes->{$ext} = 'text/plain' if $mimes->{$ext} =~ /html/;
+        }
+        my $dir = Plack::App::Directory->new(
+            root => catdir $root, 'src'
+        )->to_app;
+
+        mount '/src' => sub {
+            local $Plack::MIME::MIME_TYPES = $mimes;
+            $dir->(shift)
+        };
+    };
 }
 
 1;
