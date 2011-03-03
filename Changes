@@ -5,7 +5,7 @@ Revision history for Perl extension PGXN::API
       - Added tests for the router.
       - Serve distribution files with content-type application/zip.
 
-0.1.0 
+0.1.0   2011-03-02 23:58:41
       - Initial version.
       - Syncs to mirror.
       - Merges metadata to API doc root.
