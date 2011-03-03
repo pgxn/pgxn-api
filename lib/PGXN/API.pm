@@ -8,6 +8,19 @@ use URI::Template;
 use JSON;
 use namespace::autoclean;
 
+=head1 Name
+
+PGXN::API - Maintain and serve a REST API to search PGXN mirrors
+
+=head1 Synopsis
+
+  use PGXN::API;
+  my $api = PGXN::API->instance;
+
+=head1 Description
+
+More to come.
+
 =head1 Interface
 
 =head2 Constructor
@@ -157,19 +170,6 @@ __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
-
-=head1 Name
-
-PGXN::API - Maintain and serve a REST API to search PGXN mirrors
-
-=head1 Synopsis
-
-  use PGXN::API;
-  my $api = PGXN::API->instance;
-
-=head1 Description
-
-More to come.
 
 =head1 Author
 
