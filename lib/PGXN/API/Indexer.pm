@@ -1,4 +1,4 @@
-package PGXN::API::Indexer v0.1.0;
+package PGXN::API::Indexer v0.2.0;
 
 use 5.12.0;
 use utf8;
