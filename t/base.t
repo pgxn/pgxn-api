@@ -5,8 +5,9 @@ use warnings;
 use File::Spec::Functions qw(catdir catfile);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 32;
+use Test::More tests => 34;
 #use Test::More 'no_plan';
+use Test::File::Contents;
 use File::Copy::Recursive qw(fcopy);
 use File::Temp;
 use JSON;
@@ -60,6 +61,14 @@ file_exists_ok(
     catdir($doc_root, 'by', $_),
     "Subdiretory by/$_ should have been created"
 ) for qw(owner tag dist extension);
+
+# Make sure index.html was created.
+file_exists_ok catfile($doc_root, 'index.html'), 'index.html should exist';
+files_eq_or_diff(
+    catfile($doc_root, 'index.html'),
+    catfile('var', 'index.html'),
+    'And it should be the var copy'
+);
 
 # Test source_dir().
 my $src_dir = catdir $pgxn->doc_root, 'src';

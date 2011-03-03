@@ -17,20 +17,25 @@ sub app {
 
     builder {
         # Sever most stuff as plain files.
-        mount '/' => Plack::App::File->new(root => $root)->to_app;
+        my $dirs = Plack::App::File->new(root => $root)->to_app;
+        mount '/' => sub {
+            my $env = shift;
+            $env->{PATH_INFO} = '/index.html' if $env->{PATH_INFO} eq '/';
+            $dirs->($env);
+        };
 
         # Disable HTML in /src.
         my $mimes = { %{ $Plack::MIME::MIME_TYPES } };
         for my $ext (keys %{ $mimes }) {
             $mimes->{$ext} = 'text/plain' if $mimes->{$ext} =~ /html/;
         }
-        my $dir = Plack::App::File->new(
+        my $src_dir = Plack::App::File->new(
             root => catdir $root, 'src'
         )->to_app;
 
         mount '/src' => sub {
             local $Plack::MIME::MIME_TYPES = $mimes;
-            $dir->(shift)
+            $src_dir->(shift)
         };
     };
 }

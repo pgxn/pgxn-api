@@ -2,8 +2,8 @@
 
 use 5.12.0;
 use utf8;
-#use Test::More tests => 28;
-use Test::More 'no_plan';
+use Test::More tests => 29;
+#use Test::More 'no_plan';
 use Plack::Test;
 use HTTP::Request::Common;
 use File::Spec::Functions qw(catdir catfile);
@@ -59,12 +59,22 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try an HTML file.
-my $html = catfile qw(t data test.html);
+my $html = catfile qw(var index.html);
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
     fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
-    my $uri = '/test.html';
+    my $uri = '/index.html';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_success, 'It should be a success';
+    is $res->content_type, 'text/html', 'Should be text/html';
+};
+
+# Try the root directory.
+test_psgi +PGXN::API::Router->app => sub {
+    my $cb = shift;
+    local $ENV{FOO} = 1;
+    fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
+    ok my $res = $cb->(GET '/'), "Fetch /";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'text/html', 'Should be text/html';
 };
@@ -96,7 +106,7 @@ test_psgi +PGXN::API::Router->app => sub {
 # Try a src/html file.
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = 'src/test.html';
+    my $uri = 'src/index.html';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'text/plain', 'Should be text/plain';

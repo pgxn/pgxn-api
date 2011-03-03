@@ -4,7 +4,6 @@ use 5.12.0;
 use utf8;
 use MooseX::Singleton;
 use File::Spec::Functions qw(catfile catdir);
-use File::Path qw(make_path);
 use URI::Template;
 use JSON;
 use namespace::autoclean;
@@ -52,9 +51,22 @@ directory in the root directory of this distribution.
 my $trig = sub {
     my ($self, $dir) = @_;
      if (!-e $dir) {
-         make_path $dir;
+         require File::Path;
+         File::Path::make_path($dir);
+
+         # Copy over the index.html.
+         require File::Copy::Recursive;
+
+         my $file = quotemeta catfile qw(lib PGXN API.pm);
+         my $blib = quotemeta catfile 'blib', '';
+         (my $var = __FILE__) =~ s{(?:$blib)?$file$}{var};
+         my $idx  = catfile $var, 'index.html';
+         File::Copy::Recursive::fcopy($idx, $dir)
+             or die "Cannot copy $idx to $dir: $!\n";
+
          # Pre-generate the by/ directories.
-         make_path catdir $dir, 'by', $_ for qw(owner tag dist extension);
+         File::Path::make_path(catdir $dir, 'by', $_)
+             for qw(owner tag dist extension);
      } elsif (!-d $dir) {
          die qq{Location for document root "$dir" is not a directory\n};
      }
@@ -80,7 +92,8 @@ which is just the F<src> subdirectory of C<doc_root>.
 has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
     my $dir = catdir shift->doc_root, 'src';
     if (!-e $dir) {
-        make_path $dir;
+        require File::Path;
+        File::Path::make_path($dir);
     } elsif (!-d $dir) {
         die qq{Location for source files "$dir" is not a directory\n};
     }
@@ -99,7 +112,8 @@ just the F<pgxn> subdirectory of C<doc_root>.
 has mirror_root => (is => 'rw', 'isa' => 'Str', lazy => 1, default => sub {
     my $dir = catdir shift->doc_root, 'pgxn';
     if (!-e $dir) {
-        make_path $dir;
+        require File::Path;
+        File::Path::make_path($dir);
     } elsif (!-d $dir) {
         die qq{Location for source files "$dir" is not a directory\n};
     }

@@ -4,6 +4,7 @@ Revision history for Perl extension PGXN::API
       - No longer serve directory indexes.
       - Added tests for the router.
       - Serve distribution files with content-type application/zip.
+      - Added `var/index.html`, placeholder for a root-level HTML file.
 
 0.1.0   2011-03-02 23:58:41
       - Initial version.
