@@ -40,8 +40,8 @@ $class->new(
         'namespace::autoclean'         => '0.11',
         'perl'                         => 5.012,
         'Plack'                        => '0.9956',
+        'Plack::App::File'             => 0,
         'Plack::Builder'               => 0,
-        'Plack::App::Directory'        => 0,
         'URI::Template'                => '0.15',
     },
     recommends => {

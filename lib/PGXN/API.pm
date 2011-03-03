@@ -96,7 +96,7 @@ just the F<pgxn> subdirectory of C<doc_root>.
 
 =cut
 
-has mirror_root => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
+has mirror_root => (is => 'rw', 'isa' => 'Str', lazy => 1, default => sub {
     my $dir = catdir shift->doc_root, 'pgxn';
     if (!-e $dir) {
         make_path $dir;

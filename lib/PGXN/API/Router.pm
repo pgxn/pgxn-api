@@ -4,21 +4,27 @@ use 5.12.0;
 use utf8;
 use PGXN::API;
 use Plack::Builder;
-use Plack::App::Directory;
+use Plack::App::File;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
 
 sub app {
     my $root = PGXN::API->instance->doc_root;
+
+    # Identify distribution files as zip files.
+    my ($zip_ext) = PGXN::API->instance->uri_templates->{dist} =~ /([.][^.]+)$/;
+    $Plack::MIME::MIME_TYPES->{$zip_ext} = $Plack::MIME::MIME_TYPES->{'.zip'};
+
     builder {
-        mount '/' => Plack::App::Directory->new(root => $root)->to_app;
+        # Sever most stuff as plain files.
+        mount '/' => Plack::App::File->new(root => $root)->to_app;
 
         # Disable HTML in /src.
         my $mimes = { %{ $Plack::MIME::MIME_TYPES } };
         for my $ext (keys %{ $mimes }) {
             $mimes->{$ext} = 'text/plain' if $mimes->{$ext} =~ /html/;
         }
-        my $dir = Plack::App::Directory->new(
+        my $dir = Plack::App::File->new(
             root => catdir $root, 'src'
         )->to_app;
 
