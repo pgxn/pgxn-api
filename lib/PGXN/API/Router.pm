@@ -1,4 +1,4 @@
-package PGXN::API::Router v0.2.0;
+package PGXN::API::Router v0.3.0;
 
 use 5.12.0;
 use utf8;
