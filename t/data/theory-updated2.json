@@ -5,17 +5,28 @@
    "uri": "http://justatheory.com/",
    "releases": {
       "explanation": {
-         "stable": ["0.2.0"]
+         "stable": [
+            {"version": "0.2.0", "date": "2011-02-21T20:14:56Z"}
+         ]
       },
       "pair": {
-         "stable": ["0.1.2", "0.1.0"],
-         "testing": ["0.1.1"]
+         "stable": [
+            {"version": "0.1.2", "date": "2010-11-03T06:23:28Z"},
+            {"version": "0.1.0", "date": "2010-10-19T03:59:54Z"}
+         ],
+         "testing": [
+            {"version": "0.1.1", "date": "2010-10-29T22:44:42Z"}
+         ]
       },
       "pgTAP": {
-         "stable": ["0.25.0"]
+         "stable": [
+            {"version": "0.25.0", "date": "2011-02-02T03:25:17Z"}
+         ]
       },
       "semver": {
-         "stable": ["0.2.0"]
+         "stable": [
+            {"version": "0.2.0", "date": "2011-02-05T19:31:38Z"}
+         ]
       }
    }
 }

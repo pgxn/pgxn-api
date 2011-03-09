@@ -75,13 +75,13 @@ sub merge_distmeta {
     $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );
     fcopy $fn, $by_dist_file or die "Cannot copy $fn to $by_dist_file: $!\n";
 
-    # Now update all older versions with the complete list of verions.
-    for my $versions ( values %{ $meta->{releases} }) {
-        for my $version (@{ $versions}) {
-            next if $version eq $meta->{version};
-            local $meta->{version} = $version;
+    # Now update all older versions with the complete list of releases.
+    for my $releases ( values %{ $meta->{releases} }) {
+        for my $release (@{ $releases}) {
+            next if $release->{version} eq $meta->{version};
+            local $meta->{version} = $release->{version};
 
-            my $vmeta_file = $self->doc_root_file_for( meta => $meta);
+            my $vmeta_file = $self->doc_root_file_for(meta => $meta);
             next unless -e $vmeta_file;
             my $vmeta = $api->read_json_from($vmeta_file);
             $vmeta->{releases} = $meta->{releases};
@@ -112,7 +112,6 @@ sub update_owner {
         %{ $doc_meta->{releases}{$meta->{name}} },
         %{ $mir_meta->{releases}{$meta->{name}} },
         abstract                       => $meta->{abstract},
-        "$meta->{release_status}_date" => $meta->{release_date},
     };
 
     # Copy the release metadata into the mirrored data and the core metadata.

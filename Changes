@@ -1,6 +1,7 @@
 Revision history for Perl extension PGXN::API
 
 0.3.0
+      - Updated to work with PGXN::Manager 0.9.0 output.
 
 0.2.0   2011-03-03T01:09:42
       - No longer serve directory indexes.

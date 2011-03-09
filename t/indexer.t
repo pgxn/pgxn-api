@@ -94,7 +94,7 @@ files_eq_or_diff $dist_file, $by_dist,
 # So have a look at the contents.
 ok my $dist_meta = $api->read_json_from($dist_file),
     'Read the merged distmeta';
-$meta->{releases} = { stable => ['0.1.0'] };
+$meta->{releases} = { stable => [{version => '0.1.0', date => '2010-10-19T03:59:54Z'}] };
 is_deeply $dist_meta, $meta, 'And it should be the merged metadata';
 
 # Now update with 0.1.1. "Sync" the updated pair.json.
@@ -115,7 +115,11 @@ files_eq_or_diff $dist_011_file, $by_dist,
 ok $dist_meta = $api->read_json_from($dist_011_file),
     'Read the 0.1.1 merged distmeta';
 # 0.1.2 has been released but we haven't copied it to the doc root yet.
-$meta_011->{releases} = { stable => ['0.1.2', '0.1.1', '0.1.0'] };
+$meta_011->{releases} = { stable => [
+    {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
+    {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
+    {version => '0.1.0', date => '2010-10-19T03:59:54Z'}
+] };
 is_deeply $dist_meta, $meta_011,
     'And it should be the merged with all version info';
 
@@ -123,7 +127,11 @@ is_deeply $dist_meta, $meta_011,
 # now also have a list of all releases.
 ok $dist_meta = $api->read_json_from($dist_file),
     'Read the older version distmeta';
-$meta->{releases} = { stable => ['0.1.2', '0.1.1', '0.1.0'] };
+$meta->{releases} = { stable => [
+    {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
+    {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
+    {version => '0.1.0', date => '2010-10-19T03:59:54Z'}
+] };
 is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 
 ##############################################################################
@@ -139,8 +147,9 @@ ok my $mir_data = $api->read_json_from(
 ),'Read the mirror owner data file';
 ok my $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file';
-$mir_data->{releases}{pair}{stable} = ['0.1.0'];
-$mir_data->{releases}{pair}{stable_date} = '2010-10-18T15:24:21Z';
+$mir_data->{releases}{pair}{stable} = [
+    {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
+];
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair data type';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for this release';
@@ -150,9 +159,12 @@ fcopy catfile(qw(t data theory-updated.json)),
       catfile($api->mirror_root, qw(by owner theory.json));
 ok $indexer->update_owner($meta_011),
     'Update the owner metadata for pair 0.1.1';
-$mir_data->{releases}{pair}{stable} = ['0.1.0'];
-$mir_data->{releases}{pair}{testing} = ['0.1.1'];
-$mir_data->{releases}{pair}{testing_date} = '2010-10-29T22:46:45Z';
+$mir_data->{releases}{pair}{stable} = [
+    {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
+];
+$mir_data->{releases}{pair}{testing} = [
+    {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
+];
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
 ok $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file again';
@@ -168,8 +180,8 @@ my $meta_012 = $api->read_json_from(
 ok $indexer->merge_distmeta($meta_012), 'Merge the 0.1.2 distmeta';
 ok $indexer->update_owner($meta_012),
     'Update the owner metadata for pair 0.1.2';
-$mir_data->{releases}{pair}{stable} = ['0.1.2', '0.1.0'];
-$mir_data->{releases}{pair}{stable_date} = '2010-11-10T12:18:03Z';
+unshift @{ $mir_data->{releases}{pair}{stable} },
+    {version => '0.1.2', date => '2010-11-03T06:23:28Z'};
 ok $doc_data = $api->read_json_from($owner_file),
     'Read the doc root owner data file once more';
 is_deeply $doc_data, $mir_data,
@@ -194,8 +206,9 @@ my $exp = {
     releases => {
         pair  => {
             abstract    => "A key/value pair data type",
-            stable      => ["0.1.0"],
-            stable_date => "2010-10-18T15:24:21Z",
+            stable      => [
+                {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
+            ],
         },
         pgTAP => $pgtap,
     },
@@ -218,8 +231,12 @@ file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 
 # Check the JSON data.
 $exp->{tag} = 'pair';
-$exp->{releases}{pair}{testing} = ['0.1.1'];
-$exp->{releases}{pair}{testing_date} = '2010-10-29T22:46:45Z';
+$exp->{releases}{pair}{stable} = [
+    {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
+];
+$exp->{releases}{pair}{testing} = [
+    {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
+];
 $exp->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
 $exp->{releases}{pgTAP} = $pgtap;
 
@@ -243,8 +260,10 @@ ok $indexer->update_tags($meta_012), 'Update the tags to 0.1.2';
 
 # Make sure all tags are updated.
 $exp->{tag} = 'pair';
-$exp->{releases}{pair}{stable} = ['0.1.2', '0.1.0'];
-$exp->{releases}{pair}{stable_date} = '2010-11-10T12:18:03Z';
+$exp->{releases}{pair}{stable} = [
+    {version => '0.1.2', date => '2010-11-03T06:23:28Z'},
+    {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
+];
 $exp->{releases}{pgTAP} = $pgtap;
 
 ok $pair_data = $api->read_json_from($pairkw_file),
