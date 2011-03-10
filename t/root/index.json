@@ -1,7 +1,7 @@
 {
    "by-dist": "/by/dist/{dist}.json",
    "by-extension": "/by/extension/{extension}.json",
-   "by-owner": "/by/owner/{owner}.json",
+   "by-user": "/by/user/{user}.json",
    "by-tag": "/by/tag/{tag}.json",
    "dist": "/dist/{dist}/{dist}-{version}.pgz",
    "meta": "/dist/{dist}/{dist}-{version}.json",

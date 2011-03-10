@@ -35,7 +35,7 @@ sub add_distribution {
 
     $self->copy_files($meta)        or return;
     $self->merge_distmeta($meta)    or return;
-    $self->update_owner($meta)      or return;
+    $self->update_user($meta)       or return;
     $self->update_tags($meta)       or return;
     $self->update_extensions($meta) or return;
 
@@ -92,19 +92,19 @@ sub merge_distmeta {
     return $self;
 }
 
-sub update_owner {
+sub update_user {
     my ($self, $meta) = @_;
     my $api = PGXN::API->instance;
 
-    # Read in owner metadata from the mirror.
-    my $mir_file = $self->mirror_file_for('by-owner' => $meta);
+    # Read in user metadata from the mirror.
+    my $mir_file = $self->mirror_file_for('by-user' => $meta);
     my $mir_meta = $api->read_json_from($mir_file);
 
-    # Read in owner metadata from the doc root.
-    my $doc_file = $self->doc_root_file_for('by-owner' => $meta);
+    # Read in user metadata from the doc root.
+    my $doc_file = $self->doc_root_file_for('by-user' => $meta);
     my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
 
-    say "  Updating owner $meta->{owner}" if $self->verbose;
+    say "  Updating user $meta->{user}" if $self->verbose;
 
     # Update *this* release with version info, abstract, and date.
     $doc_meta->{releases}{$meta->{name}} = {
@@ -230,7 +230,7 @@ sub _uri_for {
     PGXN::API->instance->uri_templates->{$name}->process(
         dist    => $meta->{name},
         version => $meta->{version},
-        owner   => $meta->{owner},
+        user    => $meta->{user},
         @params,
     );
 }

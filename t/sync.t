@@ -115,19 +115,19 @@ is_deeply \@found, [qw(
     dist/tinyint/tinyint-0.1.0.json
 )], 'It should recognize the meta files.';
 
-# Test the owner template regex.
-ok $regex = $sync->regex_for_uri_template('by-owner'),
-    'Get by-owner regex';
+# Test the user template regex.
+ok $regex = $sync->regex_for_uri_template('by-user'),
+    'Get by-user regex';
 @found = ();
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
 
 is_deeply \@found, [qw(
-    by/owner/daamien.json
-    by/owner/theory.json
-    by/owner/umitanuki.json
-)], 'It should recognize the owner files.';
+    by/user/daamien.json
+    by/user/theory.json
+    by/user/umitanuki.json
+)], 'It should recognize the user files.';
 
 # Test the extension template regex.
 ok $regex = $sync->regex_for_uri_template('by-extension'),

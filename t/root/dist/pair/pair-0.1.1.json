@@ -8,7 +8,7 @@
    ],
    "release_date": "2010-10-29T22:46:45Z",
    "release_status": "testing",
-   "owner": "theory",
+   "user": "theory",
    "sha1": "c552c961400253e852250c5d2f3def183c81adb3",
    "license": "postgresql",
    "provides": {

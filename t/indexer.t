@@ -26,7 +26,7 @@ can_ok $CLASS => qw(
     add_distribution
     copy_files
     merge_distmeta
-    update_owner
+    update_user
     update_tags
     mirror_file_for
     doc_root_file_for
@@ -135,18 +135,18 @@ $meta->{releases} = { stable => [
 is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 
 ##############################################################################
-# Now update the owner metadata.
-my $owner_file = catfile $doc_root, qw(by owner theory.json);
-file_not_exists_ok $owner_file, "$owner_file should not yet exist";
-ok $indexer->update_owner($meta), 'Update the owner metadata';
-file_exists_ok $owner_file, "$owner_file should now exist";
+# Now update the user metadata.
+my $user_file = catfile $doc_root, qw(by user theory.json);
+file_not_exists_ok $user_file, "$user_file should not yet exist";
+ok $indexer->update_user($meta), 'Update the user metadata';
+file_exists_ok $user_file, "$user_file should now exist";
 
 # Now make sure that it has the updated release metadata.
 ok my $mir_data = $api->read_json_from(
-    catfile $doc_root, qw(pgxn by owner theory.json)
-),'Read the mirror owner data file';
-ok my $doc_data = $api->read_json_from($owner_file),
-    'Read the doc root owner data file';
+    catfile $doc_root, qw(pgxn by user theory.json)
+),'Read the mirror user data file';
+ok my $doc_data = $api->read_json_from($user_file),
+    'Read the doc root user data file';
 $mir_data->{releases}{pair}{stable} = [
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
 ];
@@ -156,9 +156,9 @@ is_deeply $doc_data, $mir_data,
 
 # Great, now update it.
 fcopy catfile(qw(t data theory-updated.json)),
-      catfile($api->mirror_root, qw(by owner theory.json));
-ok $indexer->update_owner($meta_011),
-    'Update the owner metadata for pair 0.1.1';
+      catfile($api->mirror_root, qw(by user theory.json));
+ok $indexer->update_user($meta_011),
+    'Update the user metadata for pair 0.1.1';
 $mir_data->{releases}{pair}{stable} = [
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
 ];
@@ -166,24 +166,24 @@ $mir_data->{releases}{pair}{testing} = [
     {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
 ];
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
-ok $doc_data = $api->read_json_from($owner_file),
-    'Read the doc root owner data file again';
+ok $doc_data = $api->read_json_from($user_file),
+    'Read the doc root user data file again';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.1';
 
 # Now do another stable release.
 fcopy catfile(qw(t data theory-updated2.json)),
-      catfile($api->mirror_root, qw(by owner theory.json));
+      catfile($api->mirror_root, qw(by user theory.json));
 my $meta_012 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair pair-0.1.2.json)
 );
 ok $indexer->merge_distmeta($meta_012), 'Merge the 0.1.2 distmeta';
-ok $indexer->update_owner($meta_012),
-    'Update the owner metadata for pair 0.1.2';
+ok $indexer->update_user($meta_012),
+    'Update the user metadata for pair 0.1.2';
 unshift @{ $mir_data->{releases}{pair}{stable} },
     {version => '0.1.2', date => '2010-11-03T06:23:28Z'};
-ok $doc_data = $api->read_json_from($owner_file),
-    'Read the doc root owner data file once more';
+ok $doc_data = $api->read_json_from($user_file),
+    'Read the doc root user data file once more';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.2';
 
@@ -378,7 +378,7 @@ my @called;
 my @meths = qw(
     copy_files
     merge_distmeta
-    update_owner
+    update_user
     update_tags
     update_extensions
 );

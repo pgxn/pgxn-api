@@ -75,13 +75,13 @@ sub regex_for_uri_template {
 
     # Get the URI for the template.
     my $uri = PGXN::API->instance->uri_templates->{$name}->process(
-        map { $_ => "{$_}" } qw(dist version owner extension tag)
+        map { $_ => "{$_}" } qw(dist version user extension tag)
     );
 
     my %regex_for = (
         '{dist}'      => qr{[^/]+?},
         '{version}'   => qr{(?:0|[1-9][0-9]*)(?:[.][0-9]+){2,}(?:[a-zA-Z][-0-9A-Za-z]*)?},
-        '{owner}'     => qr{[a-z]([-a-z0-9]{0,61}[a-z0-9])?}i,
+        '{user}'      => qr{[a-z]([-a-z0-9]{0,61}[a-z0-9])?}i,
         '{extension}' => qr{[^/]+?},
         '{tag}'       => qr{[^/]+?},
     );

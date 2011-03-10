@@ -60,7 +60,7 @@ file_exists_ok $doc_root, 'Doc root should now exist';
 file_exists_ok(
     catdir($doc_root, 'by', $_),
     "Subdiretory by/$_ should have been created"
-) for qw(owner tag dist extension);
+) for qw(user tag dist extension);
 
 # Make sure index.html was created.
 file_exists_ok catfile($doc_root, 'index.html'), 'index.html should exist';
