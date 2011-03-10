@@ -200,7 +200,7 @@ file_exists_ok $pairkw_file, "$pairkw_file should now exist";
 file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
 
-my $pgtap = { stable => ["0.25.0"] };
+my $pgtap = { stable => [{ version => "0.25.0", date => '2011-01-22T08:34:51Z'}] };
 my $exp = {
     tag => 'pair',
     releases => {

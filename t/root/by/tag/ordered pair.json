@@ -2,7 +2,9 @@
    "tag": "ordered pair",
    "releases": {
       "pair": {
-         "stable": [ "0.1.0" ]
+         "stable": [
+            {"version": "0.1.0", "date": "2010-10-19T03:59:54Z"}
+         ]
       }
    }
 }
