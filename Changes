@@ -1,9 +1,10 @@
 Revision history for Perl extension PGXN::API
 
-0.3.2
+0.3.2   2011-03-10T21:53:17
       - Updated to work with PGXN::Manager 0.10.0 output. In particular,
-        "owners" are now known as "users". The relevant methods and data have
-        been chagned to reflect this change.
+        "owners" are now known as "users" and "release_date" is now known as
+        "date". The relevant methods and data have been chagned to reflect
+        this change.
 
 0.3.1 2011-03-10T00:28:36
       - Updated to work with PGXN::Manager 0.9.1 output.
