@@ -301,7 +301,7 @@ $exp = {
         '0.1.0' => [
             {
                 dist         => 'pair',
-                release_date => '2010-10-18T15:24:21Z',
+                date => '2010-10-18T15:24:21Z',
                 version      => '0.1.0',
             },
         ],
@@ -326,7 +326,7 @@ $exp->{testing} = {
 };
 $exp->{versions}{'0.1.1'} = [{
     dist         => 'pair',
-    release_date => '2010-10-29T22:46:45Z',
+    date => '2010-10-29T22:46:45Z',
     version      => '0.1.1',
 }];
 
@@ -348,7 +348,7 @@ ok $doc_data = $api->read_json_from($ext_file),
     'Read the doc root extension data file once again';
 unshift @{ $exp->{versions}{'0.1.1'} } => {
     dist =>'otherdist',
-    release_date => '2010-10-29T22:46:45Z',
+    date => '2010-10-29T22:46:45Z',
     version => '0.3.0'
 };
 is_deeply $doc_data, $exp,
@@ -364,7 +364,7 @@ $exp->{stable}{version} = '0.1.2';
 $exp->{stable}{abstract} = 'A key/value pair dåtå type';
 $exp->{versions}{'0.1.2'} =  [{
     dist         => 'pair',
-    release_date => '2010-11-10T12:18:03Z',
+    date => '2010-11-10T12:18:03Z',
     version      => '0.1.2',
 }];
 ok $doc_data = $api->read_json_from($ext_file),

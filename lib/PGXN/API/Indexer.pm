@@ -201,7 +201,7 @@ sub update_extensions {
                 && $dist->{version} eq $meta->{version}
             ) {
                 # We got it. Add the releae date and copy it to the mirror data.
-                $dist->{release_date} = $meta->{release_date};
+                $dist->{date} = $meta->{date};
                 last;
             }
         }
