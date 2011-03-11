@@ -7,6 +7,16 @@ Revision history for Perl extension PGXN::API
       - Moved unzipped source directories under a subdirectory named for the
         distribution. That is, rather than `/src/pair-0.1.1/`, we now have
         `/src/pair/pair-0.1.1/`.
+      - Make sure that the `/by/dist` file has the latest *stable* version
+        listed as the version. Only make it a testing version if there is no
+        stable version, and an unstabe version only if there is no stable or
+        testing version.
+      - Fixed bugs in release data merging in the `/by/user` and `/by/tag`
+        files. The old code had relied too much on what was in the
+        distribution. Since the only additional data point over the mirrored
+        original is an abstract, we can just rely on the mirror data to be
+        correct and add the abstract. This simplifies the code quite a bit, in
+        fact.
 
 0.3.2   2011-03-10T21:53:17
       - Updated to work with PGXN::Manager 0.10.0 output. In particular,
