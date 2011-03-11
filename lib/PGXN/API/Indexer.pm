@@ -122,13 +122,17 @@ sub update_user {
     my $mir_file = $self->mirror_file_for('by-user' => $meta);
     my $mir_meta = $api->read_json_from($mir_file);
 
-    # Set the abstract to this version. XXX Check it's the latest?
-    my $rels = $mir_meta->{releases}{$meta->{name}};
+    # Read in user metadata from the doc root.
+    my $doc_file = $self->doc_root_file_for('by-user' => $meta);
+    my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
+
+    # Update with latest release info and abstract.
+    my $rels = $doc_meta->{releases}{$meta->{name}}
+        = $mir_meta->{releases}{$meta->{name}};
     $rels->{abstract} = $meta->{abstract};
 
     # Now write out the file again and go home.
-    my $doc_file = $self->doc_root_file_for('by-user' => $meta);
-    $api->write_json_to($doc_file => $mir_meta);
+    $api->write_json_to($doc_file => $doc_meta);
     return $self;
 }
 
@@ -142,17 +146,22 @@ sub update_tags {
 
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
+
         # Read in tag metadata from the mirror.
         my $mir_file = $self->mirror_file_for('by-tag' => $meta, tag => $tag);
         my $mir_meta = $api->read_json_from($mir_file);
 
-        # Set the abstract to this version. XXX Check it's the latest?
-        my $rels = $mir_meta->{releases}{$meta->{name}};
+        # Read in tag metadata from the doc root.
+        my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
+        my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
+
+        # Update with latest release info and abstract.
+        my $rels = $doc_meta->{releases}{$meta->{name}}
+            = $mir_meta->{releases}{$meta->{name}};
         $rels->{abstract} = $meta->{abstract};
 
         # Write out the data to the doc root.
-        my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
-        $api->write_json_to($doc_file => $mir_meta);
+        $api->write_json_to($doc_file => $doc_meta);
     }
     return $self;
 }

@@ -1,6 +1,10 @@
 Revision history for Perl extension PGXN::API
 
 0.4.1
+      - Fixed a bug introduced in 0.4.0 where the /by/user and /by/tag files
+        were overwriting release data from other distributions, thereby
+        removing their abstracts. We now update the release data only for the
+        currently-processing distribution.
 
 0.4.0   2011-03-11T23:23:12
       - Added the "special_files" key to the distribution metadata file. It
