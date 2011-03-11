@@ -132,9 +132,10 @@ files_eq_or_diff $dist_011_file, $by_dist,
     'pair-0.1.1.json and pair.json should be the same';
 
 is_deeply $meta_011->{releases}, { stable => [
-    {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
     {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'}
+], testing => [
+    {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
 ] }, 'We should have the release data';
 is_deeply $meta_011->{special_files},
     [qw(Changes README.md META.json Makefile)],
@@ -151,9 +152,10 @@ is_deeply $dist_meta, $meta_011,
 ok $dist_meta = $api->read_json_from($dist_file),
     'Read the older version distmeta';
 $meta->{releases} = { stable => [
-    {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
     {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'}
+], testing => [
+    {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
 ] };
 is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 
@@ -171,10 +173,8 @@ ok my $mir_data = $api->read_json_from(
 ),'Read the mirror user data file';
 ok my $doc_data = $api->read_json_from($user_file),
     'Read the doc root user data file';
-$mir_data->{releases}{pair}{stable} = [
-    {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
-];
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair data type';
+
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for this release';
 
@@ -254,6 +254,8 @@ is_deeply $ord_data, $exp, "$orderedkw_file should have the release data";
 
 # Now update with 0.1.1.
 $params->{meta} = $meta_011;
+fcopy catfile(qw(t data pair-tag-updated.json)),
+      catfile($api->mirror_root, qw(by tag pair.json));
 ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
 file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 
@@ -274,17 +276,27 @@ is_deeply $pair_data, $exp, "$pairkw_file should be updated for 0.1.1";
 
 $exp->{tag} = 'ordered pair';
 delete $exp->{releases}{pgTAP};
+delete $exp->{releases}{pair}{testing};
 ok $ord_data = $api->read_json_from($orderedkw_file),
     "Read JSON from $orderedkw_file again";
 is_deeply $ord_data, $exp, "$orderedkw_file should be updated for 0.1.1";
 
 $exp->{tag} = 'key value';
+unshift @{ $exp->{releases}{pair}{stable} } =>
+    {"version" => "0.1.1", "date" => "2010-10-29T22:44:42Z"};
+
 ok my $keyval_data = $api->read_json_from($keyvalkw_file),
     "Read JSON from $keyvalkw_file";
 is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.1 data";
 
 # And finally, update to 0.1.2.
 $params->{meta} = $meta_012;
+fcopy catfile(qw(t data pair-tag-updated2.json)),
+      catfile($api->mirror_root, qw(by tag pair.json));
+fcopy catfile(qw(t data ordered-tag-updated.json)),
+      catfile($api->mirror_root, qw(by tag), 'ordered pair.json');
+fcopy catfile(qw(t data kv-tag-updated.json)),
+      catfile($api->mirror_root, qw(by tag), 'key value.json');
 ok $indexer->update_tags($params), 'Update the tags to 0.1.2';
 
 # Make sure all tags are updated.
@@ -292,6 +304,9 @@ $exp->{tag} = 'pair';
 $exp->{releases}{pair}{stable} = [
     {version => '0.1.2', date => '2010-11-03T06:23:28Z'},
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
+];
+$exp->{releases}{pair}{testing} = [
+    {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
 ];
 $exp->{releases}{pgTAP} = $pgtap;
 

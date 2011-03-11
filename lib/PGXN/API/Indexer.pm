@@ -78,9 +78,21 @@ sub merge_distmeta {
     my $fn = $self->doc_root_file_for(meta => $meta);
     $api->write_json_to($fn, $meta);
 
-    # Now copy it to its by-dist home.
     $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );
-    fcopy $fn, $by_dist_file or die "Cannot copy $fn to $by_dist_file: $!\n";
+    if ($meta->{release_status} eq 'stable') {
+        # Copy it to its by-dist home.
+        fcopy $fn, $by_dist_file or die "Cannot copy $fn to $by_dist_file: $!\n";
+    } else {
+        # Determine latest stable release or fall back on testing, unstable.
+        for my $status (qw(stable testing unstable)) {
+            my $rels = $meta->{releases}{$status} or next;
+            $meta->{version} = $rels->[0]{version};
+            last;
+        }
+
+        # Now rite out the by-dist version.
+        $api->write_json_to($by_dist_file => $meta);
+    }
 
     # Now update all older versions with the complete list of releases.
     for my $releases ( values %{ $meta->{releases} }) {
@@ -104,29 +116,18 @@ sub update_user {
     my $meta = $p->{meta};
     my $api = PGXN::API->instance;
 
+    say "  Updating user $meta->{user}" if $self->verbose;
+
     # Read in user metadata from the mirror.
     my $mir_file = $self->mirror_file_for('by-user' => $meta);
     my $mir_meta = $api->read_json_from($mir_file);
 
-    # Read in user metadata from the doc root.
-    my $doc_file = $self->doc_root_file_for('by-user' => $meta);
-    my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
-
-    say "  Updating user $meta->{user}" if $self->verbose;
-
-    # Update *this* release with version info, abstract, and date.
-    $doc_meta->{releases}{$meta->{name}} = {
-        %{ $meta->{releases} },
-        %{ $doc_meta->{releases}{$meta->{name}} },
-        %{ $mir_meta->{releases}{$meta->{name}} },
-        abstract                       => $meta->{abstract},
-    };
-
-    # Copy the release metadata into the mirrored data and the core metadata.
-    $mir_meta->{releases}  = $doc_meta->{releases};
-    $meta->{releases_plus} = $doc_meta->{releases}{$meta->{name}};
+    # Set the abstract to this version. XXX Check it's the latest?
+    my $rels = $mir_meta->{releases}{$meta->{name}};
+    $rels->{abstract} = $meta->{abstract};
 
     # Now write out the file again and go home.
+    my $doc_file = $self->doc_root_file_for('by-user' => $meta);
     $api->write_json_to($doc_file => $mir_meta);
     return $self;
 }
@@ -140,18 +141,18 @@ sub update_tags {
     my $tags = $meta->{tags} or return $self;
 
     for my $tag (@{ $tags }) {
-        # Read in tag metadata from the doc root.
-        my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
         say "    $tag" if $self->verbose > 1;
-        my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : do {
-            # Fall back on the mirror file.
-            my $mir_file = $self->mirror_file_for('by-tag' => $meta, tag => $tag);
-            $api->read_json_from($mir_file);
-        };
+        # Read in tag metadata from the mirror.
+        my $mir_file = $self->mirror_file_for('by-tag' => $meta, tag => $tag);
+        my $mir_meta = $api->read_json_from($mir_file);
 
-        # Copy the release metadata into the doc data and write it back out.
-        $doc_meta->{releases}{$meta->{name}} = $meta->{releases_plus};
-        $api->write_json_to($doc_file => $doc_meta);
+        # Set the abstract to this version. XXX Check it's the latest?
+        my $rels = $mir_meta->{releases}{$meta->{name}};
+        $rels->{abstract} = $meta->{abstract};
+
+        # Write out the data to the doc root.
+        my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
+        $api->write_json_to($doc_file => $mir_meta);
     }
     return $self;
 }
@@ -188,7 +189,7 @@ sub update_extensions {
 
         # Copy the version info from the doc to the mirror and add the date.
         $doc_meta->{versions} ||= {};
-         my $version   = $data->{version};
+        my $version   = $data->{version};
         my $mir_dists = $mir_meta->{versions}{$version};
         my $doc_dists = $doc_meta->{versions}{$version} ||= [];
 

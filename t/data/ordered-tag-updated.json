@@ -1,0 +1,14 @@
+{
+   "tag": "ordered pair",
+   "releases": {
+      "pair": {
+         "stable": [
+            {"version": "0.1.2", "date": "2010-11-03T06:23:28Z"},
+            {"version": "0.1.0", "date": "2010-10-19T03:59:54Z"}
+         ],
+         "testing": [
+            {"version": "0.1.1", "date": "2010-10-29T22:44:42Z"}
+         ]
+      }
+   }
+}
