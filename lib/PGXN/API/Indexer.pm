@@ -17,11 +17,12 @@ sub update_mirror_meta {
     my $api  = PGXN::API->instance;
     say "Updating mirror metadata" if $self->verbose;
 
-    # Copy index.json.
-    # XXX Will likely modify to add doc and directory URI templates.
+    # Augment and write index.json.
     my $src = catfile $api->mirror_root, 'index.json';
     my $dst = catfile $api->doc_root, 'index.json';
-    fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
+    my $tmpl = $api->read_json_from($src);
+    $tmpl->{source} = "/src/{dist}-{version}/";
+    $api->write_json_to($dst, $tmpl);
 
     # Copy meta.
     $src = catdir $api->mirror_root, 'meta';

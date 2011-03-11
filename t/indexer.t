@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 97;
+use Test::More tests => 98;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -433,6 +433,12 @@ file_not_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json shou
 ok $indexer->update_mirror_meta, 'Update from the mirror';
 file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
 file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
+
+# Make sure it has all the templates we need.
+my $tmpl = $api->read_json_from(catfile qw(t root index.json));
+$tmpl->{source} = "/src/{dist}-{version}/";
+is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
+    'index.json should have additional templates';
 
 # Do it again, just for good measure.
 ok $indexer->update_mirror_meta, 'Update from the mirror';
