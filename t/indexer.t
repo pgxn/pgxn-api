@@ -102,7 +102,7 @@ files_eq_or_diff $dist_file, $by_dist,
 is_deeply $meta->{releases},
     { stable => [{version => '0.1.0', date => '2010-10-19T03:59:54Z'}] },
     'Meta should now have release info';
-is_deeply $meta->{special_files}, [qw(META.json README.md Makefile)],
+is_deeply $meta->{special_files}, [qw(README.md META.json Makefile)],
     'And it should have special files';
 
 # So have a look at the contents.
@@ -137,7 +137,7 @@ is_deeply $meta_011->{releases}, { stable => [
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'}
 ] }, 'We should have the release data';
 is_deeply $meta_011->{special_files},
-    [qw(META.json README.md Changes Makefile)],
+    [qw(Changes README.md META.json Makefile)],
     'And it should have special files';
 
 ok $dist_meta = $api->read_json_from($dist_011_file),

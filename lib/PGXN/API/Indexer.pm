@@ -251,10 +251,10 @@ sub _source_files {
     my $prefix  = quotemeta "$p->{meta}{name}-$p->{meta}{version}";
     my @files;
     for my $regex (
-        qr{META[.]json},
-        qr{README(?:[.][^.]+)?}i,
         qr{Change(?:s|Log)(?:[.][^.]+)?}i,
+        qr{README(?:[.][^.]+)?}i,
         qr{LICENSE(?:[.][^.]+)?}i,
+        qr{META[.]json},
         qr{Makefile},
         qr{MANIFEST},
         qr{\Q$p->{meta}{name}\E[.]control},
