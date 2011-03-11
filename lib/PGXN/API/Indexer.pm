@@ -183,12 +183,13 @@ sub update_extensions {
         # Add the abstract to the mirror data.
         my $status = $meta->{release_status};
         $mir_meta->{$status}{abstract} = $data->{abstract};
+
+        # Copy the other release status data from the doc data.
         $mir_meta->{$_} = $doc_meta->{$_} for grep {
             $doc_meta->{$_} && $_ ne $status
         } qw(stable testing unstable);
 
         # Copy the version info from the doc to the mirror and add the date.
-        $doc_meta->{versions} ||= {};
         my $version   = $data->{version};
         my $mir_dists = $mir_meta->{versions}{$version};
         my $doc_dists = $doc_meta->{versions}{$version} ||= [];
@@ -211,9 +212,8 @@ sub update_extensions {
             if ($dist->{dist} eq $meta->{name}
                 && $dist->{version} eq $meta->{version}
             ) {
-                # We got it. Add the releae date and copy it to the mirror data.
+                # Got it. Add the release date
                 $dist->{date} = $meta->{date};
-                last;
             }
         }
 
