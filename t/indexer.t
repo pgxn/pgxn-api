@@ -436,7 +436,7 @@ file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should n
 
 # Make sure it has all the templates we need.
 my $tmpl = $api->read_json_from(catfile qw(t root index.json));
-$tmpl->{source} = "/src/{dist}-{version}/";
+$tmpl->{source} = "/src/{dist}/{dist}-{version}/";
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 

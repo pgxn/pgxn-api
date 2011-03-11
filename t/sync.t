@@ -227,11 +227,11 @@ my @files = (qw(
 );
 
 my $src_dir = PGXN::API->instance->source_dir;
-my $base = catdir $src_dir, 'pair-0.1.1';
+my $base = catdir $src_dir, 'pair', 'pair-0.1.1';
 file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
 
 # Unzip it.
-ok my $zip = $sync->unzip($pgz), "Unzip $pgz";
+ok my $zip = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 isa_ok $zip, 'Archive::Zip';
 file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 

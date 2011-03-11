@@ -21,7 +21,7 @@ sub update_mirror_meta {
     my $src = catfile $api->mirror_root, 'index.json';
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
-    $tmpl->{source} = "/src/{dist}-{version}/";
+    $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
     $api->write_json_to($dst, $tmpl);
 
     # Copy meta.

@@ -8,6 +8,7 @@ use PGXN::API::Indexer;
 use Digest::SHA1;
 use List::Util qw(first);
 use File::Spec::Functions qw(catfile path rel2abs tmpdir);
+use File::Path qw(make_path);
 use namespace::autoclean;
 use Cwd;
 use Archive::Zip qw(:ERROR_CODES);
@@ -110,7 +111,7 @@ sub validate_distribution {
     }
 
     # Unpack the distribution.
-    my $zip = $self->unzip($dist) or return;
+    my $zip = $self->unzip($dist, $meta) or return;
     return { meta => $meta, zip => $zip };
 }
 
@@ -136,7 +137,7 @@ sub digest_for {
 my $CWD = cwd;
 sub unzip {
     say '  Extracting ', $_[1] if $_[0]->verbose;
-    my ($self, $dist) = shift->_rel_to_mirror(@_);
+    my ($self, $dist, $meta) = shift->_rel_to_mirror(@_);
 
     my $zip = Archive::Zip->new;
     if ($zip->read(rel2abs $dist) != AZ_OK) {
@@ -146,6 +147,8 @@ sub unzip {
 
     my $dir = PGXN::API->instance->source_dir;
     chdir $dir or die "Cannot cd to $dir: $!\n";
+    make_path $meta->{name} unless -e $meta->{name} && -d _;
+    chdir $meta->{name};
     my $ret = $zip->extractTree;
     chdir $CWD;
 
@@ -159,7 +162,7 @@ sub unzip {
 }
 
 sub _rel_to_mirror {
-    return shift, catfile +PGXN::API->instance->mirror_root, shift;
+    return shift, catfile(+PGXN::API->instance->mirror_root, shift), @_;
 }
 
 1;
