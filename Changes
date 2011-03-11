@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.4.1
+
 0.4.0   2011-03-11T23:23:12
       - Added the "special_files" key to the distribution metadata file. It
         includes paths to `README`, `META.json`, `Changes`, `Makefile`, and
