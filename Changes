@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.4.2
+
 0.4.1   2011-03-11T23:42:38
       - Fixed a bug introduced in 0.4.0 where the /by/user and /by/tag files
         were overwriting release data from other distributions, thereby
