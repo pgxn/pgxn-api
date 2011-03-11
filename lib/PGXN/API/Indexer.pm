@@ -113,17 +113,36 @@ sub merge_distmeta {
 
 sub update_user {
     my ($self, $p) = @_;
+    say "  Updating user $p->{meta}{user}" if $self->verbose;
+    $self->_update_releases('by-user' => $p->{meta});
+    return $self;
+}
+
+sub update_tags {
+    my ($self, $p) = @_;
     my $meta = $p->{meta};
+    say "  Updating $meta->{name}-$meta->{version} tags" if $self->verbose;
+
+    my $tags = $meta->{tags} or return $self;
+
+    for my $tag (@{ $tags }) {
+        say "    $tag" if $self->verbose > 1;
+        $self->_update_releases('by-tag' => $meta, tag => $tag);
+    }
+    return $self;
+}
+
+sub _update_releases {
+    my $self = shift;
+    my $meta = $_[1];
     my $api = PGXN::API->instance;
 
-    say "  Updating user $meta->{user}" if $self->verbose;
-
-    # Read in user metadata from the mirror.
-    my $mir_file = $self->mirror_file_for('by-user' => $meta);
+    # Read in metadata from the mirror.
+    my $mir_file = $self->mirror_file_for(@_);
     my $mir_meta = $api->read_json_from($mir_file);
 
-    # Read in user metadata from the doc root.
-    my $doc_file = $self->doc_root_file_for('by-user' => $meta);
+    # Read in metadata from the doc root.
+    my $doc_file = $self->doc_root_file_for(@_);
     my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
 
     # Update with latest release info and abstract.
@@ -131,39 +150,8 @@ sub update_user {
         = $mir_meta->{releases}{$meta->{name}};
     $rels->{abstract} = $meta->{abstract};
 
-    # Now write out the file again and go home.
+    # Write out the data to the doc root.
     $api->write_json_to($doc_file => $doc_meta);
-    return $self;
-}
-
-sub update_tags {
-    my ($self, $p) = @_;
-    my $meta = $p->{meta};
-    my $api = PGXN::API->instance;
-    say "  Updating $meta->{name}-$meta->{version} tags" if $self->verbose;
-
-    my $tags = $meta->{tags} or return $self;
-
-    for my $tag (@{ $tags }) {
-        say "    $tag" if $self->verbose > 1;
-
-        # Read in tag metadata from the mirror.
-        my $mir_file = $self->mirror_file_for('by-tag' => $meta, tag => $tag);
-        my $mir_meta = $api->read_json_from($mir_file);
-
-        # Read in tag metadata from the doc root.
-        my $doc_file = $self->doc_root_file_for('by-tag' => $meta, tag => $tag);
-        my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
-
-        # Update with latest release info and abstract.
-        my $rels = $doc_meta->{releases}{$meta->{name}}
-            = $mir_meta->{releases}{$meta->{name}};
-        $rels->{abstract} = $meta->{abstract};
-
-        # Write out the data to the doc root.
-        $api->write_json_to($doc_file => $doc_meta);
-    }
-    return $self;
 }
 
 sub update_extensions {
