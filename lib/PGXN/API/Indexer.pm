@@ -7,6 +7,7 @@ use PGXN::API;
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy dircopy);
+use File::Basename;
 use namespace::autoclean;
 
 has verbose => (is => 'rw', isa => 'Int', default => 0);
@@ -31,19 +32,20 @@ sub update_mirror_meta {
 }
 
 sub add_distribution {
-    my ($self, $meta) = @_;
+    my ($self, $params) = @_;
 
-    $self->copy_files($meta)        or return;
-    $self->merge_distmeta($meta)    or return;
-    $self->update_user($meta)       or return;
-    $self->update_tags($meta)       or return;
-    $self->update_extensions($meta) or return;
+    $self->copy_files($params)        or return;
+    $self->merge_distmeta($params)    or return;
+    $self->update_user($params)       or return;
+    $self->update_tags($params)       or return;
+    $self->update_extensions($params) or return;
 
     return $self;
 }
 
 sub copy_files {
-    my ($self, $meta) = @_;
+    my ($self, $p) = @_;
+    my $meta = $p->{meta};
     say "  Copying $meta->{name}-$meta->{version} files" if $self->verbose;
 
     # Need to copy the README, zip file, and dist meta file.
@@ -58,7 +60,8 @@ sub copy_files {
 }
 
 sub merge_distmeta {
-    my ($self, $meta) = @_;
+    my ($self, $p) = @_;
+    my $meta = $p->{meta};
     say "  Merging $meta->{name}-$meta->{version} META.json" if $self->verbose;
 
     # Merge the list of versions into the meta file.
@@ -66,6 +69,9 @@ sub merge_distmeta {
     my $by_dist_file = $self->mirror_file_for('by-dist' => $meta);
     my $by_dist_meta = $api->read_json_from($by_dist_file);
     $meta->{releases} = $by_dist_meta->{releases};
+
+    # Add a list of special files.
+    $meta->{special_files} = $self->_source_files($p);
 
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
@@ -93,7 +99,8 @@ sub merge_distmeta {
 }
 
 sub update_user {
-    my ($self, $meta) = @_;
+    my ($self, $p) = @_;
+    my $meta = $p->{meta};
     my $api = PGXN::API->instance;
 
     # Read in user metadata from the mirror.
@@ -124,7 +131,8 @@ sub update_user {
 }
 
 sub update_tags {
-    my ($self, $meta) = @_;
+    my ($self, $p) = @_;
+    my $meta = $p->{meta};
     my $api = PGXN::API->instance;
     say "  Updating $meta->{name}-$meta->{version} tags" if $self->verbose;
 
@@ -148,7 +156,8 @@ sub update_tags {
 }
 
 sub update_extensions {
-    my ($self, $meta) = @_;
+    my ($self, $p) = @_;
+    my $meta = $p->{meta};
     my $api = PGXN::API->instance;
     say "  Updating $meta->{name}-$meta->{version} extensions"
         if $self->verbose;
@@ -233,6 +242,28 @@ sub _uri_for {
         user    => $meta->{user},
         @params,
     );
+}
+
+sub _source_files {
+    my ($self, $p) = @_;
+    my $zip = $p->{zip};
+    my $prefix  = quotemeta "$p->{meta}{name}-$p->{meta}{version}";
+    my @files;
+    for my $regex (
+        qr{META[.]json},
+        qr{README(?:[.][^.]+)?}i,
+        qr{Change(?:s|Log)(?:[.][^.]+)?}i,
+        qr{LICENSE(?:[.][^.]+)?}i,
+        qr{Makefile},
+        qr{MANIFEST},
+        qr{\Q$p->{meta}{name}\E[.]control},
+    ) {
+        my ($member) = $zip->membersMatching(qr{^$prefix/$regex$});
+        next unless $member;
+        (my $fn = $member->fileName) =~ s{^$prefix/}{};
+        push @files => $fn;
+    }
+    return \@files;
 }
 
 

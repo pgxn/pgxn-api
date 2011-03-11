@@ -2,16 +2,17 @@
 
 use strict;
 use warnings;
-use Test::More tests => 93;
+use Test::More tests => 97;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
-use File::Spec::Functions qw(catfile catdir);
+use File::Spec::Functions qw(catfile catdir rel2abs);
 use PGXN::API::Sync;
 use Test::File;
 use Test::Exception;
 use Test::File::Contents;
 use Test::MockModule;
+use Archive::Zip;
 use utf8;
 
 my $CLASS;
@@ -54,7 +55,8 @@ file_not_exists_ok(
 ) for qw(pgz readme);
 
 my $indexer = new_ok $CLASS;
-ok $indexer->copy_files($meta), 'Copy files';
+my $params  = { meta => $meta };
+ok $indexer->copy_files($params), 'Copy files';
 
 file_exists_ok(
     catfile($api->doc_root, qw(dist pair), "pair-0.1.0.pgz"),
@@ -69,7 +71,7 @@ file_not_exists_ok(
 $meta->{name} = 'nonexistent';
 my $src = catfile $api->mirror_root, qw(dist nonexistent nonexistent-0.1.0.pgz);
 my $dst = catfile $api->doc_root,    qw(dist nonexistent nonexistent-0.1.0.pgz);
-throws_ok { $indexer->copy_files($meta ) }
+throws_ok { $indexer->copy_files($params ) }
     qr{Cannot copy \E$src\Q to \E$dst\Q: No such file or directory},
     'Should get exception with file names for bad copy';
 $meta->{name} = 'pair';
@@ -79,10 +81,15 @@ $meta->{name} = 'pair';
 my $dist_file = catfile $api->doc_root, qw(dist pair pair-0.1.0.json);
 my $by_dist   = catfile $api->doc_root, qw(by dist pair.json);
 
+# Set up zip archive.
+my $zip       = Archive::Zip->new;
+$zip->read(rel2abs catfile qw(t root dist pair pair-0.1.0.pgz));
+$params->{zip} = $zip;
+
 file_not_exists_ok $dist_file, 'pair-0.1.0.json should not yet exist';
 file_not_exists_ok $by_dist,   'pair.json should not yet exist';
 
-ok $indexer->merge_distmeta($meta), 'Merge the distmeta';
+ok $indexer->merge_distmeta($params), 'Merge the distmeta';
 
 file_exists_ok $dist_file, 'pair-0.1.0.json should now exist';
 file_exists_ok $by_dist,   'pair.json should now exist';
@@ -91,35 +98,51 @@ file_exists_ok $by_dist,   'pair.json should now exist';
 files_eq_or_diff $dist_file, $by_dist,
     'pair-0.1.0.json and pair.json should be the same';
 
+# Our metadata should have new info.
+is_deeply $meta->{releases},
+    { stable => [{version => '0.1.0', date => '2010-10-19T03:59:54Z'}] },
+    'Meta should now have release info';
+is_deeply $meta->{special_files}, [qw(META.json README.md Makefile)],
+    'And it should have special files';
+
 # So have a look at the contents.
 ok my $dist_meta = $api->read_json_from($dist_file),
     'Read the merged distmeta';
-$meta->{releases} = { stable => [{version => '0.1.0', date => '2010-10-19T03:59:54Z'}] };
 is_deeply $dist_meta, $meta, 'And it should be the merged metadata';
 
 # Now update with 0.1.1. "Sync" the updated pair.json.
 fcopy catfile(qw(t data pair-updated.json)),
       catfile($api->mirror_root, qw(by dist pair.json));
 
+# Set up the 0.1.1 metadata and zip archive.
 my $meta_011 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair pair-0.1.1.json)
 );
+my $zip_011 = Archive::Zip->new;
+$zip_011->read(rel2abs catfile qw(t root dist pair pair-0.1.1.pgz));
+
 my $dist_011_file = catfile $api->doc_root, qw(dist pair pair-0.1.1.json);
 file_not_exists_ok $dist_011_file, 'pair-0.1.1.json should not yet exist';
-ok $indexer->merge_distmeta($meta_011), 'Merge the distmeta';
+$params->{meta} = $meta_011;
+$params->{zip} = $zip_011;
+ok $indexer->merge_distmeta($params), 'Merge the distmeta';
 file_exists_ok $dist_011_file, 'pair-0.1.1.json should now exist';
 
 files_eq_or_diff $dist_011_file, $by_dist,
     'pair-0.1.1.json and pair.json should be the same';
 
-ok $dist_meta = $api->read_json_from($dist_011_file),
-    'Read the 0.1.1 merged distmeta';
-# 0.1.2 has been released but we haven't copied it to the doc root yet.
-$meta_011->{releases} = { stable => [
+is_deeply $meta_011->{releases}, { stable => [
     {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
     {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'}
-] };
+] }, 'We should have the release data';
+is_deeply $meta_011->{special_files},
+    [qw(META.json README.md Changes Makefile)],
+    'And it should have special files';
+
+ok $dist_meta = $api->read_json_from($dist_011_file),
+    'Read the 0.1.1 merged distmeta';
+# 0.1.2 has been released but we haven't copied it to the doc root yet.
 is_deeply $dist_meta, $meta_011,
     'And it should be the merged with all version info';
 
@@ -138,7 +161,8 @@ is_deeply $dist_meta, $meta, 'It should be updated with all versions';
 # Now update the user metadata.
 my $user_file = catfile $doc_root, qw(by user theory.json);
 file_not_exists_ok $user_file, "$user_file should not yet exist";
-ok $indexer->update_user($meta), 'Update the user metadata';
+$params->{meta} = $meta;
+ok $indexer->update_user($params), 'Update the user metadata';
 file_exists_ok $user_file, "$user_file should now exist";
 
 # Now make sure that it has the updated release metadata.
@@ -157,7 +181,8 @@ is_deeply $doc_data, $mir_data,
 # Great, now update it.
 fcopy catfile(qw(t data theory-updated.json)),
       catfile($api->mirror_root, qw(by user theory.json));
-ok $indexer->update_user($meta_011),
+$params->{meta} = $meta_011;
+ok $indexer->update_user($params),
     'Update the user metadata for pair 0.1.1';
 $mir_data->{releases}{pair}{stable} = [
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
@@ -177,8 +202,9 @@ fcopy catfile(qw(t data theory-updated2.json)),
 my $meta_012 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair pair-0.1.2.json)
 );
-ok $indexer->merge_distmeta($meta_012), 'Merge the 0.1.2 distmeta';
-ok $indexer->update_user($meta_012),
+$params->{meta} = $meta_012;
+ok $indexer->merge_distmeta($params), 'Merge the 0.1.2 distmeta';
+ok $indexer->update_user($params),
     'Update the user metadata for pair 0.1.2';
 unshift @{ $mir_data->{releases}{pair}{stable} },
     {version => '0.1.2', date => '2010-11-03T06:23:28Z'};
@@ -195,7 +221,8 @@ my $keyvalkw_file = catfile $doc_root, qw(by tag), 'key value.json';
 file_not_exists_ok $pairkw_file, "$pairkw_file should not yet exist";
 file_not_exists_ok $orderedkw_file, "$orderedkw_file should not yet exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should not yet exist";
-ok $indexer->update_tags($meta), 'Update the tags';
+$params->{meta} = $meta;
+ok $indexer->update_tags($params), 'Update the tags';
 file_exists_ok $pairkw_file, "$pairkw_file should now exist";
 file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
@@ -226,7 +253,8 @@ ok my $ord_data = $api->read_json_from($orderedkw_file),
 is_deeply $ord_data, $exp, "$orderedkw_file should have the release data";
 
 # Now update with 0.1.1.
-ok $indexer->update_tags($meta_011), 'Update the tags to 0.1.1';
+$params->{meta} = $meta_011;
+ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
 file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 
 # Check the JSON data.
@@ -256,7 +284,8 @@ ok my $keyval_data = $api->read_json_from($keyvalkw_file),
 is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.1 data";
 
 # And finally, update to 0.1.2.
-ok $indexer->update_tags($meta_012), 'Update the tags to 0.1.2';
+$params->{meta} = $meta_012;
+ok $indexer->update_tags($params), 'Update the tags to 0.1.2';
 
 # Make sure all tags are updated.
 $exp->{tag} = 'pair';
@@ -285,7 +314,8 @@ is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.2 data";
 # Now update the extension metadata.
 my $ext_file = catfile $doc_root, qw(by extension pair.json);
 file_not_exists_ok $ext_file, "$ext_file should not yet exist";
-ok $indexer->update_extensions($meta), 'Update the extension metadata';
+$params->{meta} = $meta;
+ok $indexer->update_extensions($params), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
 
 # Now make sure that it has the updated release metadata.
@@ -315,7 +345,8 @@ is_deeply $doc_data, $exp,
 # Okay, update it with the testing release.
 fcopy catfile(qw(t data pair-ext-updated.json)),
       catfile($api->mirror_root, qw(by extension pair.json));
-ok $indexer->update_extensions($meta_011),
+$params->{meta} = $meta_011;
+ok $indexer->update_extensions($params),
     'Update the extension metadata to 0.1.1';
 
 $exp->{latest} = 'testing';
@@ -341,7 +372,7 @@ $meta_011->{version} = '0.3.0';
 
 fcopy catfile(qw(t data pair-ext-updated2.json)),
       catfile($api->mirror_root, qw(by extension pair.json));
-ok $indexer->update_extensions($meta_011),
+ok $indexer->update_extensions($params),
     'Add the extension to another distribution';
 
 ok $doc_data = $api->read_json_from($ext_file),
@@ -357,7 +388,8 @@ is_deeply $doc_data, $exp,
 # Great! Now update it to 0.1.2.
 fcopy catfile(qw(t data pair-ext-updated3.json)),
       catfile($api->mirror_root, qw(by extension pair.json));
-ok $indexer->update_extensions($meta_012),
+$params->{meta} = $meta_012;
+ok $indexer->update_extensions($params),
     'Update the extension to 0.1.2.';
 $exp->{latest} = 'stable';
 $exp->{stable}{version} = '0.1.2';
@@ -385,11 +417,12 @@ my @meths = qw(
 for my $meth (@meths) {
     $mock->mock($meth => sub {
         push @called => $meth;
-        is $_[1], $meta, "Meta should have been passed to $meth";
+        is $_[1], $params, "Params should have been passed to $meth";
     })
 }
 
-ok $indexer->add_distribution($meta), 'Call add_distribution()';
+$params->{meta} = $meta;
+ok $indexer->add_distribution($params), 'Call add_distribution()';
 is_deeply \@called, \@meths, 'The proper meths should have been called in order';
 $mock->unmock_all;
 

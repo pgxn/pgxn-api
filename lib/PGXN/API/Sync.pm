@@ -62,8 +62,8 @@ sub update_index {
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
         next if $line !~ $regex;
-        my $meta = $self->validate_distribution($1) or next;
-        $indexer->add_distribution($meta);
+        my $params = $self->validate_distribution($1) or next;
+        $indexer->add_distribution($params);
     }
     close $fh or die "Cannot close $log: $!\n";
     say 'Sync complete' if $self->verbose;
@@ -110,8 +110,8 @@ sub validate_distribution {
     }
 
     # Unpack the distribution.
-    $self->unzip($dist) or return;
-    return $meta;
+    my $zip = $self->unzip($dist) or return;
+    return { meta => $meta, zip => $zip };
 }
 
 sub dist_for {
@@ -155,7 +155,7 @@ sub unzip {
         return;
     }
 
-    return $self;
+    return $zip;
 }
 
 sub _rel_to_mirror {

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 49;
+use Test::More tests => 50;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
@@ -231,7 +231,8 @@ my $base = catdir $src_dir, 'pair-0.1.1';
 file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
 
 # Unzip it.
-ok $sync->unzip($pgz), "Unzip $pgz";
+ok my $zip = $sync->unzip($pgz), "Unzip $pgz";
+isa_ok $zip, 'Archive::Zip';
 file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 
 # Now try a brokenated zip file.
