@@ -230,29 +230,34 @@ sub parse_docs {
     my $zip  = $p->{zip};
     say "  Parsing $meta->{name}-$meta->{version} docs" if $self->verbose;
 
-    # Make sure we have a doc directory.
-    make_path dirname $self->doc_root_file_for(doc => $meta, doc => 'foo');
-
     my $parser = Text::Markup->new( default_encoding => 'UTF-8' );
     my $dir    = $self->doc_root_file_for(source => $meta);
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
 
     # Find all doc files and write them out.
-    # Have we got a README?
-    my ($readme) = $zip->membersMatching(
-        qr{^$prefix/README(?:[.][^.]+)?$}
-    );
-    if ($readme) {
-        (my $fn  = $readme->fileName) =~ s{^$prefix/}{};
-        my $src  = catfile $dir, $fn;
-        my $dst  = $self->doc_root_file_for(doc => $meta, doc => 'readme');
-        my $html = $parser->parse(file => $src);
+    my @docs;
+    for my $regex (
+        qr{README(?:[.][^.]+)?$}i,
+        qr{docs?/},
+    ) {
+        for my $member ($zip->membersMatching(qr{^$prefix/$regex})) {
+            next if $member->isDirectory;
+            (my $fn  = $member->fileName) =~ s{^$prefix/}{};
+            my $src  = catfile $dir, $fn;
+            my $html = $parser->parse(file => $src);
 
-        open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
-        print $fh $html;
-        close $fh or die "Cannot close $fn: $!\n";
+            (my $noext = $fn) =~ s{[.][^.]+$}{};
+            my $dst  = $self->doc_root_file_for(doc => $meta, doc => $noext);
+            make_path dirname $dst;
+
+            open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
+            print $fh $html;
+            close $fh or die "Cannot close $fn: $!\n";
+
+            push @docs => "$noext.html";
+        }
     }
-
+    return \@docs;
 }
 
 sub mirror_file_for {

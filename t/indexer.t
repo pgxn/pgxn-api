@@ -452,12 +452,18 @@ $params->{zip}  = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 
 my $doc_dir = catdir $doc_root, qw(dist pair pair-0.1.0);
 my $readme = catfile $doc_dir, 'readme.html';
+my $doc = catfile $doc_dir, 'doc', 'pair.html';
 file_not_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should not exist';
 file_not_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should not exist';
+file_not_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should not exist';
 
-ok $indexer->parse_docs($params), 'Parse docs';
+is_deeply $indexer->parse_docs($params), [
+    'README.html',
+    'doc/pair.html',
+], 'Should get array of docs from parsing';
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
+file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.
