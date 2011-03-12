@@ -47,7 +47,7 @@ L<URI::Template> objects.
 has uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
     my $self = shift;
     my $tmpl = $self->read_json_from(
-        catfile $self->mirror_root, 'index.json'
+        catfile $self->doc_root, 'index.json'
     );
     return { map { $_ => URI::Template->new($tmpl->{$_}) } keys %{ $tmpl } };
 });

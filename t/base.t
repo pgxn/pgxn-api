@@ -85,7 +85,7 @@ file_exists_ok $mirror_root, 'Mirror dir should now exist';
 ok -d $mirror_root, 'Mirror dir should be a directory';
 
 # Make sure the URI templates are created.
-fcopy catfile(qw(t root index.json)), $mirror_root;
+fcopy catfile(qw(t root index.json)), $doc_root;
 ok my $tmpl = $pgxn->uri_templates, 'Get URI templates';
 isa_ok $tmpl, 'HASH', 'Their storage';
 isa_ok $tmpl->{$_}, 'URI::Template', "Template $_" for keys %{ $tmpl };
