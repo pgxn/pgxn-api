@@ -9,6 +9,7 @@ use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy dircopy);
 use File::Basename;
 use Text::Markup;
+use XML::LibXML;
 use namespace::autoclean;
 
 has verbose => (is => 'rw', isa => 'Int', default => 0);
@@ -230,9 +231,15 @@ sub parse_docs {
     my $zip  = $p->{zip};
     say "  Parsing $meta->{name}-$meta->{version} docs" if $self->verbose;
 
-    my $parser = Text::Markup->new( default_encoding => 'UTF-8' );
+    my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
+    my $libxml = XML::LibXML->new(
+        recover    => 2,
+        no_network => 1,
+        no_blanks  => 1,
+        no_cdata   => 1,
+    );
 
     # Find all doc files and write them out.
     my %docs;
@@ -244,17 +251,25 @@ sub parse_docs {
             next if $member->isDirectory;
             (my $fn  = $member->fileName) =~ s{^$prefix/}{};
             my $src  = catfile $dir, $fn;
-            my $html = $parser->parse(file => $src);
+            my $doc  = $libxml->parse_html_string($markup->parse(file => $src), {
+                suppress_warnings => 1,
+                suppress_errors   => 1,
+                recover           => 2,
+            });
 
             (my $noext = $fn) =~ s{[.][^.]+$}{};
             my $dst  = $self->doc_root_file_for(doc => $meta, doc => $noext);
             make_path dirname $dst;
 
             open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
-            print $fh $html;
+            print $fh _clean_html($doc->findnodes('/html/body'));
             close $fh or die "Cannot close $fn: $!\n";
 
-            $docs{$noext} = 'title';
+            (my $file = $noext) =~ s{^doc/}{};
+            $docs{$noext} = $meta->{provides}{$file}{abstract}
+                || $doc->findvalue('/html/head/title')
+                || $doc->findvalue('//h1[1]')
+                || '';
         }
     }
     return \%docs;
@@ -302,6 +317,198 @@ sub _source_files {
         push @files => $fn;
     }
     return \@files;
+}
+
+# List of allowed elements and attributes.
+# http://www.w3schools.com/tags/default.asp
+# http://www.w3schools.com/html5/html5_reference.asp
+my %allowed = do {
+    my $attrs = { title => 1, dir => 1, lang => 1 };
+    map { $_ => $attrs } qw(
+        a
+        abbr
+        acronym
+        address
+        area
+        article
+        aside
+        audio
+        b
+        bdo
+        big
+        blockquote
+        br
+        canvas
+        caption
+        center
+        cite
+        code
+        col
+        colgroup
+        dd
+        del
+        details
+        dfn
+        dir
+        div
+        dl
+        dt
+        em
+        figcaption
+        figure
+        footer
+        h1
+        h2
+        h3
+        h4
+        h5
+        h6
+        header
+        hgroup
+        hr
+        i
+        img
+        ins
+        kbd
+        li
+        map
+        mark
+        meter
+        ol
+        output
+        p
+        pre
+        q
+        rp
+        rt
+        ruby
+        s
+        samp
+        section
+        small
+        source
+        span
+        strike
+        strong
+        sub
+        summary
+        sup
+        table
+        tbody
+        td
+        tfoot
+        th
+        thead
+        time
+        tr
+        tt
+        u
+        ul
+        var
+        video
+        wbr
+        xmp
+    );
+};
+
+# A few elements may retain other attributes.
+$allowed{a}        = { %{ $allowed{a} }, map { $_  => 1 } qw(href hreflang media rel target type) };
+$allowed{area}     = { %{ $allowed{area} }, map { $_  => 1 } qw(alt coords href hreflang media rel shape target tytpe) };
+$allowed{article}  = { %{ $allowed{article} }, cite  => 1, pubdate   => 1 };
+$allowed{audio}    = { %{ $allowed{audio} }, map { $_  => 1 } qw(src) };
+$allowed{canvas}   = { %{ $allowed{canvas} }, map { $_  => 1 } qw(height width) };
+$allowed{col}      = { %{ $allowed{col} }, map { $_  => 1 } qw(span align valign width) };
+$allowed{colgroup} = $allowed{col};
+$allowed{del}      = { %{ $allowed{del} },     cite  => 1, datetime  => 1 };
+$allowed{details}  = { %{ $allowed{details} }, open  => 1 };
+$allowed{img}      = { %{ $allowed{img} }, map { $_  => 1 } qw(alt src height ismap usemap width) };
+$allowed{ins}      = $allowed{del};
+$allowed{li}       = { %{ $allowed{li} }, value  => 1 };
+$allowed{map}      = { %{ $allowed{map} }, name  => 1 };
+$allowed{meter}    = { %{ $allowed{meter} }, map { $_  => 1 } qw(high low min max optimum value) };
+$allowed{source}   = { %{ $allowed{source} }, map { $_  => 1 } qw(media src type) };
+$allowed{ol}       = { %{ $allowed{ol} }, revese  => 1, start  => 1 };
+$allowed{q}        = { %{ $allowed{q} }, cite  => 1 };
+$allowed{section}  = $allowed{q};
+$allowed{table}    = { %{ $allowed{table} }, map { $_  => 1 } qw(sumary width) };
+$allowed{tbody}    = { %{ $allowed{tbody} }, map { $_  => 1 } qw(align valign) };
+$allowed{td}       = { %{ $allowed{td} }, map { $_  => 1 } qw(align colspan headers height nowrap rowspan scope valign width) };
+$allowed{tfoot}    = $allowed{tbody};
+$allowed{th}       = $allowed{td};
+$allowed{tfoot}    = $allowed{tbody};
+$allowed{tr}       = $allowed{tbody};
+$allowed{time}     = { %{ $allowed{time} }, datetime  => 1, pubdate => 1 };
+$allowed{video}    = { %{ $allowed{video} }, map { $_  => 1 } qw(audio height poster src width) };
+
+# We delete all other elements except for these, for which we keep text.
+my %keep_children = map { $_ => 1 } qw(
+    blink
+    center
+    font
+);
+
+sub _clean_html {
+    my $top = my $elem = shift;
+    while ($elem) {
+        if ($elem->nodeType == XML_ELEMENT_NODE) {
+            my $name = $elem->nodeName;
+            if ($name eq 'html') {
+                $top = $elem = $elem->lastChild || last;
+                next;
+            } elsif ($name eq 'body') {
+                $elem = $elem->firstChild || last;
+                next;
+            }
+
+            if (my $attrs = $allowed{$name}) {
+                # Keep only allowed attributes.
+                $elem->removeAttribute($_) for grep { !$attrs->{$_} }
+                    map { $_->nodeName } $elem->attributes;
+
+                # Descend into children.
+                if (my $next = $elem->firstChild) {
+                    $elem = $next;
+                    next;
+                }
+            } else {
+                # You are not wanted.
+                my $parent = $elem->parentNode;
+                if ($keep_children{$name}) {
+                    # Keep the children.
+                    $parent->insertAfter($_, $elem) for reverse $elem->childNodes;
+                }
+
+                # Take it out jump to the next sibling.
+                my $next = $elem;
+                NEXT: {
+                    if (my $sib = $next->nextSibling) {
+                        $next = $sib;
+                        last;
+                    }
+
+                    # No sibling, try parent's sibling
+                    $next = $next->parentNode;
+                    redo if $next && $next ne $top;
+                }
+                $parent->removeChild($elem);
+                $elem = $next;
+                next;
+            }
+        }
+
+        # Find the next node.
+        NEXT: {
+            if (my $sib = $elem->nextSibling) {
+                $elem = $sib;
+                last;
+            }
+
+            # No sibling, try parent's sibling
+            $elem = $elem->parentNode;
+            redo if $elem;
+        }
+    }
+    return join '' => map { $_->toString } $top->childNodes;
 }
 
 1;

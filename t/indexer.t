@@ -462,12 +462,21 @@ file_not_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should not exist';
 file_not_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should not exist';
 
 is_deeply $indexer->parse_docs($params), {
-    'README'   => 'title',
-    'doc/pair' => 'title',
+    'README'   => 'pair 0.1.0',
+    'doc/pair' => 'A key/value pair data type',
 }, 'Should get array of docs from parsing';
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
+file_contents_like $readme, qr{\Q<h1>pair 0.1.0</h1>}, 'README should have HTML';
+file_contents_unlike $readme, qr{<html}i, 'README should have no html element';
+file_contents_unlike $readme, qr{<body}i, 'README should have no body element';
+file_contents_like $doc, qr{\Q<pre>pair 0.1.0}, 'Doc should have preformatted HTML';
+file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
+file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
+
+##############################################################################
+# Test HTML cleaning.
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.

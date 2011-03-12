@@ -44,6 +44,7 @@ $class->new(
         'Plack::Builder'               => 0,
         'Text::Markup'                 => '0.11',
         'URI::Template'                => '0.15',
+        'XML::LibXML'                  => '1.70',
     },
     recommends => {
         'Test::Pod'           => '1.41',
