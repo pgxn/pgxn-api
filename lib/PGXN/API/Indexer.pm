@@ -262,7 +262,7 @@ sub parse_docs {
             make_path dirname $dst;
 
             open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
-            print $fh _clean_html($doc->findnodes('/html/body'));
+            print $fh _clean_html_body($doc->findnodes('/html/body'));
             close $fh or die "Cannot close $fn: $!\n";
 
             (my $file = $noext) =~ s{^doc/}{};
@@ -447,15 +447,12 @@ my %keep_children = map { $_ => 1 } qw(
     font
 );
 
-sub _clean_html {
+sub _clean_html_body {
     my $top = my $elem = shift;
     while ($elem) {
         if ($elem->nodeType == XML_ELEMENT_NODE) {
             my $name = $elem->nodeName;
-            if ($name eq 'html') {
-                $top = $elem = $elem->lastChild || last;
-                next;
-            } elsif ($name eq 'body') {
+            if ($name eq 'body') {
                 $elem = $elem->firstChild || last;
                 next;
             }
@@ -478,7 +475,7 @@ sub _clean_html {
                     $parent->insertAfter($_, $elem) for reverse $elem->childNodes;
                 }
 
-                # Take it out jump to the next sibling.
+                # Take it out and jump to the next sibling.
                 my $next = $elem;
                 NEXT: {
                     if (my $sib = $next->nextSibling) {
