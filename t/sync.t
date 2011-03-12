@@ -8,7 +8,7 @@ use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
 use Test::Output;
 use File::Path qw(remove_tree);
-use File::Copy::Recursive qw(dircopy);
+use File::Copy::Recursive qw(dircopy fcopy);
 use Test::File;
 
 my $CLASS;
@@ -75,6 +75,7 @@ $mirror_root
 # Rsync our "mirror" to the mirror root.
 remove_tree $mirror_root;
 dircopy catdir(qw(t root)), $mirror_root;
+fcopy catfile(qw(t root index.json)), $pgxn->doc_root;
 
 ##############################################################################
 # Test the regular expression for finding distributions.
