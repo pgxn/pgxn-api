@@ -104,6 +104,8 @@ $meta->{name} = 'pair';
 # Now merge the distribution metadata files.
 my $dist_file = catfile $api->doc_root, qw(dist pair pair-0.1.0.json);
 my $by_dist   = catfile $api->doc_root, qw(by dist pair.json);
+my $mock      = Test::MockModule->new($CLASS);
+$mock->mock(parse_docs => 'docs_here');
 
 # Set up zip archive.
 my $zip       = Archive::Zip->new;
@@ -128,6 +130,7 @@ is_deeply $meta->{releases},
     'Meta should now have release info';
 is_deeply $meta->{special_files}, [qw(README.md META.json Makefile)],
     'And it should have special files';
+is $meta->{docs}, 'docs_here', 'Should have docs from parse_docs';
 
 # So have a look at the contents.
 ok my $dist_meta = $api->read_json_from($dist_file),
@@ -182,6 +185,7 @@ $meta->{releases} = { stable => [
     {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
 ] };
 is_deeply $dist_meta, $meta, 'It should be updated with all versions';
+$mock->unmock('parse_docs');
 
 ##############################################################################
 # Now update the user metadata.
@@ -457,17 +461,16 @@ file_not_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should not exist';
 file_not_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should not exist';
 file_not_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should not exist';
 
-is_deeply $indexer->parse_docs($params), [
-    'README.html',
-    'doc/pair.html',
-], 'Should get array of docs from parsing';
+is_deeply $indexer->parse_docs($params), {
+    'README'   => 'title',
+    'doc/pair' => 'title',
+}, 'Should get array of docs from parsing';
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.
-my $mock = Test::MockModule->new($CLASS);
 my @called;
 my @meths = qw(
     copy_files
@@ -475,7 +478,6 @@ my @meths = qw(
     update_user
     update_tags
     update_extensions
-    parse_docs
 );
 for my $meth (@meths) {
     $mock->mock($meth => sub {

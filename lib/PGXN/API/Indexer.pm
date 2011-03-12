@@ -42,7 +42,6 @@ sub add_distribution {
     $self->update_user($params)       or return;
     $self->update_tags($params)       or return;
     $self->update_extensions($params) or return;
-    $self->parse_docs($params)        or return;
 
     return $self;
 }
@@ -74,8 +73,9 @@ sub merge_distmeta {
     my $by_dist_meta = $api->read_json_from($by_dist_file);
     $meta->{releases} = $by_dist_meta->{releases};
 
-    # Add a list of special files.
+    # Add a list of special files and docs.
     $meta->{special_files} = $self->_source_files($p);
+    $meta->{docs}          = $self->parse_docs($p);
 
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
@@ -235,7 +235,7 @@ sub parse_docs {
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
 
     # Find all doc files and write them out.
-    my @docs;
+    my %docs;
     for my $regex (
         qr{README(?:[.][^.]+)?$}i,
         qr{docs?/},
@@ -254,10 +254,10 @@ sub parse_docs {
             print $fh $html;
             close $fh or die "Cannot close $fn: $!\n";
 
-            push @docs => "$noext.html";
+            $docs{$noext} = 'title';
         }
     }
-    return \@docs;
+    return \%docs;
 }
 
 sub mirror_file_for {
