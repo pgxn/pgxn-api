@@ -8,6 +8,7 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy dircopy);
 use File::Basename;
+use Text::Markup;
 use namespace::autoclean;
 
 has verbose => (is => 'rw', isa => 'Int', default => 0);
@@ -41,6 +42,7 @@ sub add_distribution {
     $self->update_user($params)       or return;
     $self->update_tags($params)       or return;
     $self->update_extensions($params) or return;
+    $self->parse_docs($params)        or return;
 
     return $self;
 }
@@ -220,6 +222,37 @@ sub update_extensions {
     }
 
     return $self;
+}
+
+sub parse_docs {
+    my ($self, $p) = @_;
+    my $meta = $p->{meta};
+    my $zip  = $p->{zip};
+    say "  Parsing $meta->{name}-$meta->{version} docs" if $self->verbose;
+
+    # Make sure we have a doc directory.
+    make_path dirname $self->doc_root_file_for(doc => $meta, doc => 'foo');
+
+    my $parser = Text::Markup->new( default_encoding => 'UTF-8' );
+    my $dir    = $self->doc_root_file_for(source => $meta);
+    my $prefix = quotemeta "$meta->{name}-$meta->{version}";
+
+    # Find all doc files and write them out.
+    # Have we got a README?
+    my ($readme) = $zip->membersMatching(
+        qr{^$prefix/README(?:[.][^.]+)?$}
+    );
+    if ($readme) {
+        (my $fn  = $readme->fileName) =~ s{^$prefix/}{};
+        my $src  = catfile $dir, $fn;
+        my $dst  = $self->doc_root_file_for(doc => $meta, doc => 'readme');
+        my $html = $parser->parse(file => $src);
+
+        open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
+        print $fh $html;
+        close $fh or die "Cannot close $fn: $!\n";
+    }
+
 }
 
 sub mirror_file_for {

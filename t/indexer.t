@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 98;
-#use Test::More 'no_plan';
+#use Test::More tests => 98;
+use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
@@ -42,19 +42,43 @@ END { remove_tree $doc_root }
 # "Sync" from a "mirror."
 dircopy catdir(qw(t root)), $api->mirror_root;
 
-# Read pair-0.1.0.' metadata file.
+##############################################################################
+# Test update_mirror_meta().
+my $indexer = new_ok $CLASS;
+file_not_exists_ok catfile($doc_root, qw(index.json)), 'index.json should not exist';
+file_not_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should not exist';
+ok $indexer->update_mirror_meta, 'Update from the mirror';
+file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
+file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
+
+# Make sure it has all the templates we need.
+my $tmpl = $api->read_json_from(catfile qw(t root index.json));
+$tmpl->{source} = "/src/{dist}/{dist}-{version}/";
+$tmpl->{doc} = "/dist/{dist}/{dist}-{version}/{doc}.html";
+is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
+    'index.json should have additional templates';
+
+# Make sure that PGXN::API is aware of them.
+is_deeply [sort keys %{ $api->uri_templates } ],
+    [qw( by-dist by-extension by-tag by-user dist doc meta readme source)],
+    'PGXN::API should see the additional templates';
+
+# Do it again, just for good measure.
+ok $indexer->update_mirror_meta, 'Update from the mirror';
+file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
+file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
+
+##############################################################################
+# Let's index pair-0.1.0.
 my $meta = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair pair-0.1.0.json)
 );
 
-##############################################################################
-# Let's index pair-0.1.0.
 file_not_exists_ok(
     catfile($api->doc_root, qw(dist pair), "pair-0.1.0.$_"),
     "pair-0.1.0.$_ should not yet exist"
 ) for qw(pgz readme);
 
-my $indexer = new_ok $CLASS;
 my $params  = { meta => $meta };
 ok $indexer->copy_files($params), 'Copy files';
 
@@ -419,6 +443,23 @@ ok $doc_data = $api->read_json_from($ext_file),
 is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
 
 ##############################################################################
+# Test parse_docs().
+my $sync = PGXN::API::Sync->new(source => 'rsync://localhost/pgxn');
+my $pgz = catfile qw(dist pair pair-0.1.0.pgz);
+
+$params->{meta} = $meta;
+$params->{zip}  = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
+
+my $doc_dir = catdir $doc_root, qw(dist pair pair-0.1.0);
+my $readme = catfile $doc_dir, 'readme.html';
+file_not_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should not exist';
+file_not_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should not exist';
+
+ok $indexer->parse_docs($params), 'Parse docs';
+file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
+file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
+
+##############################################################################
 # Make sure that add_document() calls all the necessary methods.
 my $mock = Test::MockModule->new($CLASS);
 my @called;
@@ -428,6 +469,7 @@ my @meths = qw(
     update_user
     update_tags
     update_extensions
+    parse_docs
 );
 for my $meth (@meths) {
     $mock->mock($meth => sub {
@@ -440,24 +482,3 @@ $params->{meta} = $meta;
 ok $indexer->add_distribution($params), 'Call add_distribution()';
 is_deeply \@called, \@meths, 'The proper meths should have been called in order';
 $mock->unmock_all;
-
-##############################################################################
-# Test update_mirror_meta().
-file_not_exists_ok catfile($doc_root, qw(index.json)), 'index.json should not exist';
-file_not_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should not exist';
-ok $indexer->update_mirror_meta, 'Update from the mirror';
-file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
-file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
-
-# Make sure it has all the templates we need.
-my $tmpl = $api->read_json_from(catfile qw(t root index.json));
-$tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-$tmpl->{doc} = "/dist/{dist}/{dist}-{version}/{doc}.html";
-is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
-    'index.json should have additional templates';
-
-# Do it again, just for good measure.
-ok $indexer->update_mirror_meta, 'Update from the mirror';
-file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
-file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
-
