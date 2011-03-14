@@ -468,7 +468,7 @@ is_deeply $indexer->parse_docs($params), {
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
-file_contents_like $readme, qr{\Q<h1>pair 0.1.0</h1>}, 'README should have HTML';
+file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>}, 'README should have HTML';
 file_contents_unlike $readme, qr{<html}i, 'README should have no html element';
 file_contents_unlike $readme, qr{<body}i, 'README should have no body element';
 file_contents_like $doc, qr{\Q<pre>pair 0.1.0}, 'Doc should have preformatted HTML';

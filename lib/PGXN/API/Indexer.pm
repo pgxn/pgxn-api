@@ -261,15 +261,19 @@ sub parse_docs {
             my $dst  = $self->doc_root_file_for(doc => $meta, doc => $noext);
             make_path dirname $dst;
 
+            # Determine the title before we mangle the HTML.
+            (my $file = $noext) =~ s{^doc/}{};
+            my $title = $meta->{provides}{$file}{abstract}
+                || $doc->findvalue('/html/head/title')
+                || $doc->findvalue('//h1[1]')
+                || '';
+
+            # Clean up the HTML and write it out.
             open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
             print $fh _clean_html_body($doc->findnodes('/html/body'));
             close $fh or die "Cannot close $fn: $!\n";
 
-            (my $file = $noext) =~ s{^doc/}{};
-            $docs{$noext} = $meta->{provides}{$file}{abstract}
-                || $doc->findvalue('/html/head/title')
-                || $doc->findvalue('//h1[1]')
-                || '';
+            $docs{$noext} = $title;
         }
     }
     return \%docs;
@@ -449,10 +453,33 @@ my %keep_children = map { $_ => 1 } qw(
 
 sub _clean_html_body {
     my $top = my $elem = shift;
+
+    # Create an element for the table of contents.
+    my $toc = XML::LibXML::Element->new('div');
+    $toc->setAttribute(id => 'pgxntoc');
+    $toc->appendText("\n    ");
+    my $contents = XML::LibXML::Element->new('h3');
+    $contents->appendText('Contents');
+    $toc->appendChild($contents);
+    $toc->appendText("\n    ");
+
+    my $topul = my $ul = XML::LibXML::Element->new('ul');
+    $ul->setAttribute(class => 'pgxntocroot');
+    $toc->addChild($ul);
+
+    my %gen_ids;
+    my $level = 1;
+
     while ($elem) {
         if ($elem->nodeType == XML_ELEMENT_NODE) {
             my $name = $elem->nodeName;
             if ($name eq 'body') {
+                # Remove all attributes and rewrite it as a div.
+                $elem->removeAttribute($_) for map {
+                    $_->nodeName
+                } $elem->attributes;
+                $elem->setNodeName('div');
+                $elem->setAttribute(id => 'pgxnbod');
                 $elem = $elem->firstChild || last;
                 next;
             }
@@ -461,6 +488,36 @@ sub _clean_html_body {
                 # Keep only allowed attributes.
                 $elem->removeAttribute($_) for grep { !$attrs->{$_} }
                     map { $_->nodeName } $elem->attributes;
+
+                if ($name =~ /^h([123])$/) {
+                    my $header = $1;
+                    # Create an ID and add it to the TOC.
+                    # http://www.w3schools.com/tags/att_standard_id.aps
+                    (my $id = $elem->textContent) =~ s{^([^a-zA-Z])}{L$1};
+                    $id =~ s{[^a-zA-Z0-9_:.-]+}{.}g;
+                    $id .= $gen_ids{$id}++ || '';
+                    $elem->setAttribute(id => $id);
+                    if ($header != $level) {
+                        while ($header < $level) {
+                            $ul->appendText("\n    ");
+                            $ul = $ul->parentNode;
+                            $level--;
+                        }
+                        while ($header > $level) {
+                            my $newul = XML::LibXML::Element->new('ul');
+                            $ul->addChild($newul);
+                            $ul = $newul;
+                            $level++;
+                        }
+                    }
+                    my $li = XML::LibXML::Element->new('li');
+                    my $a = XML::LibXML::Element->new('a');
+                    $a->setAttribute(href => "#$id");
+                    $a->appendText($elem->textContent);
+                    $li->addChild($a);
+                    $ul->appendText("\n    " . '  ' x $level);
+                    $ul->addChild($li);
+                }
 
                 # Descend into children.
                 if (my $next = $elem->firstChild) {
@@ -505,7 +562,19 @@ sub _clean_html_body {
             redo if $elem;
         }
     }
-    return join '' => map { $_->toString } $top->childNodes;
+
+    # Add the documentation to the overall document and stringify.
+    my $doc = XML::LibXML::Element->new('div');
+    $doc->setAttribute(id => 'pgxndoc');
+    $doc->appendText("\n  ");
+    $doc->addChild($toc);
+    $topul->appendText("\n    ");
+    $toc->appendText("\n  ");
+    $doc->appendText("\n  ");
+    $doc->addChild($top);
+    $top->appendText("");
+    $doc->appendText("\n");
+    return $doc->toString;
 }
 
 1;
