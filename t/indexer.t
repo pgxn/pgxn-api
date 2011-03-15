@@ -465,6 +465,9 @@ is_deeply $indexer->parse_docs($params), {
     'README'   => 'pair 0.1.0',
     'doc/pair' => 'A key/value pair data type',
 }, 'Should get array of docs from parsing';
+ok !exists $meta->{provides}{README},
+    'Should hot have autovivified README into provides';
+
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';

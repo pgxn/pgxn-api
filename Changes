@@ -3,6 +3,8 @@ Revision history for Perl extension PGXN::API
 0.5.2
       - HTML documents are now properly written out at UTF-8, instead of as
         raw bytes.
+      - The doc parser no longer autovivifies doc file names into the
+        "provides" has of the version metadata file.
 
 0.5.1   2011-03-15T21:44:07
       - The sync code now updates the mirror meta after `rsync`ing but before

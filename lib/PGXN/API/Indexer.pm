@@ -263,8 +263,11 @@ sub parse_docs {
 
             # Determine the title before we mangle the HTML.
             (my $file = $noext) =~ s{^doc/}{};
-            my $title = $meta->{provides}{$file}{abstract}
-                || $doc->findvalue('/html/head/title')
+            # Avoid autovivication.
+            my $title = $meta->{provides}{$file}
+                ? $meta->{provides}{$file}{abstract}
+                : undef;
+            $title  ||= $doc->findvalue('/html/head/title')
                 || $doc->findvalue('//h1[1]')
                 || '';
 
