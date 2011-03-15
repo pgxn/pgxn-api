@@ -491,14 +491,14 @@ sub _clean_html_body {
 
                 if ($name =~ /^h([123])$/) {
                     my $header = $1;
-                    # Create an ID and add it to the TOC.
+                    # Create an ID.
                     # http://www.w3schools.com/tags/att_standard_id.aps
                     (my $id = $elem->textContent) =~ s{^([^a-zA-Z])}{L$1};
                     $id =~ s{[^a-zA-Z0-9_:.-]+}{.}g;
                     $id .= $gen_ids{$id}++ || '';
                     $elem->setAttribute(id => $id);
                     if ($header != $level) {
-                        # Add and remove unrdered lists as needed.
+                        # Add and remove unordered lists as needed.
                         while ($header < $level) {
                             $ul->appendText("\n    " . '  ' x (2 * $level - 2));
                             my $li = $ul->parentNode;
@@ -517,6 +517,8 @@ sub _clean_html_body {
                             $level++;
                         }
                     }
+
+                    # Add the item to the TOC.
                     my $li = XML::LibXML::Element->new('li');
                     my $a = XML::LibXML::Element->new('a');
                     $a->setAttribute(href => "#$id");
