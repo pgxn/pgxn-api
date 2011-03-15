@@ -451,8 +451,8 @@ is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
 my $sync = PGXN::API::Sync->new(source => 'rsync://localhost/pgxn');
 my $pgz = catfile qw(dist pair pair-0.1.0.pgz);
 
-$params->{meta} = $meta;
-$params->{zip}  = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
+$params->{meta}   = $meta;
+ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 
 my $doc_dir = catdir $doc_root, qw(dist pair pair-0.1.0);
 my $readme = catfile $doc_dir, 'readme.html';
