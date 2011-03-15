@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.5.1
+0.5.1   2011-03-15T21:44:07
       - The sync code now updates the mirror meta after `rsync`ing but before
         doing anything else. It was fetching a template first, and this caused
         errors on the first sync because the `index.json` had not yet been
