@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.5.3
+
 0.5.2   2011-03-15T22:23:56
       - HTML documents are now properly written out at UTF-8, instead of as
         raw bytes.
