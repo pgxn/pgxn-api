@@ -4,6 +4,12 @@ Revision history for Perl extension PGXN::API
       - The URI templates are now read from the doc root rather than the
         mirror root, so that the API-specific templates stored there will be
         visible to the app.
+      - Added documentation parsing. Docs are read by Text::Markup and
+        converted to HTML. The HTML is cleaned up, unwanted stuff removed, and
+        a table of contents added. They are then written to a file represented
+        by the new "doc" URI template. They are also listed in the versioned
+        distribution metadata, suitable for for formatting into a URI via the
+        template. README files are included in this formatting treatment.
 
 0.4.1   2011-03-11T23:42:38
       - Fixed a bug introduced in 0.4.0 where the /by/user and /by/tag files
