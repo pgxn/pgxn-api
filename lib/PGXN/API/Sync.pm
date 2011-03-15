@@ -52,12 +52,13 @@ sub run_rsync {
 
 sub update_index {
     my $self    = shift;
-    my $regex   = $self->regex_for_uri_template('meta');
-    my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
-    my $log     = $self->log_file;
 
     # Update the mirror metadata.
+    my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
     $indexer->update_mirror_meta;
+
+    my $regex = $self->regex_for_uri_template('meta');
+    my $log   = $self->log_file;
 
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";

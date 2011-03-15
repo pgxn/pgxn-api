@@ -168,10 +168,18 @@ my $mock = Test::MockModule->new($CLASS);
 $mock->mock(validate_distribution => sub { push @found => $_[1]; $_[1] });
 @found = ();
 
+my $api_mock = Test::MockModule->new('PGXN::API');
+$api_mock->mock(uri_templates => sub {
+    fail 'Should not get URI templates before updating the mirror meta';
+});
+
 my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
 my @dists;
 $idx_mock->mock(add_distribution => sub { push @dists => $_[1] });
-$idx_mock->mock(update_mirror_meta => sub { pass 'Should update mirror meta' });
+$idx_mock->mock(update_mirror_meta => sub {
+    $api_mock->unmock_all;
+    pass 'Should update mirror meta';
+});
 
 ok $sync->update_index, 'Update the index';
 is_deeply \@found, [qw(
