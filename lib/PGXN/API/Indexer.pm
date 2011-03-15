@@ -344,7 +344,6 @@ my %allowed = do {
         br
         canvas
         caption
-        center
         cite
         code
         col
@@ -583,7 +582,7 @@ sub _clean_html_body {
     $doc->addChild($top);
     $top->appendText("");
     $doc->appendText("\n");
-    return $doc->toString;
+    return $doc->toString . "\n";
 }
 
 1;
