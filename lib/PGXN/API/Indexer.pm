@@ -269,7 +269,7 @@ sub parse_docs {
                 || '';
 
             # Clean up the HTML and write it out.
-            open my $fh, '>:raw', $dst or die "Cannot open $dst: $!\n";
+            open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
             print $fh _clean_html_body($doc->findnodes('/html/body'));
             close $fh or die "Cannot close $fn: $!\n";
 
