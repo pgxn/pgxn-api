@@ -28,6 +28,8 @@ for my $in (glob catfile qw(t htmlin *)) {
     # my $html = PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body'));
     # open my $fh, '>:raw', 'tmp.html';
     # print $fh $html;
+    # last if $in =~ /head/; next;
+    # diag PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')) if $in =~ /head/; next;
     file_contents_eq_or_diff(
         catfile(qw(t htmlout), basename $in),
         PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')),

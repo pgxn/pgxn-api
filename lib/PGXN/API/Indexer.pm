@@ -498,14 +498,21 @@ sub _clean_html_body {
                     $id .= $gen_ids{$id}++ || '';
                     $elem->setAttribute(id => $id);
                     if ($header != $level) {
+                        # Add and remove unrdered lists as needed.
                         while ($header < $level) {
-                            $ul->appendText("\n    ");
-                            $ul = $ul->parentNode;
+                            $ul->appendText("\n    " . '  ' x (2 * $level - 2));
+                            my $li = $ul->parentNode;
+                            $li->appendText("\n    " . '  ' x (2 * $level - 3));
+                            $ul = $li->parentNode;
                             $level--;
                         }
                         while ($header > $level) {
                             my $newul = XML::LibXML::Element->new('ul');
-                            $ul->addChild($newul);
+                            my $li = $ul->find('./li[last()]')->shift || do {
+                                XML::LibXML::Element->new('li');
+                            };
+                            $li->appendText("\n    " . '  ' x (2 * $level));
+                            $li->addChild($newul);
                             $ul = $newul;
                             $level++;
                         }
@@ -515,7 +522,7 @@ sub _clean_html_body {
                     $a->setAttribute(href => "#$id");
                     $a->appendText($elem->textContent);
                     $li->addChild($a);
-                    $ul->appendText("\n    " . '  ' x $level);
+                    $ul->appendText("\n    " . '  ' x (2 * $level - 1));
                     $ul->addChild($li);
                 }
 
