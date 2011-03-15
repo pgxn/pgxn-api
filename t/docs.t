@@ -2,8 +2,7 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 98;
-use Test::More 'no_plan';
+use Test::More 0.88;
 use PGXN::API::Indexer;
 use Test::File::Contents;
 use File::Basename;
@@ -19,7 +18,7 @@ my $libxml = XML::LibXML->new(
 );
 
 for my $in (glob catfile qw(t htmlin *)) {
-    my $doc  = $libxml->parse_html_file($in, {
+    my $doc = $libxml->parse_html_file($in, {
         suppress_warnings => 1,
         suppress_errors   => 1,
         recover           => 2,
@@ -37,4 +36,6 @@ for my $in (glob catfile qw(t htmlin *)) {
     );
 
 }
+
+done_testing;
 
