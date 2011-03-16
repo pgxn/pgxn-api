@@ -24,7 +24,7 @@ sub update_mirror_meta {
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{[.]json$}{/{doc}.html};
+    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{[.]json$}{/{+path}.html};
     $api->write_json_to($dst, $tmpl);
 
     # Copy meta.
@@ -258,7 +258,9 @@ sub parse_docs {
             });
 
             (my $noext = $fn) =~ s{[.][^.]+$}{};
-            my $dst  = $self->doc_root_file_for(doc => $meta, doc => $noext);
+            # Nasty hack until we get + operator in URI Template v4.
+            local $URI::Escape::escapes{'/'} = '/';
+            my $dst  = $self->doc_root_file_for(doc => $meta, '+path' => $noext);
             make_path dirname $dst;
 
             # Determine the title before we mangle the HTML.
@@ -267,7 +269,7 @@ sub parse_docs {
             my $title = $meta->{provides}{$file}
                 ? $meta->{provides}{$file}{abstract}
                 : undef;
-            $title  ||= $doc->findvalue('/html/head/title')
+            $title ||= $doc->findvalue('/html/head/title')
                 || $doc->findvalue('//h1[1]')
                 || '';
 
