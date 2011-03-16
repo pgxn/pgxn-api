@@ -258,9 +258,13 @@ sub parse_docs {
             });
 
             (my $noext = $fn) =~ s{[.][^.]+$}{};
-            # Nasty hack until we get + operator in URI Template v4.
+            # XXX Nasty hack until we get + operator in URI Template v4.
             local $URI::Escape::escapes{'/'} = '/';
-            my $dst  = $self->doc_root_file_for(doc => $meta, '+path' => $noext);
+            my $dst  = $self->doc_root_file_for(
+                doc     => $meta,
+                path    => $noext,
+                '+path' => $noext, # XXX Part of above-mentioned hack.
+            );
             make_path dirname $dst;
 
             # Determine the title before we mangle the HTML.
