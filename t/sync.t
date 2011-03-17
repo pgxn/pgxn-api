@@ -91,13 +91,12 @@ my @found;
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
-
 is_deeply \@found, [qw(
-    dist/pair/pair-0.1.0.pgz
-    dist/pair/pair-0.1.1.pgz
-    dist/pg_french_datatypes/pg_french_datatypes-0.1.0.pgz
-    dist/pg_french_datatypes/pg_french_datatypes-0.1.1.pgz
-    dist/tinyint/tinyint-0.1.0.pgz
+    dist/pair/0.1.0/pair-0.1.0.pgz
+    dist/pair/0.1.1/pair-0.1.1.pgz
+    dist/pg_french_datatypes/0.1.0/pg_french_datatypes-0.1.0.pgz
+    dist/pg_french_datatypes/0.1.1/pg_french_datatypes-0.1.1.pgz
+    dist/tinyint/0.1.0/tinyint-0.1.0.pgz
 )], 'It should recognize the distribution files.';
 
 # Test the meta template regex.
@@ -109,11 +108,11 @@ for (@rsync_out) {
 }
 
 is_deeply \@found, [qw(
-    dist/pair/pair-0.1.0.json
-    dist/pair/pair-0.1.1.json
-    dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
-    dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
-    dist/tinyint/tinyint-0.1.0.json
+    dist/pair/0.1.0/META.json
+    dist/pair/0.1.1/META.json
+    dist/pg_french_datatypes/0.1.0/META.json
+    dist/pg_french_datatypes/0.1.1/META.json
+    dist/tinyint/0.1.0/META.json
 )], 'It should recognize the meta files.';
 
 # Test the user template regex.
@@ -183,17 +182,17 @@ $idx_mock->mock(update_mirror_meta => sub {
 
 ok $sync->update_index, 'Update the index';
 is_deeply \@found, [qw(
-    dist/pair/pair-0.1.0.json
-    dist/pair/pair-0.1.1.json
-    dist/pg_french_datatypes/pg_french_datatypes-0.1.0.json
-    dist/pg_french_datatypes/pg_french_datatypes-0.1.1.json
-    dist/tinyint/tinyint-0.1.0.json
+    dist/pair/0.1.0/META.json
+    dist/pair/0.1.1/META.json
+    dist/pg_french_datatypes/0.1.0/META.json
+    dist/pg_french_datatypes/0.1.1/META.json
+    dist/tinyint/0.1.0/META.json
 )], 'It should have processed the meta files';
 is_deeply \@dists, \@found, 'And it should have passed them to the indexer';
 
 ##############################################################################
 # digest_for()
-my $pgz = catfile qw(dist pair pair-0.1.1.pgz);
+my $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.pgz);
 is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
     'Should get expected digest from digest_for()';
 
@@ -201,7 +200,7 @@ is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
 # Test validate_distribution().
 $mock->unmock('validate_distribution');
 
-my $json = catfile qw(dist pair pair-0.1.1.json);
+my $json = catfile qw(dist pair 0.1.1 META.json);
 $mock->mock(unzip => sub {
     is $_[1], $pgz, "unzip should be passed $pgz";
 });
@@ -212,8 +211,8 @@ CHECKSUM: {
     $mock->mock(unzip => sub {
         fail 'unzip should not be called when checksum fails'
     });
-    my $json = catfile qw( dist pair pair-0.1.0.json);
-    my $pgz  = catfile qw( dist pair pair-0.1.0.json);
+    my $json = catfile qw( dist pair/0.1.0/META.json);
+    my $pgz  = catfile qw( dist pair/0.1.0/META.json);
     my $pgzp = catfile $pgxn->mirror_root, $pgz;
     stderr_is { $sync->validate_distribution($json ) }
         "Checksum verification failed for $pgzp\n",

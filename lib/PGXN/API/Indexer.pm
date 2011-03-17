@@ -24,7 +24,7 @@ sub update_mirror_meta {
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{[.]json$}{/{+path}.html};
+    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+path}.html};
     $api->write_json_to($dst, $tmpl);
 
     # Copy meta.
@@ -58,6 +58,7 @@ sub copy_files {
         my $dst = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
         say "    $meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
+        make_path dirname $dst;
         fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
     }
     return $self;
@@ -80,6 +81,7 @@ sub merge_distmeta {
 
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
+    make_path dirname $fn;
     $api->write_json_to($fn, $meta);
 
     $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );

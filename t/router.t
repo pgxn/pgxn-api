@@ -33,7 +33,7 @@ test_psgi +PGXN::API::Router->app => sub {
 # Try a subdirectory JSON file.
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = '/dist/pair/pair-0.1.1.json';
+    my $uri = '/dist/pair/0.1.1/META.json';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'application/json', 'Should be application/json';
@@ -42,7 +42,7 @@ test_psgi +PGXN::API::Router->app => sub {
 # Try a readme file.
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = '/dist/pair/pair-0.1.1.readme';
+    my $uri = '/dist/pair/0.1.1/README.txt';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'text/plain', 'Should be text/plain';
@@ -52,7 +52,7 @@ test_psgi +PGXN::API::Router->app => sub {
 # Try a distribution file.
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = '/dist/pair/pair-0.1.1.pgz';
+    my $uri = '/dist/pair/0.1.1/pair-0.1.1.pgz';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'application/zip', 'Should be application/zip';
@@ -81,14 +81,14 @@ test_psgi +PGXN::API::Router->app => sub {
 
 # Create a src directory.
 my $src = catdir $doc_root, qw(dist/pair);
-my $dst = catdir $doc_root, 'src';
+my $dst = catdir $doc_root, qw(src pair);
 dircopy $src, $dst or die "Cannot copy dir $src to $dst: $!\n";
 fcopy $html, $dst or die "Cannot copy $html to $dst: $!\n";
 
 # Try a src/json file.
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = 'src/pair-0.1.1.json';
+    my $uri = 'src/pair/0.1.0/META.json';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'application/json', 'Should be application/json';
@@ -97,7 +97,7 @@ test_psgi +PGXN::API::Router->app => sub {
 # Try a src/readme file
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = 'src/pair-0.1.1.readme';
+    my $uri = 'src/pair/0.1.1/README.txt';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'text/plain', 'Should be text/plain';
@@ -106,7 +106,7 @@ test_psgi +PGXN::API::Router->app => sub {
 # Try a src/html file.
 test_psgi +PGXN::API::Router->app => sub {
     my $cb = shift;
-    my $uri = 'src/index.html';
+    my $uri = 'src/pair/index.html';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'text/plain', 'Should be text/plain';

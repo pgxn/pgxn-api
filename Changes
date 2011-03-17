@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.5.4
+      - Updated to work with new default URI templates deployed in
+        PGXN::Manager 0.10.2.
 
 0.5.3  2011-03-16T03:16:27
       - Changed doc template to use `{+path}` instead of `{doc}`, so that

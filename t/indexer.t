@@ -54,7 +54,7 @@ file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should n
 # Make sure it has all the templates we need.
 my $tmpl = $api->read_json_from(catfile qw(t root index.json));
 $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-$tmpl->{doc} = "/dist/{dist}/{dist}-{version}/{+path}.html";
+$tmpl->{doc} = "/dist/{dist}/{version}/{+path}.html";
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 
@@ -71,30 +71,35 @@ file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should n
 ##############################################################################
 # Let's index pair-0.1.0.
 my $meta = $api->read_json_from(
-    catfile $api->mirror_root, qw(dist pair pair-0.1.0.json)
+    catfile $api->mirror_root, qw(dist pair 0.1.0 META.json)
 );
 
 file_not_exists_ok(
-    catfile($api->doc_root, qw(dist pair), "pair-0.1.0.$_"),
-    "pair-0.1.0.$_ should not yet exist"
-) for qw(pgz readme);
+    catfile($api->doc_root, qw(dist pair 0.1.0), 'pair-0.1.0.pgz'),
+    'pair-0.1.0.pgz should not yet exist'
+);
+
+file_not_exists_ok(
+    catfile($api->doc_root, qw(dist pair 0.1.0), 'README.txt'),
+    'README.txt should not yet exist'
+);
 
 my $params  = { meta => $meta };
 ok $indexer->copy_files($params), 'Copy files';
 
 file_exists_ok(
-    catfile($api->doc_root, qw(dist pair), "pair-0.1.0.pgz"),
+    catfile($api->doc_root, qw(dist pair 0.1.0), "pair-0.1.0.pgz"),
     "pair-0.1.0.pgz should now exist"
 );
 file_not_exists_ok(
-    catfile($api->doc_root, qw(dist pair), "pair-0.1.0.readme"),
-    "pair-0.1.0.readme still should not exist"
+    catfile($api->doc_root, qw(dist pair 0.1.0), "README.txt"),
+    "pair/0.1.0/README.txt still should not exist"
 );
 
 # Make sure we get an error when we try to copy a file that does't exist.
 $meta->{name} = 'nonexistent';
-my $src = catfile $api->mirror_root, qw(dist nonexistent nonexistent-0.1.0.pgz);
-my $dst = catfile $api->doc_root,    qw(dist nonexistent nonexistent-0.1.0.pgz);
+my $src = catfile $api->mirror_root, qw(dist nonexistent 0.1.0 nonexistent-0.1.0.pgz);
+my $dst = catfile $api->doc_root,    qw(dist nonexistent 0.1.0 nonexistent-0.1.0.pgz);
 throws_ok { $indexer->copy_files($params ) }
     qr{Cannot copy \E$src\Q to \E$dst\Q: No such file or directory},
     'Should get exception with file names for bad copy';
@@ -102,14 +107,14 @@ $meta->{name} = 'pair';
 
 ##############################################################################
 # Now merge the distribution metadata files.
-my $dist_file = catfile $api->doc_root, qw(dist pair pair-0.1.0.json);
+my $dist_file = catfile $api->doc_root, qw(dist pair 0.1.0 META.json);
 my $by_dist   = catfile $api->doc_root, qw(by dist pair.json);
 my $mock      = Test::MockModule->new($CLASS);
 $mock->mock(parse_docs => 'docs_here');
 
 # Set up zip archive.
 my $zip       = Archive::Zip->new;
-$zip->read(rel2abs catfile qw(t root dist pair pair-0.1.0.pgz));
+$zip->read(rel2abs catfile qw(t root dist pair 0.1.0 pair-0.1.0.pgz));
 $params->{zip} = $zip;
 
 file_not_exists_ok $dist_file, 'pair-0.1.0.json should not yet exist';
@@ -143,20 +148,20 @@ fcopy catfile(qw(t data pair-updated.json)),
 
 # Set up the 0.1.1 metadata and zip archive.
 my $meta_011 = $api->read_json_from(
-    catfile $api->mirror_root, qw(dist pair pair-0.1.1.json)
+    catfile $api->mirror_root, qw(dist pair 0.1.1 META.json)
 );
 my $zip_011 = Archive::Zip->new;
-$zip_011->read(rel2abs catfile qw(t root dist pair pair-0.1.1.pgz));
+$zip_011->read(rel2abs catfile qw(t root dist pair 0.1.1 pair-0.1.1.pgz));
 
-my $dist_011_file = catfile $api->doc_root, qw(dist pair pair-0.1.1.json);
-file_not_exists_ok $dist_011_file, 'pair-0.1.1.json should not yet exist';
+my $dist_011_file = catfile $api->doc_root, qw(dist pair 0.1.1 META.json);
+file_not_exists_ok $dist_011_file, 'pair/0.1.1/META.json should not yet exist';
 $params->{meta} = $meta_011;
 $params->{zip} = $zip_011;
 ok $indexer->merge_distmeta($params), 'Merge the distmeta';
-file_exists_ok $dist_011_file, 'pair-0.1.1.json should now exist';
+file_exists_ok $dist_011_file, 'pair/0.1.1/META.json should now exist';
 
 files_eq_or_diff $dist_011_file, $by_dist,
-    'pair-0.1.1.json and pair.json should be the same';
+    'pair/0.1.1/META.json and pair.json should be the same';
 
 is_deeply $meta_011->{releases}, { stable => [
     {version => '0.1.1', date => '2010-10-29T22:44:42Z'},
@@ -228,7 +233,7 @@ is_deeply $doc_data, $mir_data,
 fcopy catfile(qw(t data theory-updated2.json)),
       catfile($api->mirror_root, qw(by user theory.json));
 my $meta_012 = $api->read_json_from(
-    catfile $api->mirror_root, qw(dist pair pair-0.1.2.json)
+    catfile $api->mirror_root, qw(dist pair 0.1.2 META.json)
 );
 $params->{meta} = $meta_012;
 ok $indexer->merge_distmeta($params), 'Merge the 0.1.2 distmeta';
@@ -449,17 +454,17 @@ is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
 ##############################################################################
 # Test parse_docs().
 my $sync = PGXN::API::Sync->new(source => 'rsync://localhost/pgxn');
-my $pgz = catfile qw(dist pair pair-0.1.0.pgz);
+my $pgz = catfile qw(dist pair 0.1.0 pair-0.1.0.pgz);
 
 $params->{meta}   = $meta;
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 
-my $doc_dir = catdir $doc_root, qw(dist pair pair-0.1.0);
+my $doc_dir = catdir $doc_root, qw(dist pair 0.1.0);
 my $readme = catfile $doc_dir, 'readme.html';
 my $doc = catfile $doc_dir, 'doc', 'pair.html';
-file_not_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should not exist';
-file_not_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should not exist';
-file_not_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should not exist';
+file_exists_ok $doc_dir, 'Directory dist/pair/0.1.0 should exist';
+file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
+file_not_exists_ok $doc, 'dist/pair/pair/0.1.0/doc/pair.html should not exist';
 
 is_deeply $indexer->parse_docs($params), {
     'README'   => 'pair 0.1.0',
@@ -469,11 +474,12 @@ ok !exists $meta->{provides}{README},
     'Should hot have autovivified README into provides';
 
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
-file_exists_ok $readme, 'dist/pair/pair-0.1.0/readme.html should now exist';
+file_exists_ok $readme, 'dist/pair/pair/0.1.0/readme.html should now exist';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
-file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>}, 'README should have HTML';
-file_contents_unlike $readme, qr{<html}i, 'README should have no html element';
-file_contents_unlike $readme, qr{<body}i, 'README should have no body element';
+file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>},
+    'readme.html should have HTML';
+file_contents_unlike $readme, qr{<html}i, 'readme.html should have no html element';
+file_contents_unlike $readme, qr{<body}i, 'readme.html should have no body element';
 file_contents_like $doc, qr{\Q<pre>pair 0.1.0}, 'Doc should have preformatted HTML';
 file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
 file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
