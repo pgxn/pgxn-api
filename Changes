@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.5.5
+0.5.5   2011-03-17T23:07:43
       - Changed doc JSON to have a hash for each value: a title and an
         abstract (if there is one).
 
