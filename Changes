@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.5.5
+
 0.5.4   2011-03-17T00:08:30
       - Updated to work with new default URI templates deployed in
         PGXN::Manager 0.10.2.
