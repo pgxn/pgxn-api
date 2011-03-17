@@ -374,6 +374,7 @@ $exp = {
         abstract => 'A key/value pair data type',
         dist     => 'pair',
         version => '0.1.0',
+        sha1     => '1234567890abcdef1234567890abcdef12345678',
     },
     versions  => {
         '0.1.0' => [
@@ -402,6 +403,7 @@ $exp->{testing} = {
     abstract => 'A key/value pair dåtå type',
     dist     => 'pair',
     version  => '0.1.1',
+    sha1     => 'c552c961400253e852250c5d2f3def183c81adb3',
 };
 $exp->{versions}{'0.1.1'} = [{
     dist         => 'pair',
@@ -442,10 +444,11 @@ ok $indexer->update_extensions($params),
 $exp->{latest} = 'stable';
 $exp->{stable}{version} = '0.1.2';
 $exp->{stable}{abstract} = 'A key/value pair dåtå type';
+$exp->{stable}{sha1} = 'cebefd23151b4b797239646f7ae045b03d028fcf';
 $exp->{versions}{'0.1.2'} =  [{
-    dist         => 'pair',
-    date => '2010-11-10T12:18:03Z',
-    version      => '0.1.2',
+    dist    => 'pair',
+    date    => '2010-11-10T12:18:03Z',
+    version => '0.1.2',
 }];
 ok $doc_data = $api->read_json_from($ext_file),
     'Read the doc root extension data file one more time';

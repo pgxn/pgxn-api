@@ -1,7 +1,7 @@
 {
    "extension": "pair",
    "latest": "stable",
-   "stable": { "dist": "pair", "version": "0.1.0" },
+   "stable": { "dist": "pair", "version": "0.1.0", "sha1": "1234567890abcdef1234567890abcdef12345678" },
    "versions": {
       "0.1.0": [
          { "dist": "pair", "version": "0.1.0" }
