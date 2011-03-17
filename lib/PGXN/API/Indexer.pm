@@ -271,20 +271,24 @@ sub parse_docs {
 
             # Determine the title before we mangle the HTML.
             (my $file = $noext) =~ s{^doc/}{};
-            # Avoid autovivication.
-            my $title = $meta->{provides}{$file}
+            my $title = $doc->findvalue('/html/head/title')
+                     || $doc->findvalue('//h1[1]')
+                     || $file;
+
+            # Grab abstract if this looks like extension documentation.
+            my $abstract = $meta->{provides}{$file}
                 ? $meta->{provides}{$file}{abstract}
                 : undef;
-            $title ||= $doc->findvalue('/html/head/title')
-                || $doc->findvalue('//h1[1]')
-                || '';
 
             # Clean up the HTML and write it out.
             open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
             print $fh _clean_html_body($doc->findnodes('/html/body'));
             close $fh or die "Cannot close $fn: $!\n";
 
-            $docs{$noext} = $title;
+            $docs{$noext} = {
+                title => $title,
+                ($abstract) ? (abstract => $abstract) : ()
+            };
         }
     }
     return \%docs;

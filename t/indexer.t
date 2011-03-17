@@ -467,8 +467,8 @@ file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
 file_not_exists_ok $doc, 'dist/pair/pair/0.1.0/doc/pair.html should not exist';
 
 is_deeply $indexer->parse_docs($params), {
-    'README'   => 'pair 0.1.0',
-    'doc/pair' => 'A key/value pair data type',
+    'README'   => { title => 'pair 0.1.0' },
+    'doc/pair' => { title => 'pair', abstract => 'A key/value pair data type' },
 }, 'Should get array of docs from parsing';
 ok !exists $meta->{provides}{README},
     'Should hot have autovivified README into provides';
