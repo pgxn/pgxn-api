@@ -2,7 +2,7 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 33;
+use Test::More tests => 45;
 #use Test::More 'no_plan';
 use Plack::Test;
 use HTTP::Request::Common;
@@ -121,4 +121,14 @@ test_psgi +PGXN::API::Router->app => sub {
     is $res->content_type, 'text/html', 'Should be text/html';
     like $res->content, qr/Parent Directory/,
         'Should look like a directory listing';
+};
+
+# Make sure /_index always 404s.
+test_psgi +PGXN::API::Router->app => sub {
+    my $cb = shift;
+    for my $uri (qw( _index _index/ _index/foo _index/index.html)) {
+        ok my $res = $cb->(GET $uri), "Fetch $uri";
+        ok $res->is_error, "$uri should respond with an error";
+        is $res->code, 404, "$uri should 404";
+    }
 };
