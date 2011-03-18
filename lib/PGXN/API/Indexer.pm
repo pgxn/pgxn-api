@@ -41,6 +41,11 @@ has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default 
         stored  => 0,
     );
 
+    my $dat_type = KinoSearch::Plan::StringType->new(
+        indexed => 0,
+        stored  => 1,
+    );
+
     my $tag_type  = KinoSearch::Plan::FullTextType->new(
         indexed       => 1,
         stored        => 1,
@@ -53,6 +58,7 @@ has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default 
     my $schema = KinoSearch::Plan::Schema->new;
     $schema->spec_field( name => 'key',      type => $key_type );
     $schema->spec_field( name => 'category', type => $cat_type );
+    $schema->spec_field( name => 'date',     type => $dat_type );
     $schema->spec_field( name => 'title',    type => $fti_type );
     $schema->spec_field( name => 'abstract', type => $fti_type );
     $schema->spec_field( name => 'body',     type => $fti_type );
