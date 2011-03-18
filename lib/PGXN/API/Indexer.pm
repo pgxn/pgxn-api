@@ -10,9 +10,62 @@ use File::Copy::Recursive qw(fcopy dircopy);
 use File::Basename;
 use Text::Markup;
 use XML::LibXML;
+use KinoSearch::Plan::Schema;
+use KinoSearch::Plan::FullTextType;
+use KinoSearch::Analysis::PolyAnalyzer;
+use KinoSearch::Analysis::Tokenizer;
+use KinoSearch::Index::Indexer;
 use namespace::autoclean;
 
 has verbose => (is => 'rw', isa => 'Int', default => 0);
+has docs => (is => 'ro', isa => 'ArrayRef', default => sub { [] });
+has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default => sub {
+    # Create the analyzer.
+    my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
+        language => 'en',
+    );
+
+    # Create the data types.
+    my $fti_type = KinoSearch::Plan::FullTextType->new(
+        analyzer      => $polyanalyzer,
+        highlightable => 1,
+    );
+
+    my $cat_type = KinoSearch::Plan::StringType->new(
+        indexed => 1,
+        stored  => 1,
+    );
+
+    my $key_type = KinoSearch::Plan::StringType->new(
+        indexed => 1,
+        stored  => 0,
+    );
+
+    my $tag_type  = KinoSearch::Plan::FullTextType->new(
+        indexed       => 1,
+        stored        => 1,
+        boost         => 2.0,
+        analyzer      => KinoSearch::Analysis::Tokenizer->new(pattern => '[^\003]'),
+        highlightable => 1,
+    );
+
+    # Create the schema.
+    my $schema = KinoSearch::Plan::Schema->new;
+    $schema->spec_field( name => 'key',      type => $key_type );
+    $schema->spec_field( name => 'category', type => $cat_type );
+    $schema->spec_field( name => 'title',    type => $fti_type );
+    $schema->spec_field( name => 'abstract', type => $fti_type );
+    $schema->spec_field( name => 'body',     type => $fti_type );
+    $schema->spec_field( name => 'tags',     type => $tag_type );
+    $schema->spec_field( name => 'meta',     type => $fti_type );
+
+    # Create Indexer.
+    KinoSearch::Index::Indexer->new(
+        index    => catfile(PGXN::API->instance->doc_root, '_index'),
+        schema   => $schema,
+        create   => 1,
+    );
+});
 
 sub update_mirror_meta {
     my $self = shift;
@@ -38,13 +91,12 @@ sub update_mirror_meta {
 sub add_distribution {
     my ($self, $params) = @_;
 
-    $self->copy_files($params)        or return;
-    $self->merge_distmeta($params)    or return;
-    $self->update_user($params)       or return;
-    $self->update_tags($params)       or return;
-    $self->update_extensions($params) or return;
-
-    return $self;
+    $self->copy_files($params)        or return $self->_rollback;
+    $self->merge_distmeta($params)    or return $self->_rollback;
+    $self->update_user($params)       or return $self->_rollback;
+    $self->update_tags($params)       or return $self->_rollback;
+    $self->update_extensions($params) or return $self->_rollback;
+    return $self->_commit;
 }
 
 sub copy_files {
@@ -304,6 +356,32 @@ sub doc_root_file_for {
     my $self = shift;
     return catfile +PGXN::API->instance->doc_root,
         $self->_uri_for(@_)->path_segments;
+}
+
+sub _index {
+    my $self = shift;
+    push @{ $self->docs } => shift;
+}
+
+sub _rollback {
+    @{ shift->docs } = ();
+    return;
+}
+
+sub _commit {
+    my $self = shift;
+    my $docs = $self->docs;
+    return unless @{ $docs };
+
+    @{ $self->docs } = ();
+
+    my $ksi = $self->ksi;
+    for my $doc (@{ $docs }) {
+        $ksi->delete_by_term( field => 'key', term => $doc->{key});
+        $ksi->add_doc($doc);
+    }
+
+    return $self;
 }
 
 sub _uri_for {

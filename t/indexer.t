@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 115;
+use Test::More tests => 126;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -23,6 +23,9 @@ BEGIN {
 
 can_ok $CLASS => qw(
     new
+    verbose
+    ksi
+    docs
     update_mirror_meta
     add_distribution
     copy_files
@@ -41,6 +44,12 @@ END { remove_tree $doc_root }
 
 # "Sync" from a "mirror."
 dircopy catdir(qw(t root)), $api->mirror_root;
+
+# Mock indexing stuff.
+my $mock = Test::MockModule->new($CLASS);
+$mock->mock(_commit => sub { shift });
+my @docs;
+$mock->mock(_index => sub { shift; push @docs => shift });
 
 ##############################################################################
 # Test update_mirror_meta().
@@ -109,7 +118,6 @@ $meta->{name} = 'pair';
 # Now merge the distribution metadata files.
 my $dist_file = catfile $api->doc_root, qw(dist pair 0.1.0 META.json);
 my $by_dist   = catfile $api->doc_root, qw(by dist pair.json);
-my $mock      = Test::MockModule->new($CLASS);
 $mock->mock(parse_docs => 'docs_here');
 
 # Set up zip archive.
@@ -488,9 +496,6 @@ file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
 file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
 
 ##############################################################################
-# Test HTML cleaning.
-
-##############################################################################
 # Make sure that add_document() calls all the necessary methods.
 my @called;
 my @meths = qw(
@@ -511,3 +516,25 @@ $params->{meta} = $meta;
 ok $indexer->add_distribution($params), 'Call add_distribution()';
 is_deeply \@called, \@meths, 'The proper meths should have been called in order';
 $mock->unmock_all;
+
+##############################################################################
+# Make sure transaction stuff works.
+is_deeply $indexer->docs, [], 'Should start with no docs';
+$doc = {
+    key      => 'foo',
+    category => 'tag',
+    title    => 'explain',
+    body     => 'explanation: 0.1.3, 0.2.4',
+};
+ok $indexer->_index($doc), 'Index a doc';
+is_deeply $indexer->docs, [$doc], 'Should have it in docs';
+ok !$indexer->_rollback, 'Rollback should return false';
+is_deeply $indexer->docs, [], 'Should have no docs again';
+
+# Test full text search indexing.
+ok $indexer->_index($doc), 'Index a doc again';
+file_not_exists_ok catdir($doc_root, '_index'), 'Should not have index dir yet';
+isa_ok $indexer->ksi, 'KinoSearch::Index::Indexer';
+ok $indexer->_commit, 'Commit that doc';
+file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
+is_deeply $indexer->docs, [], 'Should once again have no docs';

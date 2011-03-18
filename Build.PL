@@ -33,6 +33,7 @@ $class->new(
         'File::Spec'                   => '3.33',
         'JSON'                         => '2.27',
         'JSON::XS'                     => '2.3',
+        'KinoSearch'                   => '0.311',
         'List::Util'                   => '1.23',
         'Moose'                        => '1.15',
         'Moose::Util::TypeConstraints' => '1.15',

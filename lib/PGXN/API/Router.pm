@@ -25,6 +25,15 @@ sub app {
             $dirs->($env);
         };
 
+        mount '/_index' => sub {
+            # Never allow access here.
+            return [
+                404,
+                ['Content-Type' => 'text/plain', 'Content-Length' => 9],
+                ['not found']
+            ];
+        };
+
         # Disable HTML in /src.
         my $mimes = { %{ $Plack::MIME::MIME_TYPES } };
         for my $ext (keys %{ $mimes }) {
