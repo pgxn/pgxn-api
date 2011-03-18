@@ -1,4 +1,4 @@
-package PGXN::API::Sync v0.5.5;
+package PGXN::API::Sync v0.5.6;
 
 use 5.12.0;
 use utf8;
