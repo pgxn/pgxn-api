@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 126;
-#use Test::More 'no_plan';
+#use Test::More tests => 126;
+use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
@@ -48,8 +48,6 @@ dircopy catdir(qw(t root)), $api->mirror_root;
 # Mock indexing stuff.
 my $mock = Test::MockModule->new($CLASS);
 $mock->mock(_commit => sub { shift });
-my @docs;
-$mock->mock(_index => sub { shift; push @docs => shift });
 
 ##############################################################################
 # Test update_mirror_meta().
@@ -133,6 +131,17 @@ ok $indexer->merge_distmeta($params), 'Merge the distmeta';
 file_exists_ok $dist_file, 'pair-0.1.0.json should now exist';
 file_exists_ok $by_dist,   'pair.json should now exist';
 
+is_deeply shift @{ $indexer->docs }, {
+    abstract => 'A key/value pair data type',
+    body     => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.',
+    category => 'dist',
+    date     => '2010-10-18T15:24:21Z',
+    key      => 'dist--pair',
+    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair data type",
+    tags     => "ordered pair\003pair",
+    title    => 'pair',
+}, 'Should have pair 0.1.0 queued for indexing';
+
 # The two files should be identical.
 files_eq_or_diff $dist_file, $by_dist,
     'pair-0.1.0.json and pair.json should be the same';
@@ -167,6 +176,9 @@ $params->{meta} = $meta_011;
 $params->{zip} = $zip_011;
 ok $indexer->merge_distmeta($params), 'Merge the distmeta';
 file_exists_ok $dist_011_file, 'pair/0.1.1/META.json should now exist';
+
+is_deeply $indexer->docs, [],
+    'Testing distribution should not be queued for indexing';
 
 files_eq_or_diff $dist_011_file, $by_dist,
     'pair/0.1.1/META.json and pair.json should be the same';
@@ -253,6 +265,17 @@ ok $doc_data = $api->read_json_from($user_file),
     'Read the doc root user data file once more';
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.2';
+
+is_deeply shift @{ $indexer->docs }, {
+    abstract => "A key/value pair d\xE5t\xE5 type",
+    body     => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.',
+    category => 'dist',
+    date     => '2010-11-10T12:18:03Z',
+    key      => 'dist--pair',
+    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair d\xE5t\xE5 type",
+    tags     => "ordered pair\003pair\003key value",
+    title    => 'pair',
+}, 'New version should be queued for indexing';
 
 ##############################################################################
 # Now update the tag metadata.
@@ -519,6 +542,7 @@ $mock->unmock_all;
 
 ##############################################################################
 # Make sure transaction stuff works.
+ok !$indexer->_rollback, 'Rollback';
 is_deeply $indexer->docs, [], 'Should start with no docs';
 $doc = {
     key      => 'foo',

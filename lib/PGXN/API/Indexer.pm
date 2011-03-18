@@ -158,6 +158,17 @@ sub merge_distmeta {
         $api->write_json_to($by_dist_file => $meta);
     }
 
+    $self->_index({
+        key      => "dist--$meta->{name}",
+        category => 'dist',
+        date     => $meta->{date},
+        title    => $meta->{name},
+        abstract => $meta->{abstract},
+        body     => $meta->{description},
+        tags     => join("\003" => @{ $meta->{tags} }),
+        meta     => _idx_distmeta($meta),
+    }) if $meta->{release_status} eq 'stable';
+
     # Now update all older versions with the complete list of releases.
     for my $releases ( values %{ $meta->{releases} }) {
         for my $release (@{ $releases}) {
@@ -173,6 +184,19 @@ sub merge_distmeta {
     }
 
     return $self;
+}
+
+sub _idx_distmeta {
+    my $meta = shift;
+    my @lines = (
+        "$meta->{license} license",
+        (ref $meta->{maintainer} ? @{ $meta->{maintainer} } : ($meta->{maintainer})),
+    );
+
+    while (my ($k, $v) = each %{ $meta->{provides}} ) {
+        push @lines => $v->{abstract} ? "$k: $v->{abstract}" : $k;
+    }
+    return join $/ => @lines;
 }
 
 sub update_user {
