@@ -5,6 +5,7 @@ use utf8;
 use PGXN::API;
 use Plack::Builder;
 use Plack::App::File;
+use Plack::App::Directory;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
 
@@ -29,7 +30,7 @@ sub app {
         for my $ext (keys %{ $mimes }) {
             $mimes->{$ext} = 'text/plain' if $mimes->{$ext} =~ /html/;
         }
-        my $src_dir = Plack::App::File->new(
+        my $src_dir = Plack::App::Directory->new(
             root => catdir $root, 'src'
         )->to_app;
 

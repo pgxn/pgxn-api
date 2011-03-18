@@ -2,7 +2,7 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 29;
+use Test::More tests => 33;
 #use Test::More 'no_plan';
 use Plack::Test;
 use HTTP::Request::Common;
@@ -110,4 +110,15 @@ test_psgi +PGXN::API::Router->app => sub {
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->content_type, 'text/plain', 'Should be text/plain';
+};
+
+# Try a src directory..
+test_psgi +PGXN::API::Router->app => sub {
+    my $cb = shift;
+    my $uri = 'src/pair/';
+    ok my $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_success, 'It should be a success';
+    is $res->content_type, 'text/html', 'Should be text/html';
+    like $res->content, qr/Parent Directory/,
+        'Should look like a directory listing';
 };
