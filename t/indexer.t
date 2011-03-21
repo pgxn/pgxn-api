@@ -131,12 +131,15 @@ ok $indexer->merge_distmeta($params), 'Merge the distmeta';
 file_exists_ok $dist_file, 'pair-0.1.0.json should now exist';
 file_exists_ok $by_dist,   'pair.json should now exist';
 
+my $readme = $zip->memberNamed('pair-0.1.0/README.md')->contents;
+utf8::decode $readme;
+
 is_deeply shift @{ $indexer->docs }, {
     abstract => 'A key/value pair data type',
-    body     => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.',
+    body     => $readme,
     date     => '2010-10-18T15:24:21Z',
     key      => 'pair',
-    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair data type",
+    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair data type\nThis library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.",
     nickname => 'theory',
     tags     => "ordered pair\003pair",
     title    => 'pair',
@@ -281,10 +284,10 @@ is_deeply $doc_data, $mir_data,
 
 is_deeply shift @{ $indexer->docs }, {
     abstract => 'A key/value pair dåtå type',
-    body     => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.',
+    body     => undef,
     date     => '2010-11-10T12:18:03Z',
     key      => 'pair',
-    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair dåtå type",
+    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair dåtå type\nThis library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.",
     nickname => 'theory',
     tags     => "ordered pair\003pair\003key value",
     title    => 'pair',
@@ -667,4 +670,3 @@ is_deeply $indexer->docs, [], 'Should once again have no docs';
 
 # XXX Test to make sure a record is replaced by searching, then updating, then
 # searching again.
-

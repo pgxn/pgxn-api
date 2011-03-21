@@ -177,7 +177,7 @@ sub merge_distmeta {
         title    => $meta->{name},
         date     => $meta->{date},
         abstract => $meta->{abstract},
-        body     => $meta->{description},
+        body     => $self->_readme($p),
         tags     => join("\003" => @{ $meta->{tags} }),
         username => $self->_get_username($meta),
         nickname => $meta->{user},
@@ -401,6 +401,7 @@ sub _idx_distmeta {
     while (my ($k, $v) = each %{ $meta->{provides}} ) {
         push @lines => $v->{abstract} ? "$k: $v->{abstract}" : $k;
     }
+    push @lines, $meta->{description} if $meta->{description};
     return join $/ => @lines;
 }
 
@@ -523,6 +524,19 @@ sub _source_files {
         push @files => $fn;
     }
     return \@files;
+}
+
+sub _readme {
+    my ($self, $p) = @_;
+     my $zip = $p->{zip};
+    my $prefix  = quotemeta "$p->{meta}{name}-$p->{meta}{version}";
+    my ($member) = $zip->membersMatching(
+        qr{^$prefix/(?i:README(?:[.][^.]+)?)$}
+    );
+    return undef unless $member;
+    my $contents = $member->contents;
+    utf8::decode $contents;
+    return $contents;
 }
 
 # List of allowed elements and attributes.
