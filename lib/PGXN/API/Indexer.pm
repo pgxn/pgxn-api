@@ -26,27 +26,27 @@ has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default 
     );
 
     # Create the data types.
-    my $fti_type = KinoSearch::Plan::FullTextType->new(
+    my $fti = KinoSearch::Plan::FullTextType->new(
         analyzer      => $polyanalyzer,
         highlightable => 1,
     );
 
-    my $cat_type = KinoSearch::Plan::StringType->new(
+    my $string = KinoSearch::Plan::StringType->new(
         indexed => 1,
         stored  => 1,
     );
 
-    my $key_type = KinoSearch::Plan::StringType->new(
+    my $indexed = KinoSearch::Plan::StringType->new(
         indexed => 1,
         stored  => 0,
     );
 
-    my $dat_type = KinoSearch::Plan::StringType->new(
+    my $stored = KinoSearch::Plan::StringType->new(
         indexed => 0,
         stored  => 1,
     );
 
-    my $tag_type  = KinoSearch::Plan::FullTextType->new(
+    my $list  = KinoSearch::Plan::FullTextType->new(
         indexed       => 1,
         stored        => 1,
         boost         => 2.0,
@@ -56,14 +56,17 @@ has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default 
 
     # Create the schema.
     my $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'key',      type => $key_type );
-    $schema->spec_field( name => 'category', type => $cat_type );
-    $schema->spec_field( name => 'date',     type => $dat_type );
-    $schema->spec_field( name => 'title',    type => $fti_type );
-    $schema->spec_field( name => 'abstract', type => $fti_type );
-    $schema->spec_field( name => 'body',     type => $fti_type );
-    $schema->spec_field( name => 'tags',     type => $tag_type );
-    $schema->spec_field( name => 'meta',     type => $fti_type );
+    $schema->spec_field( name => 'type',     type => $string  );
+    $schema->spec_field( name => 'key',      type => $indexed );
+    $schema->spec_field( name => 'title',    type => $fti     );
+    $schema->spec_field( name => 'date',     type => $stored  );
+    $schema->spec_field( name => 'username', type => $fti     );
+    $schema->spec_field( name => 'nickname', type => $string  );
+    $schema->spec_field( name => 'version',  type => $stored  );
+    $schema->spec_field( name => 'abstract', type => $fti     );
+    $schema->spec_field( name => 'body',     type => $fti     );
+    $schema->spec_field( name => 'tags',     type => $list    );
+    $schema->spec_field( name => 'meta',     type => $fti     );
 
     # Create Indexer.
     KinoSearch::Index::Indexer->new(
@@ -158,14 +161,18 @@ sub merge_distmeta {
         $api->write_json_to($by_dist_file => $meta);
     }
 
+    # Index it if it's a new stable release.
     $self->_index({
-        key      => "dist--$meta->{name}",
-        category => 'dist',
-        date     => $meta->{date},
+        type     => 'dist',
+        key      => $meta->{name},
         title    => $meta->{name},
+        date     => $meta->{date},
         abstract => $meta->{abstract},
         body     => $meta->{description},
         tags     => join("\003" => @{ $meta->{tags} }),
+        username => $self->_get_username($meta),
+        nickname => $meta->{user},
+        version  => $meta->{version},
         meta     => _idx_distmeta($meta),
     }) if $meta->{release_status} eq 'stable';
 
@@ -184,6 +191,16 @@ sub merge_distmeta {
     }
 
     return $self;
+}
+
+sub _get_username {
+    my ($self, $meta) = @_;
+    return $self->{_username} ||= do {
+        my $user = PGXN::API->instance->read_json_from(
+            $self->mirror_file_for('by-user' => $meta)
+        );
+        $user->{name};
+    };
 }
 
 sub _idx_distmeta {
@@ -407,7 +424,10 @@ sub _commit {
 
     my $ksi = $self->ksi;
     for my $doc (@{ $docs }) {
-        $ksi->delete_by_term( field => 'key', term => $doc->{key});
+        $ksi->delete_by_query(KinoSearch::Search::AndQuery->new(children => [
+            KinoSearch::Search::TermQuery->(field => 'type', term => $doc->{type}),
+            KinoSearch::Search::TermQuery->(field => 'id',   term => $doc->{id}),
+        ]));
         $ksi->add_doc($doc);
     }
 

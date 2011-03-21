@@ -134,12 +134,15 @@ file_exists_ok $by_dist,   'pair.json should now exist';
 is_deeply shift @{ $indexer->docs }, {
     abstract => 'A key/value pair data type',
     body     => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.',
-    category => 'dist',
     date     => '2010-10-18T15:24:21Z',
-    key      => 'dist--pair',
+    key      => 'pair',
     meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair data type",
+    nickname => 'theory',
     tags     => "ordered pair\003pair",
     title    => 'pair',
+    type     => 'dist',
+    username => 'David E. Wheeler',
+    version  => '0.1.0',
 }, 'Should have pair 0.1.0 queued for indexing';
 
 # The two files should be identical.
@@ -267,14 +270,17 @@ is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.2';
 
 is_deeply shift @{ $indexer->docs }, {
-    abstract => "A key/value pair d\xE5t\xE5 type",
+    abstract => 'A key/value pair dåtå type',
     body     => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.',
-    category => 'dist',
     date     => '2010-11-10T12:18:03Z',
-    key      => 'dist--pair',
-    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair d\xE5t\xE5 type",
+    key      => 'pair',
+    meta     => "postgresql license\nDavid E. Wheeler <david\@justatheory.com>\npair: A key/value pair dåtå type",
+    nickname => 'theory',
     tags     => "ordered pair\003pair\003key value",
     title    => 'pair',
+    type     => 'dist',
+    username => 'David E. Wheeler',
+    version  => "0.1.2",
 }, 'New version should be queued for indexing';
 
 ##############################################################################
@@ -562,3 +568,7 @@ isa_ok $indexer->ksi, 'KinoSearch::Index::Indexer';
 ok $indexer->_commit, 'Commit that doc';
 file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
 is_deeply $indexer->docs, [], 'Should once again have no docs';
+
+# XXX Test to make sure a record is replaced by searching, then updating, then
+# searching again.
+
