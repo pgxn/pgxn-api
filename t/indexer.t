@@ -292,13 +292,14 @@ is_deeply shift @{ $indexer->docs }, {
     username => 'David E. Wheeler',
     version  => "0.1.2",
 }, 'New version should be queued for indexing';
+
 is_deeply shift @{ $indexer->docs }, {
     key      => 'theory',
     meta     => "david\@justatheory.com\nhttp://justatheory.com/",
     nickname => 'theory',
     type     => 'user',
     username => 'David E. Wheeler',
-}, 'Should have index data again';
+}, 'Should have user index data again';
 
 ##############################################################################
 # Now update the tag metadata.
@@ -313,6 +314,18 @@ ok $indexer->update_tags($params), 'Update the tags';
 file_exists_ok $pairkw_file, "$pairkw_file should now exist";
 file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
+
+is_deeply shift @{ $indexer->docs }, {
+    key   => 'ordered pair',
+    type  => 'tag',
+    title => 'ordered pair',
+}, 'Should have "ordered pair" index data';
+
+is_deeply shift @{ $indexer->docs }, {
+    key   => 'pair',
+    type  => 'tag',
+    title => 'pair',
+}, 'Should have "pair" index data';
 
 my $pgtap = { stable => [{ version => "0.25.0", date => '2011-01-22T08:34:51Z'}] };
 my $exp = {
@@ -345,6 +358,7 @@ fcopy catfile(qw(t data pair-tag-updated.json)),
       catfile($api->mirror_root, qw(by tag pair.json));
 ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
 file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
+is_deeply $indexer->docs, [], 'Should have no index update for test dist';
 
 # Check the JSON data.
 $exp->{tag} = 'pair';
@@ -385,6 +399,23 @@ fcopy catfile(qw(t data ordered-tag-updated.json)),
 fcopy catfile(qw(t data kv-tag-updated.json)),
       catfile($api->mirror_root, qw(by tag), 'key value.json');
 ok $indexer->update_tags($params), 'Update the tags to 0.1.2';
+
+is_deeply shift @{ $indexer->docs }, {
+    key   => 'ordered pair',
+    type  => 'tag',
+    title => 'ordered pair',
+}, 'Should have "ordered pair" index data';
+
+is_deeply shift @{ $indexer->docs }, {
+    key   => 'pair',
+    type  => 'tag',
+    title => 'pair',
+}, 'Should have "pair" index data';
+is_deeply shift @{ $indexer->docs }, {
+    key   => 'key value',
+    type  => 'tag',
+    title => 'key value',
+}, 'Should have "key value" index data';
 
 # Make sure all tags are updated.
 $exp->{tag} = 'pair';

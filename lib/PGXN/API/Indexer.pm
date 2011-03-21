@@ -220,7 +220,12 @@ sub update_tags {
 
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
-        $self->_update_releases('by-tag' => $meta, tag => $tag);
+        my $data = $self->_update_releases('by-tag' => $meta, tag => $tag);
+        $self->_index({
+            type     => 'tag',
+            key      => $tag,
+            title    => $tag,
+        }) if $p->{meta}->{release_status} eq 'stable';
     }
     return $self;
 }
