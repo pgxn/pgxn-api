@@ -456,15 +456,17 @@ ok $indexer->update_extensions($params), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
 
 is_deeply shift @{ $indexer->docs }, {
-    abstract => 'A key/value pair data type',
-    body     => 'Doc for pair',
-    date     => '2010-10-18T15:24:21Z',
-    key      => 'pair',
-    nickname => 'theory',
-    title    => 'pair',
-    type     => 'extension',
-    username => 'David E. Wheeler',
-    version  => '0.1.0',
+    abstract    => 'A key/value pair data type',
+    body        => 'Doc for pair',
+    date        => '2010-10-18T15:24:21Z',
+    dist        => 'pair',
+    distversion => '0.1.0',
+    key         => 'pair',
+    nickname    => 'theory',
+    title       => 'pair',
+    type        => 'extension',
+    username    => 'David E. Wheeler',
+    version     => '0.1.0',
 }, 'Should have extension index data';
 
 # Now make sure that it has the updated release metadata.
@@ -522,13 +524,26 @@ is_deeply $doc_data, $exp,
 # Add this version to a different distribution.
 $meta_011->{name} = 'otherdist';
 $meta_011->{version} = '0.3.0';
+$meta_011->{release_status} = 'stable';
 
 fcopy catfile(qw(t data pair-ext-updated2.json)),
       catfile($api->mirror_root, qw(by extension pair.json));
 ok $indexer->update_extensions($params),
     'Add the extension to another distribution';
-is_deeply $indexer->docs, [],
-    'Should still have no indexed extensions for testing dist';
+
+is_deeply shift @{ $indexer->docs }, {
+    abstract    => 'A key/value pair dåtå type',
+    body        => "Doc for pair",
+    date        => "2010-10-29T22:46:45Z",
+    dist        => "otherdist",
+    distversion => "0.3.0",
+    key         => "pair",
+    nickname    => "theory",
+    title       => "pair",
+    type        => "extension",
+    username    => "David E. Wheeler",
+    version     => "0.1.2",
+}, 'Should have otherdidst extension index data';
 
 ok $doc_data = $api->read_json_from($ext_file),
     'Read the doc root extension data file once again';
@@ -536,6 +551,12 @@ unshift @{ $exp->{versions}{'0.1.1'} } => {
     dist =>'otherdist',
     date => '2010-10-29T22:46:45Z',
     version => '0.3.0'
+};
+$exp->{stable} = {
+    abstract => 'A key/value pair dåtå type',
+    dist => 'pair',
+    sha1 => 'cebefd23151b4b797239646f7ae045b03d028fcf',
+    version => '0.1.2',
 };
 is_deeply $doc_data, $exp,
     "The second distribution's metadata should new be present";
@@ -548,15 +569,17 @@ ok $indexer->update_extensions($params),
     'Update the extension to 0.1.2.';
 
 is_deeply shift @{ $indexer->docs }, {
-    abstract => 'A key/value pair dåtå type',
-    body     => 'Doc for pair',
-    date     => '2010-11-10T12:18:03Z',
-    key      => 'pair',
-    nickname => 'theory',
-    title    => 'pair',
-    type     => 'extension',
-    username => 'David E. Wheeler',
-    version  => '0.1.2',
+    abstract    => 'A key/value pair dåtå type',
+    body        => 'Doc for pair',
+    date        => '2010-11-10T12:18:03Z',
+    dist        => 'pair',
+    distversion => '0.1.2',
+    key         => 'pair',
+    nickname    => 'theory',
+    title       => 'pair',
+    type        => 'extension',
+    username    => 'David E. Wheeler',
+    version     => '0.1.2',
 }, 'Should have extension index data again';
 
 $exp->{latest} = 'stable';
@@ -581,7 +604,7 @@ $params->{meta}   = $meta;
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 
 my $doc_dir = catdir $doc_root, qw(dist pair 0.1.0);
-my $readme = catfile $doc_dir, 'readme.html';
+$readme = catfile $doc_dir, 'readme.html';
 my $doc = catfile $doc_dir, 'doc', 'pair.html';
 file_exists_ok $doc_dir, 'Directory dist/pair/0.1.0 should exist';
 file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
@@ -650,11 +673,12 @@ $mock->unmock_all;
 ok !$indexer->_rollback, 'Rollback';
 is_deeply $indexer->docs, [], 'Should start with no docs';
 $doc = {
-    key      => 'foo',
-    category => 'tag',
-    title    => 'explain',
-    body     => 'explanation: 0.1.3, 0.2.4',
+    type  => 'tag',
+    key   => 'foo',
+    title => 'explain',
+    body  => 'explanation: 0.1.3, 0.2.4',
 };
+
 ok $indexer->_index($doc), 'Index a doc';
 is_deeply $indexer->docs, [$doc], 'Should have it in docs';
 ok !$indexer->_rollback, 'Rollback should return false';

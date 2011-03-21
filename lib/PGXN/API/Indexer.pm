@@ -65,17 +65,19 @@ has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default 
 
     # Create the schema.
     my $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'type',     type => $string  );
-    $schema->spec_field( name => 'key',      type => $indexed );
-    $schema->spec_field( name => 'title',    type => $fti     );
-    $schema->spec_field( name => 'date',     type => $stored  );
-    $schema->spec_field( name => 'username', type => $fti     );
-    $schema->spec_field( name => 'nickname', type => $string  );
-    $schema->spec_field( name => 'version',  type => $stored  );
-    $schema->spec_field( name => 'abstract', type => $fti     );
-    $schema->spec_field( name => 'body',     type => $fti     );
-    $schema->spec_field( name => 'tags',     type => $list    );
-    $schema->spec_field( name => 'meta',     type => $fti     );
+    $schema->spec_field( name => 'type',        type => $string  );
+    $schema->spec_field( name => 'key',         type => $indexed );
+    $schema->spec_field( name => 'title',       type => $fti     );
+    $schema->spec_field( name => 'date',        type => $stored  );
+    $schema->spec_field( name => 'username',    type => $fti     );
+    $schema->spec_field( name => 'nickname',    type => $string  );
+    $schema->spec_field( name => 'version',     type => $stored  );
+    $schema->spec_field( name => 'abstract',    type => $fti     );
+    $schema->spec_field( name => 'body',        type => $fti     );
+    $schema->spec_field( name => 'tags',        type => $list    );
+    $schema->spec_field( name => 'meta',        type => $fti     );
+    $schema->spec_field( name => 'dist',        type => $stored  );
+    $schema->spec_field( name => 'distversion', type => $stored  );
 
     # Create Indexer.
     KinoSearch::Index::Indexer->new(
@@ -302,15 +304,17 @@ sub update_extensions {
         # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
         $self->_index({
-            type     => 'extension',
-            key      => $mir_meta->{extension},
-            title    => $mir_meta->{extension},
-            date     => $meta->{date},
-            body     => $self->_idx_extdoc($meta, $mir_meta->{extension}),
-            abstract => $mir_meta->{stable}{abstract},
-            username => $self->_get_username($meta),
-            nickname => $meta->{user},
-            version  => $mir_meta->{stable}{version},
+            type        => 'extension',
+            key         => $mir_meta->{extension},
+            title       => $mir_meta->{extension},
+            date        => $meta->{date},
+            body        => $self->_idx_extdoc($meta, $mir_meta->{extension}),
+            abstract    => $mir_meta->{stable}{abstract},
+            username    => $self->_get_username($meta),
+            nickname    => $meta->{user},
+            version     => $mir_meta->{stable}{version},
+            dist        => $meta->{name},
+            distversion => $meta->{version},
         }) if $meta->{release_status} eq 'stable';
     }
 
