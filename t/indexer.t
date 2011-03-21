@@ -445,11 +445,24 @@ is_deeply $keyval_data, $exp, "$keyvalkw_file should have 0.1.2 data";
 
 ##############################################################################
 # Now update the extension metadata.
+$mock->mock(_idx_extdoc => sub { "Doc for $_[2]" });
 my $ext_file = catfile $doc_root, qw(by extension pair.json);
 file_not_exists_ok $ext_file, "$ext_file should not yet exist";
 $params->{meta} = $meta;
 ok $indexer->update_extensions($params), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
+
+is_deeply shift @{ $indexer->docs }, {
+    abstract => 'A key/value pair data type',
+    body     => 'Doc for pair',
+    date     => '2010-10-18T15:24:21Z',
+    key      => 'pair',
+    nickname => 'theory',
+    title    => 'pair',
+    type     => 'extension',
+    username => 'David E. Wheeler',
+    version  => '0.1.0',
+}, 'Should have extension index data';
 
 # Now make sure that it has the updated release metadata.
 $exp = {
@@ -482,6 +495,8 @@ fcopy catfile(qw(t data pair-ext-updated.json)),
 $params->{meta} = $meta_011;
 ok $indexer->update_extensions($params),
     'Update the extension metadata to 0.1.1';
+is_deeply $indexer->docs, [],
+    'Should have no indexed extensions for testing dist';
 
 $exp->{latest} = 'testing';
 $exp->{testing} = {
@@ -509,6 +524,8 @@ fcopy catfile(qw(t data pair-ext-updated2.json)),
       catfile($api->mirror_root, qw(by extension pair.json));
 ok $indexer->update_extensions($params),
     'Add the extension to another distribution';
+is_deeply $indexer->docs, [],
+    'Should still have no indexed extensions for testing dist';
 
 ok $doc_data = $api->read_json_from($ext_file),
     'Read the doc root extension data file once again';
@@ -526,6 +543,19 @@ fcopy catfile(qw(t data pair-ext-updated3.json)),
 $params->{meta} = $meta_012;
 ok $indexer->update_extensions($params),
     'Update the extension to 0.1.2.';
+
+is_deeply shift @{ $indexer->docs }, {
+    abstract => 'A key/value pair dåtå type',
+    body     => 'Doc for pair',
+    date     => '2010-11-10T12:18:03Z',
+    key      => 'pair',
+    nickname => 'theory',
+    title    => 'pair',
+    type     => 'extension',
+    username => 'David E. Wheeler',
+    version  => '0.1.2',
+}, 'Should have extension index data again';
+
 $exp->{latest} = 'stable';
 $exp->{stable}{version} = '0.1.2';
 $exp->{stable}{abstract} = 'A key/value pair dåtå type';
@@ -554,9 +584,10 @@ file_exists_ok $doc_dir, 'Directory dist/pair/0.1.0 should exist';
 file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
 file_not_exists_ok $doc, 'dist/pair/pair/0.1.0/doc/pair.html should not exist';
 
-is_deeply $indexer->parse_docs($params), {
+$meta->{docs} = $indexer->parse_docs($params);
+is_deeply $meta->{docs}, {
     'README'   => { title => 'pair 0.1.0' },
-    'doc/pair' => { title => 'pair', abstract => 'A key/value pair data type' },
+    'doc/pair' => { title => 'pair 0.1.0', abstract => 'A key/value pair data type' },
 }, 'Should get array of docs from parsing';
 ok !exists $meta->{provides}{README},
     'Should hot have autovivified README into provides';
@@ -568,9 +599,26 @@ file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>},
     'readme.html should have HTML';
 file_contents_unlike $readme, qr{<html}i, 'readme.html should have no html element';
 file_contents_unlike $readme, qr{<body}i, 'readme.html should have no body element';
-file_contents_like $doc, qr{\Q<pre>pair 0.1.0}, 'Doc should have preformatted HTML';
+file_contents_like $doc, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0},
+    'Doc should have preformatted HTML';
 file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
 file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
+
+##############################################################################
+# Test _idx_extdoc().
+$mock->unmock('_idx_extdoc');
+ok my $text = $indexer->_idx_extdoc($meta, 'pair'),
+    'Get doc text for "pair" extension';
+like $text, qr/^pair 0[.]1[.]0$/ms,
+    'Should look like plain text';
+unlike $text, qr/<[^>]+>/, 'Should have nothing that looks like HTML';
+unlike $text, qr/&[^;];/, 'Should have nothing that looks like an entity';
+unlike $text, qr/    Contents/ms,
+    'Should not have contents';
+
+# Make sure it returns undef for non-existent doc.
+is $indexer->_idx_extdoc($meta, 'nonexistent'), undef,
+    '_idx_extdoc should return undef for non-existent extension doc';
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.

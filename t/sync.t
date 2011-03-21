@@ -193,7 +193,7 @@ is_deeply \@dists, \@found, 'And it should have passed them to the indexer';
 ##############################################################################
 # digest_for()
 my $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.pgz);
-is $sync->digest_for($pgz), 'c552c961400253e852250c5d2f3def183c81adb3',
+is $sync->digest_for($pgz), 'db9bcf1280ecc3776460ea3d09ee98a43a82239f',
     'Should get expected digest from digest_for()';
 
 ##############################################################################

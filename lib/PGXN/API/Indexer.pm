@@ -10,6 +10,7 @@ use File::Copy::Recursive qw(fcopy dircopy);
 use File::Basename;
 use Text::Markup;
 use XML::LibXML;
+use List::Util qw(first);
 use KinoSearch::Plan::Schema;
 use KinoSearch::Plan::FullTextType;
 use KinoSearch::Analysis::PolyAnalyzer;
@@ -19,6 +20,14 @@ use namespace::autoclean;
 
 has verbose => (is => 'rw', isa => 'Int', default => 0);
 has docs => (is => 'ro', isa => 'ArrayRef', default => sub { [] });
+has libxml => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
+    XML::LibXML->new(
+        recover    => 2,
+        no_network => 1,
+        no_blanks  => 1,
+        no_cdata   => 1,
+    );
+});
 has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default => sub {
     # Create the analyzer.
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
@@ -290,8 +299,19 @@ sub update_extensions {
             }
         }
 
-        # Write it back out.
+        # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
+        $self->_index({
+            type     => 'extension',
+            key      => $mir_meta->{extension},
+            title    => $mir_meta->{extension},
+            date     => $meta->{date},
+            body     => $self->_idx_extdoc($meta, $mir_meta->{extension}),
+            abstract => $mir_meta->{stable}{abstract},
+            username => $self->_get_username($meta),
+            nickname => $meta->{user},
+            version  => $mir_meta->{stable}{version},
+        }) if $meta->{release_status} eq 'stable';
     }
 
     return $self;
@@ -306,12 +326,7 @@ sub parse_docs {
     my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
-    my $libxml = XML::LibXML->new(
-        recover    => 2,
-        no_network => 1,
-        no_blanks  => 1,
-        no_cdata   => 1,
-    );
+    my $libxml = $self->libxml;
 
     # Find all doc files and write them out.
     my %docs;
@@ -321,9 +336,9 @@ sub parse_docs {
     ) {
         for my $member ($zip->membersMatching(qr{^$prefix/$regex})) {
             next if $member->isDirectory;
-            (my $fn  = $member->fileName) =~ s{^$prefix/}{};
-            my $src  = catfile $dir, $fn;
-            my $doc  = $libxml->parse_html_string($markup->parse(file => $src), {
+            (my $fn = $member->fileName) =~ s{^$prefix/}{};
+            my $src = catfile $dir, $fn;
+            my $doc = $libxml->parse_html_string($markup->parse(file => $src), {
                 suppress_warnings => 1,
                 suppress_errors   => 1,
                 recover           => 2,
@@ -397,6 +412,33 @@ sub _get_username {
         );
         $user->{name};
     };
+}
+
+sub _idx_extdoc {
+    my ($self, $meta, $ext) = @_;
+    my $path = first { $meta->{docs}{"$_$ext"} } 'doc/', 'docs/', ''
+        or return;
+    my $file = $self->doc_root_file_for(
+        doc     => $meta,
+        path    => "$path$ext",
+        '+path' => "$path$ext", # XXX Part of above-mentioned hack.
+    );
+    my $doc = $self->libxml->parse_html_file($file, {
+        suppress_warnings => 1,
+        suppress_errors   => 1,
+        recover           => 2,
+    });
+    return _strip_html( $doc->findnodes('//div[@id="pgxnbod"]')->shift );
+}
+
+sub _strip_html {
+    my $ret = '';
+    for my $elem (@_) {
+        $ret .= $elem->nodeType == XML_TEXT_NODE ? $elem->data
+              : $elem->nodeType == XML_ELEMENT_NODE && $elem->nodeName eq 'br' ? ' '
+              : _strip_html($elem->childNodes);
+    }
+    return $ret;
 }
 
 sub _update_releases {
