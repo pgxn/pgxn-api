@@ -223,6 +223,14 @@ $params->{meta} = $meta;
 ok $indexer->update_user($params), 'Update the user metadata';
 file_exists_ok $user_file, "$user_file should now exist";
 
+is_deeply shift @{ $indexer->docs }, {
+    key      => 'theory',
+    meta     => "david\@justatheory.com\nhttp://justatheory.com/",
+    nickname => 'theory',
+    type     => 'user',
+    username => 'David E. Wheeler',
+}, 'Should have index data';
+
 # Now make sure that it has the updated release metadata.
 ok my $mir_data = $api->read_json_from(
     catfile $doc_root, qw(pgxn by user theory.json)
@@ -240,6 +248,8 @@ fcopy catfile(qw(t data theory-updated.json)),
 $params->{meta} = $meta_011;
 ok $indexer->update_user($params),
     'Update the user metadata for pair 0.1.1';
+is_deeply $indexer->docs, [], 'Should have no index update for test dist';
+
 $mir_data->{releases}{pair}{stable} = [
     {version => '0.1.0', date => '2010-10-19T03:59:54Z'},
 ];
@@ -282,6 +292,13 @@ is_deeply shift @{ $indexer->docs }, {
     username => 'David E. Wheeler',
     version  => "0.1.2",
 }, 'New version should be queued for indexing';
+is_deeply shift @{ $indexer->docs }, {
+    key      => 'theory',
+    meta     => "david\@justatheory.com\nhttp://justatheory.com/",
+    nickname => 'theory',
+    type     => 'user',
+    username => 'David E. Wheeler',
+}, 'Should have index data again';
 
 ##############################################################################
 # Now update the tag metadata.

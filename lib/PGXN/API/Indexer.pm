@@ -196,7 +196,18 @@ sub merge_distmeta {
 sub update_user {
     my ($self, $p) = @_;
     say "  Updating user $p->{meta}{user}" if $self->verbose;
-    $self->_update_releases('by-user' => $p->{meta});
+    my $user = $self->_update_releases('by-user' => $p->{meta});
+
+    $self->_index({
+        type     => 'user',
+        key      => $user->{nickname},
+        username => $user->{name},
+        nickname => $user->{nickname},
+        meta     => join("\n",
+            grep { $_ } map { $user->{$_} } qw(email uri twitter)
+        ),
+    }) if $p->{meta}->{release_status} eq 'stable';
+
     return $self;
 }
 
@@ -403,6 +414,7 @@ sub _update_releases {
 
     # Write out the data to the doc root.
     $api->write_json_to($doc_file => $doc_meta);
+    return $doc_meta;
 }
 
 sub _index {
