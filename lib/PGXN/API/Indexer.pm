@@ -193,29 +193,6 @@ sub merge_distmeta {
     return $self;
 }
 
-sub _get_username {
-    my ($self, $meta) = @_;
-    return $self->{_username} ||= do {
-        my $user = PGXN::API->instance->read_json_from(
-            $self->mirror_file_for('by-user' => $meta)
-        );
-        $user->{name};
-    };
-}
-
-sub _idx_distmeta {
-    my $meta = shift;
-    my @lines = (
-        "$meta->{license} license",
-        (ref $meta->{maintainer} ? @{ $meta->{maintainer} } : ($meta->{maintainer})),
-    );
-
-    while (my ($k, $v) = each %{ $meta->{provides}} ) {
-        push @lines => $v->{abstract} ? "$k: $v->{abstract}" : $k;
-    }
-    return join $/ => @lines;
-}
-
 sub update_user {
     my ($self, $p) = @_;
     say "  Updating user $p->{meta}{user}" if $self->verbose;
@@ -235,28 +212,6 @@ sub update_tags {
         $self->_update_releases('by-tag' => $meta, tag => $tag);
     }
     return $self;
-}
-
-sub _update_releases {
-    my $self = shift;
-    my $meta = $_[1];
-    my $api = PGXN::API->instance;
-
-    # Read in metadata from the mirror.
-    my $mir_file = $self->mirror_file_for(@_);
-    my $mir_meta = $api->read_json_from($mir_file);
-
-    # Read in metadata from the doc root.
-    my $doc_file = $self->doc_root_file_for(@_);
-    my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
-
-    # Update with latest release info and abstract.
-    my $rels = $doc_meta->{releases}{$meta->{name}}
-        = $mir_meta->{releases}{$meta->{name}};
-    $rels->{abstract} = $meta->{abstract};
-
-    # Write out the data to the doc root.
-    $api->write_json_to($doc_file => $doc_meta);
 }
 
 sub update_extensions {
@@ -403,6 +358,51 @@ sub doc_root_file_for {
     my $self = shift;
     return catfile +PGXN::API->instance->doc_root,
         $self->_uri_for(@_)->path_segments;
+}
+
+sub _idx_distmeta {
+    my $meta = shift;
+    my @lines = (
+        "$meta->{license} license",
+        (ref $meta->{maintainer} ? @{ $meta->{maintainer} } : ($meta->{maintainer})),
+    );
+
+    while (my ($k, $v) = each %{ $meta->{provides}} ) {
+        push @lines => $v->{abstract} ? "$k: $v->{abstract}" : $k;
+    }
+    return join $/ => @lines;
+}
+
+sub _get_username {
+    my ($self, $meta) = @_;
+    return $self->{_username} ||= do {
+        my $user = PGXN::API->instance->read_json_from(
+            $self->mirror_file_for('by-user' => $meta)
+        );
+        $user->{name};
+    };
+}
+
+sub _update_releases {
+    my $self = shift;
+    my $meta = $_[1];
+    my $api = PGXN::API->instance;
+
+    # Read in metadata from the mirror.
+    my $mir_file = $self->mirror_file_for(@_);
+    my $mir_meta = $api->read_json_from($mir_file);
+
+    # Read in metadata from the doc root.
+    my $doc_file = $self->doc_root_file_for(@_);
+    my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : $mir_meta;
+
+    # Update with latest release info and abstract.
+    my $rels = $doc_meta->{releases}{$meta->{name}}
+        = $mir_meta->{releases}{$meta->{name}};
+    $rels->{abstract} = $meta->{abstract};
+
+    # Write out the data to the doc root.
+    $api->write_json_to($doc_file => $doc_meta);
 }
 
 sub _index {
