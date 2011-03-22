@@ -71,89 +71,66 @@ has indexers => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         ),
     );
 
-    my $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'key',      type => $indexed );
-    $schema->spec_field( name => 'title',    type => $fti     );
-    $schema->spec_field( name => 'abstract', type => $fti     );
-    $schema->spec_field( name => 'body',     type => $ftih    );
-    $schema->spec_field( name => 'dist',     type => $fti     );
-    $schema->spec_field( name => 'version',  type => $stored  );
-    $schema->spec_field( name => 'date',     type => $stored  );
-    $schema->spec_field( name => 'username', type => $stored  );
-    $schema->spec_field( name => 'nickname', type => $stored  );
+    my %indexes;
+    for my $spec (
+        [ doc => [
+            [ key         => $indexed ],
+            [ title       => $fti     ],
+            [ abstract    => $fti     ],
+            [ body        => $ftih    ],
+            [ dist        => $fti     ],
+            [ version     => $stored  ],
+            [ date        => $stored  ],
+            [ username    => $stored  ],
+            [ nickname    => $stored  ],
+        ]],
+        [ dist => [
+            [ key         => $indexed ],
+            [ name        => $fti     ],
+            [ abstract    => $ftih    ],
+            [ description => $ftih    ],
+            [ readme      => $ftih    ],
+            [ tags        => $list    ],
+            [ version     => $stored  ],
+            [ date        => $stored  ],
+            [ username    => $stored  ],
+            [ nickname    => $stored  ],
+        ]],
+        [ ext => [
+            [ key         => $indexed ],
+            [ name        => $fti     ],
+            [ abstract    => $ftih    ],
+            [ dist        => $stored  ],
+            [ version     => $stored  ],
+            [ date        => $stored  ],
+            [ username    => $stored  ],
+            [ nickname    => $stored  ],
+        ]],
+        [ user => [
+            [ key         => $indexed ],
+            [ nickname    => $fti     ],
+            [ name        => $fti     ],
+            [ email       => $indexed ],
+            [ uri         => $indexed ],
+            [ details     => $ftih    ],
+        ]],
+        [ tag => [
+            [ key         => $indexed ],
+            [ name        => $fti     ],
+        ]],
+    ) {
+        my ($name, $fields) = @{ $spec };
+        my $schema = KinoSearch::Plan::Schema->new;
+        $schema->spec_field(name => $_->[0], type => $_->[1] )
+            for @{ $fields };
+        $indexes{$name} = KinoSearch::Index::Indexer->new(
+            index    => catdir($dir, $name),
+            schema   => $schema,
+            create   => 1,
+        );
+    }
 
-    my $doc = KinoSearch::Index::Indexer->new(
-        index    => catdir($dir, 'doc'),
-        schema   => $schema,
-        create   => 1,
-    );
-
-    $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'key',         type => $indexed );
-    $schema->spec_field( name => 'name',        type => $fti     );
-    $schema->spec_field( name => 'abstract',    type => $fti     );
-    $schema->spec_field( name => 'description', type => $fti     );
-    $schema->spec_field( name => 'readme',      type => $ftih    );
-    $schema->spec_field( name => 'tags',        type => $list    );
-    $schema->spec_field( name => 'version',     type => $stored  );
-    $schema->spec_field( name => 'date',        type => $stored  );
-    $schema->spec_field( name => 'username',    type => $stored  );
-    $schema->spec_field( name => 'nickname',    type => $stored  );
-
-    my $dist = KinoSearch::Index::Indexer->new(
-        index    => catdir($dir, 'dist'),
-        schema   => $schema,
-        create   => 1,
-    );
-
-    $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'key',      type => $indexed );
-    $schema->spec_field( name => 'name',     type => $fti     );
-    $schema->spec_field( name => 'abstract', type => $ftih    );
-    $schema->spec_field( name => 'dist',     type => $stored  );
-    $schema->spec_field( name => 'version',  type => $stored  );
-    $schema->spec_field( name => 'date',     type => $stored  );
-    $schema->spec_field( name => 'username', type => $stored  );
-    $schema->spec_field( name => 'nickname', type => $stored  );
-
-    my $ext = KinoSearch::Index::Indexer->new(
-        index    => catdir($dir, 'ext'),
-        schema   => $schema,
-        create   => 1,
-    );
-
-    $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'key',      type => $indexed );
-    $schema->spec_field( name => 'nickname', type => $fti     );
-    $schema->spec_field( name => 'name',     type => $fti     );
-    $schema->spec_field( name => 'email',    type => $indexed );
-    $schema->spec_field( name => 'uri',      type => $indexed );
-    $schema->spec_field( name => 'details',  type => $ftih    );
-
-    my $user = KinoSearch::Index::Indexer->new(
-        index    => catdir($dir, 'user'),
-        schema   => $schema,
-        create   => 1,
-    );
-
-    $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'key',  type => $indexed );
-    $schema->spec_field( name => 'name', type => $fti     );
-
-    my $tag = KinoSearch::Index::Indexer->new(
-        index    => catdir($dir, 'tag'),
-        schema   => $schema,
-        create   => 1,
-    );
-
-    return +{
-        doc  => $doc,
-        dist => $dist,
-        ext  => $ext,
-        user => $user,
-        tag  => $tag,
-    };
-
+    return \%indexes;
 });
 
 sub update_mirror_meta {
