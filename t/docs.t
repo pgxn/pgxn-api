@@ -31,7 +31,9 @@ for my $in (glob catfile qw(t htmlin *)) {
     # diag PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')) if $in =~ /head/; next;
     file_contents_eq_or_diff(
         catfile(qw(t htmlout), basename $in),
-        PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')),
+        PGXN::API::Indexer::_clean_html_body(
+            $doc->findnodes('/html/body')
+        )->toString . "\n",
         "Test HTML from $in",
         { encoding => 'UTF-8' },
     );

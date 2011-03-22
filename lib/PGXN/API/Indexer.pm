@@ -12,15 +12,17 @@ use Text::Markup;
 use XML::LibXML;
 use List::Util qw(first);
 use KinoSearch::Plan::Schema;
-use KinoSearch::Plan::FullTextType;
 use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Index::Indexer;
 use namespace::autoclean;
 
-has verbose => (is => 'rw', isa => 'Int', default => 0);
-has docs => (is => 'ro', isa => 'ArrayRef', default => sub { [] });
-has libxml => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
+has verbose  => (is => 'rw', isa => 'Int', default => 0);
+has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
+    map { $_ => [] } qw(doc dist ext user tag)
+} });
+
+has libxml   => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
     XML::LibXML->new(
         recover    => 2,
         no_network => 1,
@@ -28,21 +30,26 @@ has libxml => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
         no_cdata   => 1,
     );
 });
-has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default => sub {
-    # Create the analyzer.
+
+has indexers => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+    my $dir = catdir +PGXN::API->instance->doc_root, '_index';
+    if (!-e $dir) {
+        require File::Path;
+        File::Path::make_path($dir);
+    }
+
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
         language => 'en',
     );
 
-    # Create the data types.
     my $fti = KinoSearch::Plan::FullTextType->new(
         analyzer      => $polyanalyzer,
-        highlightable => 1,
+        highlightable => 0,
     );
 
-    my $string = KinoSearch::Plan::StringType->new(
-        indexed => 1,
-        stored  => 1,
+    my $ftih = KinoSearch::Plan::FullTextType->new(
+        analyzer      => $polyanalyzer,
+        highlightable => 1,
     );
 
     my $indexed = KinoSearch::Plan::StringType->new(
@@ -55,36 +62,98 @@ has ksi => (is => 'ro', isa => 'KinoSearch::Index::Indexer', lazy => 1, default 
         stored  => 1,
     );
 
-    my $list  = KinoSearch::Plan::FullTextType->new(
+    my $list = KinoSearch::Plan::FullTextType->new(
         indexed       => 1,
         stored        => 1,
-        boost         => 2.0,
-        analyzer      => KinoSearch::Analysis::Tokenizer->new(pattern => '[^\003]'),
         highlightable => 1,
+        analyzer      => KinoSearch::Analysis::Tokenizer->new(
+            pattern => '[^\003]'
+        ),
     );
 
-    # Create the schema.
     my $schema = KinoSearch::Plan::Schema->new;
-    $schema->spec_field( name => 'type',        type => $string  );
-    $schema->spec_field( name => 'key',         type => $indexed );
-    $schema->spec_field( name => 'title',       type => $fti     );
-    $schema->spec_field( name => 'date',        type => $stored  );
-    $schema->spec_field( name => 'username',    type => $fti     );
-    $schema->spec_field( name => 'nickname',    type => $string  );
-    $schema->spec_field( name => 'version',     type => $stored  );
-    $schema->spec_field( name => 'abstract',    type => $fti     );
-    $schema->spec_field( name => 'body',        type => $fti     );
-    $schema->spec_field( name => 'tags',        type => $list    );
-    $schema->spec_field( name => 'meta',        type => $fti     );
-    $schema->spec_field( name => 'dist',        type => $stored  );
-    $schema->spec_field( name => 'distversion', type => $stored  );
+    $schema->spec_field( name => 'key',      type => $indexed );
+    $schema->spec_field( name => 'title',    type => $fti     );
+    $schema->spec_field( name => 'abstract', type => $fti     );
+    $schema->spec_field( name => 'body',     type => $ftih    );
+    $schema->spec_field( name => 'dist',     type => $fti     );
+    $schema->spec_field( name => 'version',  type => $stored  );
+    $schema->spec_field( name => 'date',     type => $stored  );
+    $schema->spec_field( name => 'username', type => $stored  );
+    $schema->spec_field( name => 'nickname', type => $stored  );
 
-    # Create Indexer.
-    KinoSearch::Index::Indexer->new(
-        index    => catfile(PGXN::API->instance->doc_root, '_index'),
+    my $doc = KinoSearch::Index::Indexer->new(
+        index    => catdir($dir, 'doc'),
         schema   => $schema,
         create   => 1,
     );
+
+    $schema = KinoSearch::Plan::Schema->new;
+    $schema->spec_field( name => 'key',         type => $indexed );
+    $schema->spec_field( name => 'name',        type => $fti     );
+    $schema->spec_field( name => 'abstract',    type => $fti     );
+    $schema->spec_field( name => 'description', type => $fti     );
+    $schema->spec_field( name => 'readme',      type => $ftih    );
+    $schema->spec_field( name => 'tags',        type => $list    );
+    $schema->spec_field( name => 'version',     type => $stored  );
+    $schema->spec_field( name => 'date',        type => $stored  );
+    $schema->spec_field( name => 'username',    type => $stored  );
+    $schema->spec_field( name => 'nickname',    type => $stored  );
+
+    my $dist = KinoSearch::Index::Indexer->new(
+        index    => catdir($dir, 'dist'),
+        schema   => $schema,
+        create   => 1,
+    );
+
+    $schema = KinoSearch::Plan::Schema->new;
+    $schema->spec_field( name => 'key',      type => $indexed );
+    $schema->spec_field( name => 'name',     type => $fti     );
+    $schema->spec_field( name => 'abstract', type => $ftih    );
+    $schema->spec_field( name => 'dist',     type => $stored  );
+    $schema->spec_field( name => 'version',  type => $stored  );
+    $schema->spec_field( name => 'date',     type => $stored  );
+    $schema->spec_field( name => 'username', type => $stored  );
+    $schema->spec_field( name => 'nickname', type => $stored  );
+
+    my $ext = KinoSearch::Index::Indexer->new(
+        index    => catdir($dir, 'ext'),
+        schema   => $schema,
+        create   => 1,
+    );
+
+    $schema = KinoSearch::Plan::Schema->new;
+    $schema->spec_field( name => 'key',      type => $indexed );
+    $schema->spec_field( name => 'nickname', type => $fti     );
+    $schema->spec_field( name => 'name',     type => $fti     );
+    $schema->spec_field( name => 'email',    type => $indexed );
+    $schema->spec_field( name => 'uri',      type => $indexed );
+    $schema->spec_field( name => 'details',  type => $ftih    );
+
+    my $user = KinoSearch::Index::Indexer->new(
+        index    => catdir($dir, 'user'),
+        schema   => $schema,
+        create   => 1,
+    );
+
+    $schema = KinoSearch::Plan::Schema->new;
+    $schema->spec_field( name => 'key',  type => $indexed );
+    $schema->spec_field( name => 'name', type => $fti     );
+
+    my $tag = KinoSearch::Index::Indexer->new(
+        index    => catdir($dir, 'tag'),
+        schema   => $schema,
+        create   => 1,
+    );
+
+    return +{
+        doc  => $doc,
+        dist => $dist,
+        ext  => $ext,
+        user => $user,
+        tag  => $tag,
+    };
+
 });
 
 sub update_mirror_meta {
@@ -173,18 +242,17 @@ sub merge_distmeta {
     }
 
     # Index it if it's a new stable release.
-    $self->_index({
-        type     => 'dist',
-        key      => $meta->{name},
-        title    => $meta->{name},
-        date     => $meta->{date},
-        abstract => $meta->{abstract},
-        body     => $self->_readme($p),
+    $self->_index( dist => {
+        key         => $meta->{name},
+        name        => $meta->{name},
+        abstract    => $meta->{abstract},
+        description => $meta->{description},
+        readme      => $self->_readme($p),
         tags     => join("\003" => @{ $meta->{tags} }),
+        version  => $meta->{version},
+        date     => $meta->{date},
         username => $self->_get_username($meta),
         nickname => $meta->{user},
-        version  => $meta->{version},
-        meta     => _idx_distmeta($meta),
     }) if $meta->{release_status} eq 'stable';
 
     # Now update all older versions with the complete list of releases.
@@ -209,15 +277,25 @@ sub update_user {
     say "  Updating user $p->{meta}{user}" if $self->verbose;
     my $user = $self->_update_releases('by-user' => $p->{meta});
 
-    $self->_index({
-        type     => 'user',
-        key      => $user->{nickname},
-        username => $user->{name},
-        nickname => $user->{nickname},
-        meta     => join("\n",
-            grep { $_ } map { $user->{$_} } qw(email uri twitter)
-        ),
-    }) if $p->{meta}->{release_status} eq 'stable';
+    if ($p->{meta}->{release_status} eq 'stable') {
+        my $data = {
+            key      => $user->{nickname},
+            nickname => $user->{nickname},
+            name     => $user->{name},
+            email    => $user->{email},
+            uri      => $user->{uri},
+        };
+
+        # Gather up any other details.
+        $data->{details} = join(
+            "\n",
+            grep { $_ }
+             map { $user->{$_} }
+            sort grep { !$data->{$_} && !ref $user->{$_} }
+            keys %{ $user }
+        );
+        $self->_index(user => $data);
+    }
 
     return $self;
 }
@@ -232,10 +310,9 @@ sub update_tags {
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
         my $data = $self->_update_releases('by-tag' => $meta, tag => $tag);
-        $self->_index({
-            type     => 'tag',
-            key      => $tag,
-            title    => $tag,
+        $self->_index(tag => {
+            key  => $tag,
+            name => $tag,
         }) if $p->{meta}->{release_status} eq 'stable';
     }
     return $self;
@@ -303,18 +380,15 @@ sub update_extensions {
 
         # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
-        $self->_index({
-            type        => 'extension',
+        $self->_index(ext => {
             key         => $mir_meta->{extension},
-            title       => $mir_meta->{extension},
-            date        => $meta->{date},
-            body        => $self->_idx_extdoc($meta, $mir_meta->{extension}),
+            name        => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
+            dist        => $meta->{name},
+            version     => $mir_meta->{stable}{version},
+            date        => $meta->{date},
             username    => $self->_get_username($meta),
             nickname    => $meta->{user},
-            version     => $mir_meta->{stable}{version},
-            dist        => $meta->{name},
-            distversion => $meta->{version},
         }) if $meta->{release_status} eq 'stable';
     }
 
@@ -340,6 +414,7 @@ sub parse_docs {
     ) {
         for my $member ($zip->membersMatching(qr{^$prefix/$regex})) {
             next if $member->isDirectory;
+            # XXX Read no_index and skip as appropriate.
             (my $fn = $member->fileName) =~ s{^$prefix/}{};
             my $src = catfile $dir, $fn;
             my $doc = $libxml->parse_html_string($markup->parse(file => $src), {
@@ -371,13 +446,28 @@ sub parse_docs {
 
             # Clean up the HTML and write it out.
             open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
-            print $fh _clean_html_body($doc->findnodes('/html/body'));
+            $doc = _clean_html_body($doc->findnodes('/html/body'));
+            print $fh $doc->toString, "\n";
             close $fh or die "Cannot close $fn: $!\n";
 
             $docs{$noext} = {
                 title => $title,
                 ($abstract) ? (abstract => $abstract) : ()
             };
+
+            # Add it to the search index.
+            $self->_index(doc => {
+                key      => "$meta->{name}/$noext",
+                title    => $title,
+                abstract => $abstract,
+                body     => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),
+                dist     => $meta->{name},
+                version  => $meta->{version},
+                date     => $meta->{date},
+                username => $self->_get_username($meta),
+                nickname => $meta->{user},
+            }) if $meta->{release_status} eq 'stable'
+               && $member->fileName !~ qr{^$prefix/(?i:README(?:[.][^.]+)?)$};
         }
     }
     return \%docs;
@@ -419,23 +509,6 @@ sub _get_username {
     };
 }
 
-sub _idx_extdoc {
-    my ($self, $meta, $ext) = @_;
-    my $path = first { $meta->{docs}{"$_$ext"} } 'doc/', 'docs/', ''
-        or return;
-    my $file = $self->doc_root_file_for(
-        doc     => $meta,
-        path    => "$path$ext",
-        '+path' => "$path$ext", # XXX Part of above-mentioned hack.
-    );
-    my $doc = $self->libxml->parse_html_file($file, {
-        suppress_warnings => 1,
-        suppress_errors   => 1,
-        recover           => 2,
-    });
-    return _strip_html( $doc->findnodes('//div[@id="pgxnbod"]')->shift );
-}
-
 sub _strip_html {
     my $ret = '';
     for my $elem (@_) {
@@ -470,31 +543,29 @@ sub _update_releases {
 }
 
 sub _index {
-    my $self = shift;
-    push @{ $self->docs } => shift;
+    my ($self, $index, $data) = @_;
+    push @{ $self->to_index->{ $index } } => $data;
 }
 
 sub _rollback {
-    @{ shift->docs } = ();
+    my $self = shift;
+    @{ $self->to_index->{$_} } = () for keys %{ $self->to_index };
     return;
 }
 
 sub _commit {
     my $self = shift;
-    my $docs = $self->docs;
-    return unless @{ $docs };
+    my $to_index = $self->to_index;
 
-    @{ $self->docs } = ();
-
-    my $ksi = $self->ksi;
-    for my $doc (@{ $docs }) {
-        $ksi->delete_by_query(KinoSearch::Search::AndQuery->new(children => [
-            KinoSearch::Search::TermQuery->(field => 'type', term => $doc->{type}),
-            KinoSearch::Search::TermQuery->(field => 'id',   term => $doc->{id}),
-        ]));
-        $ksi->add_doc($doc);
+    for my $iname (keys %{ $to_index }) {
+        my $indexer = $self->indexers->{$iname};
+        for my $doc (@{ $to_index->{$iname} }) {
+            $indexer->delete_by_term( field => 'key', term => $doc->{key} );
+            $indexer->add_doc($doc);
+        }
     }
 
+    $self->_rollback;
     return $self;
 }
 
@@ -802,7 +873,7 @@ sub _clean_html_body {
     $doc->addChild($top);
     $top->appendText("");
     $doc->appendText("\n");
-    return $doc->toString . "\n";
+    return $doc;
 }
 
 1;
