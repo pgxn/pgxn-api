@@ -19,7 +19,7 @@ use namespace::autoclean;
 
 has verbose  => (is => 'rw', isa => 'Int', default => 0);
 has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 } });
 
 has libxml   => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
@@ -88,15 +88,15 @@ has indexers => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ key         => $indexed ],
             [ name        => $fti     ],
             [ abstract    => $ftih    ],
-            [ description => $ftih    ],
-            [ readme      => $ftih    ],
+            [ description => $fti     ],
+            [ readme      => $fti     ],
             [ tags        => $list    ],
             [ version     => $stored  ],
             [ date        => $stored  ],
             [ username    => $stored  ],
             [ nickname    => $stored  ],
         ]],
-        [ ext => [
+        [ extension => [
             [ key         => $indexed ],
             [ name        => $fti     ],
             [ abstract    => $ftih    ],
@@ -357,7 +357,7 @@ sub update_extensions {
 
         # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
-        $self->_index(ext => {
+        $self->_index(extension => {
             key         => $mir_meta->{extension},
             name        => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},

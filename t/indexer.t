@@ -374,7 +374,7 @@ fcopy catfile(qw(t data pair-tag-updated.json)),
 ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
 file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should have no index updates for test dist';
 
 # Check the JSON data.
@@ -467,7 +467,7 @@ $params->{meta} = $meta;
 ok $indexer->update_extensions($params), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
 
-is_deeply shift @{ $indexer->to_index->{ext} }, {
+is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract => 'A key/value pair data type',
     date     => '2010-10-18T15:24:21Z',
     dist     => 'pair',
@@ -510,7 +510,7 @@ $params->{meta} = $meta_011;
 ok $indexer->update_extensions($params),
     'Update the extension metadata to 0.1.1';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should have no indexed extensions for testing dist';
 
 $exp->{latest} = 'testing';
@@ -541,7 +541,7 @@ fcopy catfile(qw(t data pair-ext-updated2.json)),
 ok $indexer->update_extensions($params),
     'Add the extension to another distribution';
 
-is_deeply shift @{ $indexer->to_index->{ext} }, {
+is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-10-29T22:46:45Z',
     dist        => 'otherdist',
@@ -575,7 +575,7 @@ $params->{meta} = $meta_012;
 ok $indexer->update_extensions($params),
     'Update the extension to 0.1.2.';
 
-is_deeply shift @{ $indexer->to_index->{ext} }, {
+is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract => 'A key/value pair dåtå type',
     date     => '2010-11-10T12:18:03Z',
     dist     => 'pair',
@@ -615,7 +615,7 @@ file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
 file_not_exists_ok $doc, 'dist/pair/pair/0.1.0/doc/pair.html should not exist';
 
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should start with no docs to index';
 
 $meta->{docs} = $indexer->parse_docs($params);
@@ -685,7 +685,7 @@ $mock->unmock_all;
 # Make sure transaction stuff works.
 ok !$indexer->_rollback, 'Rollback';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should start with no docs to index';
 $doc = {
     key      => 'foo',
@@ -697,7 +697,7 @@ ok $indexer->_index(dist =>$doc), 'Index a doc';
 is_deeply $indexer->to_index->{dist}, [$doc], 'Should have it in docs';
 ok !$indexer->_rollback, 'Rollback should return false';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should have no docs to index again';
 
 # Test full text search indexing.
@@ -709,7 +709,7 @@ isa_ok $indexer->indexers->{$_}, 'KinoSearch::Index::Indexer', "$_ indexer"
 ok $indexer->_commit, 'Commit that doc';
 file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist ext user tag)
+    map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should once again have no docs to index';
 
 # XXX Test to make sure a record is replaced by searching, then updating, then
