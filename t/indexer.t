@@ -8,6 +8,7 @@ use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
 use PGXN::API::Sync;
+use PGXN::API::Searcher;
 use Test::File;
 use Test::Exception;
 use Test::File::Contents;
@@ -26,7 +27,9 @@ can_ok $CLASS => qw(
     verbose
     to_index
     libxml
-    indexers
+    index_dir
+    schemas
+    indexer_for
     update_mirror_meta
     add_distribution
     copy_files
@@ -704,13 +707,68 @@ is_deeply $indexer->to_index, {
 ok $indexer->_index(dist => $doc), 'Index a doc again';
 file_not_exists_ok catdir($doc_root, '_index'), 'Should not have index dir yet';
 
-isa_ok $indexer->indexers->{$_}, 'KinoSearch::Index::Indexer', "$_ indexer"
-    for keys %{ $indexer->indexers };
+isa_ok $indexer->indexer_for($_), 'KinoSearch::Index::Indexer', "$_ indexer"
+    for qw(doc dist extension user tag);
 ok $indexer->_commit, 'Commit that doc';
 file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
 is_deeply $indexer->to_index, {
     map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should once again have no docs to index';
 
+##############################################################################
+# Time to actually add some stuff to the index.
+$mock->unmock_all;
+
+$params = { meta => $meta, zip => $zip };
+ok $indexer->add_distribution($params), 'Index pair 0.1.0';
+
 # XXX Test to make sure a record is replaced by searching, then updating, then
 # searching again.
+my $dir = catdir +PGXN::API->instance->doc_root, '_index';
+ok my $searcher = PGXN::API::Searcher->new($dir), 'Instantiate a searcher';
+ok my $res = $searcher->search(dist => {query => 'data'}),
+    'Search dists for "data"';
+is $res->{count}, 1, 'Should have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair data type',
+    'It should have the distribution';
+
+# Now index 0.1.1 (testing).
+$meta_011 = $api->read_json_from(
+    catfile $api->mirror_root, qw(dist pair 0.1.1 META.json)
+);
+$pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.pgz);
+$params->{meta}   = $meta_011;
+ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
+ok $indexer->add_distribution($params), 'Index pair 0.1.1';
+
+# The previous stable release should still be indxed.
+ok $searcher = PGXN::API::Searcher->new($dir), 'Instantiate another searcher';
+ok $res = $searcher->search(dist => {query => 'data'}),
+    'Search dists for "data" again';
+is $res->{count}, 1, 'Should have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair data type',
+    'It should have the distribution';
+is $res->{hits}[0]{version}, '0.1.0', 'It should still be 0.1.0';
+
+# Make it stable and try again.
+$meta_011->{release_status} = 'stable';
+ok $indexer->add_distribution($params), 'Index pair 0.1.1 stable';
+
+# Now it should be updated.
+ok $searcher = PGXN::API::Searcher->new($dir), 'Instantiate the searcher';
+ok $res = $searcher->search(dist => {query => 'dåtå'}),
+    'Search dists for "dåtå"';
+is $res->{count}, 1, 'Should have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
+    'It should have the distribution';
+is $res->{hits}[0]{version}, '0.1.1', 'It should still be 0.1.1';
+
+# The query for "data" should stil return the one record.
+ok $res = $searcher->search(dist => {query => 'data'}),
+    'Search dists for "data" one last time';
+is $res->{count}, 1, 'Should have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
+    'It should have the distribution';
+is $res->{hits}[0]{version}, '0.1.1', 'It should still be 0.1.1';
+
+

@@ -31,13 +31,16 @@ has libxml   => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
     );
 });
 
-has indexers => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+has index_dir => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
     my $dir = catdir +PGXN::API->instance->doc_root, '_index';
     if (!-e $dir) {
         require File::Path;
         File::Path::make_path($dir);
     }
+    $dir;
+});
 
+has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
         language => 'en',
     );
@@ -71,7 +74,7 @@ has indexers => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         ),
     );
 
-    my %indexes;
+    my %schemas;
     for my $spec (
         [ doc => [
             [ key         => $indexed ],
@@ -123,15 +126,19 @@ has indexers => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         my $schema = KinoSearch::Plan::Schema->new;
         $schema->spec_field(name => $_->[0], type => $_->[1] )
             for @{ $fields };
-        $indexes{$name} = KinoSearch::Index::Indexer->new(
-            index    => catdir($dir, $name),
-            schema   => $schema,
-            create   => 1,
-        );
+        $schemas{$name} = $schema;
     }
-
-    return \%indexes;
+    return \%schemas;
 });
+
+sub indexer_for {
+    my ($self, $iname) = @_;
+    KinoSearch::Index::Indexer->new(
+        index    => catdir($self->index_dir, $iname),
+        schema   => $self->schemas->{$iname},
+        create   => 1,
+    );
+}
 
 sub update_mirror_meta {
     my $self = shift;
@@ -535,14 +542,15 @@ sub _commit {
     my $to_index = $self->to_index;
 
     for my $iname (keys %{ $to_index }) {
-        my $indexer = $self->indexers->{$iname};
+        my $indexer = $self->indexer_for($iname);
         for my $doc (@{ $to_index->{$iname} }) {
             $indexer->delete_by_term( field => 'key', term => $doc->{key} );
             $indexer->add_doc($doc);
         }
+        $indexer->commit;
+        @{ $to_index->{$iname} } = ();
     }
 
-    $self->_rollback;
     return $self;
 }
 

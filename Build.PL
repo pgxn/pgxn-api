@@ -40,7 +40,7 @@ $class->new(
         'MooseX::Singleton'            => '0.25',
         'namespace::autoclean'         => '0.11',
         'perl'                         => 5.012,
-        'PGXN::API::Search'            => '0.5.6',
+        'PGXN::API::Searcher'          => '0.5.6',
         'Plack'                        => '0.9956',
         'Plack::App::Directory'        => 0,
         'Plack::App::File'             => 0,
