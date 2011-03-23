@@ -83,6 +83,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ body        => $ftih    ],
             [ dist        => $fti     ],
             [ version     => $stored  ],
+            [ path        => $stored  ],
             [ date        => $stored  ],
             [ username    => $stored  ],
             [ nickname    => $stored  ],
@@ -442,6 +443,7 @@ sub parse_docs {
             # Add it to the search index.
             $self->_index(doc => {
                 key      => "$meta->{name}/$noext",
+                path     => $noext,
                 title    => $title,
                 abstract => $abstract,
                 body     => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),

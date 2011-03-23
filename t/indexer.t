@@ -643,6 +643,7 @@ is_deeply shift @{ $indexer->to_index->{doc} }, {
     dist     => 'pair',
     key      => 'pair/doc/pair',
     nickname => 'theory',
+    path     => 'doc/pair',
     title    => 'pair 0.1.0',
     username => 'David E. Wheeler',
     version  => '0.1.0',
@@ -722,16 +723,28 @@ $mock->unmock_all;
 $params = { meta => $meta, zip => $zip };
 ok $indexer->add_distribution($params), 'Index pair 0.1.0';
 
-# XXX Test to make sure a record is replaced by searching, then updating, then
-# searching again.
 my $dir = catdir +PGXN::API->instance->doc_root, '_index';
 ok my $searcher = PGXN::API::Searcher->new($dir), 'Instantiate a searcher';
+
+# Let's search it!
 ok my $res = $searcher->search(dist => {query => 'data'}),
     'Search dists for "data"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
     'It should have the distribution';
+is $res->{hits}[0]{version}, '0.1.0', 'It should be 0.1.0';
 
+ok $res = $searcher->search(doc => {query => 'composite'}),
+    'Search docs for "composite"';
+is $res->{count}, 1, 'Should have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair data type',
+    'It should have the abstract';
+like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
+    'It should have the excerpt';
+is $res->{hits}[0]{dist}, 'pair', 'It should be in dist "pair"';
+is $res->{hits}[0]{version}, '0.1.0', 'It should be in 0.1.0';
+
+##############################################################################
 # Now index 0.1.1 (testing).
 $meta_011 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair 0.1.1 META.json)
@@ -750,7 +763,19 @@ is $res->{hits}[0]{abstract}, 'A key/value pair data type',
     'It should have the distribution';
 is $res->{hits}[0]{version}, '0.1.0', 'It should still be 0.1.0';
 
-# Make it stable and try again.
+# Search docs.
+ok $res = $searcher->search(doc => {query => 'composite'}),
+    'Search docs for "composite" again';
+is $res->{count}, 1, 'Should also have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair data type',
+    'It should have the same abstract';
+like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
+    'It should have the same excerpt';
+is $res->{hits}[0]{dist}, 'pair', 'It should still be in dist "pair"';
+is $res->{hits}[0]{version}, '0.1.0', 'It should still be in 0.1.0';
+
+##############################################################################
+# Make 0.1.1 stable and try again.
 $meta_011->{release_status} = 'stable';
 ok $indexer->add_distribution($params), 'Index pair 0.1.1 stable';
 
@@ -771,4 +796,14 @@ is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
     'It should have the distribution';
 is $res->{hits}[0]{version}, '0.1.1', 'It should still be 0.1.1';
 
+# Search docs.
+ok $res = $searcher->search(doc => {query => 'composite'}),
+    'Search docs for "composite" once more';
+is $res->{count}, 1, 'Should again have one result';
+is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
+    'It should have the updated abstract';
+like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
+    'It should have the same excerpt';
+is $res->{hits}[0]{dist}, 'pair', 'It should still be in dist "pair"';
+is $res->{hits}[0]{version}, '0.1.1', 'It should now be in 0.1.1';
 
