@@ -70,7 +70,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         stored        => 1,
         highlightable => 1,
         analyzer      => KinoSearch::Analysis::Tokenizer->new(
-            pattern => '[^\003]'
+            pattern => '[^\003]+'
         ),
     );
 
@@ -85,8 +85,8 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ version     => $stored  ],
             [ path        => $stored  ],
             [ date        => $stored  ],
-            [ username    => $stored  ],
-            [ nickname    => $stored  ],
+            [ user        => $stored  ],
+            [ user_name   => $stored  ],
         ]],
         [ dist => [
             [ key         => $indexed ],
@@ -97,8 +97,8 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ tags        => $list    ],
             [ version     => $stored  ],
             [ date        => $stored  ],
-            [ username    => $stored  ],
-            [ nickname    => $stored  ],
+            [ user_name   => $stored  ],
+            [ user        => $stored  ],
         ]],
         [ extension => [
             [ key         => $indexed ],
@@ -107,8 +107,8 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ dist        => $stored  ],
             [ version     => $stored  ],
             [ date        => $stored  ],
-            [ username    => $stored  ],
-            [ nickname    => $stored  ],
+            [ user_name   => $stored  ],
+            [ user        => $stored  ],
         ]],
         [ user => [
             [ key         => $indexed ],
@@ -233,11 +233,11 @@ sub merge_distmeta {
         abstract    => $meta->{abstract},
         description => $meta->{description},
         readme      => $self->_readme($p),
-        tags     => join("\003" => @{ $meta->{tags} }),
-        version  => $meta->{version},
-        date     => $meta->{date},
-        username => $self->_get_username($meta),
-        nickname => $meta->{user},
+        tags        => join("\003" => @{ $meta->{tags} }),
+        version     => $meta->{version},
+        date        => $meta->{date},
+        user_name   => $self->_get_user_name($meta),
+        user        => $meta->{user},
     }) if $meta->{release_status} eq 'stable';
 
     # Now update all older versions with the complete list of releases.
@@ -372,8 +372,8 @@ sub update_extensions {
             dist        => $meta->{name},
             version     => $mir_meta->{stable}{version},
             date        => $meta->{date},
-            username    => $self->_get_username($meta),
-            nickname    => $meta->{user},
+            user_name   => $self->_get_user_name($meta),
+            user        => $meta->{user},
         }) if $meta->{release_status} eq 'stable';
     }
 
@@ -442,16 +442,16 @@ sub parse_docs {
 
             # Add it to the search index.
             $self->_index(doc => {
-                key      => "$meta->{name}/$noext",
-                path     => $noext,
-                title    => $title,
-                abstract => $abstract,
-                body     => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),
-                dist     => $meta->{name},
-                version  => $meta->{version},
-                date     => $meta->{date},
-                username => $self->_get_username($meta),
-                nickname => $meta->{user},
+                key       => "$meta->{name}/$noext",
+                path      => $noext,
+                title     => $title,
+                abstract  => $abstract,
+                body      => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),
+                dist      => $meta->{name},
+                version   => $meta->{version},
+                date      => $meta->{date},
+                user_name => $self->_get_user_name($meta),
+                user      => $meta->{user},
             }) if $meta->{release_status} eq 'stable'
                && $member->fileName !~ qr{^$prefix/(?i:README(?:[.][^.]+)?)$};
         }
@@ -485,9 +485,9 @@ sub _idx_distmeta {
     return join $/ => @lines;
 }
 
-sub _get_username {
+sub _get_user_name {
     my ($self, $meta) = @_;
-    return $self->{_username} ||= do {
+    return $self->{_user_name} ||= do {
         my $user = PGXN::API->instance->read_json_from(
             $self->mirror_file_for('by-user' => $meta)
         );

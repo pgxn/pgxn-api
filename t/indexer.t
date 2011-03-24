@@ -41,7 +41,7 @@ can_ok $CLASS => qw(
     mirror_file_for
     doc_root_file_for
     _idx_distmeta
-    _get_username
+    _get_user_name
     _strip_html
     _update_releases
     _index
@@ -156,10 +156,10 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
     description => "This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.",
     key         => 'pair',
     name        => 'pair',
-    nickname    => 'theory',
+    user        => 'theory',
     readme      => $readme,
     tags        => "ordered pair\003pair",
-    username    => 'David E. Wheeler',
+    user_name   => 'David E. Wheeler',
     version     => '0.1.0',
 }, 'Should have pair 0.1.0 queued for indexing';
 
@@ -305,11 +305,11 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
     description => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.',
     key         => 'pair',
     name        => 'pair',
-    nickname    => 'theory',
+    user        => 'theory',
     readme      => undef,
-    tags     => "ordered pair\003pair\003key value",
-    username => 'David E. Wheeler',
-    version  => "0.1.2",
+    tags        => "ordered pair\003pair\003key value",
+    user_name   => 'David E. Wheeler',
+    version     => "0.1.2",
 }, 'New version should be queued for indexing';
 
 is_deeply shift @{ $indexer->to_index->{user} }, {
@@ -471,14 +471,14 @@ ok $indexer->update_extensions($params), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
 
 is_deeply shift @{ $indexer->to_index->{extension} }, {
-    abstract => 'A key/value pair data type',
-    date     => '2010-10-18T15:24:21Z',
-    dist     => 'pair',
-    key      => 'pair',
-    name     => 'pair',
-    nickname => 'theory',
-    username => 'David E. Wheeler',
-    version  => '0.1.0',
+    abstract  => 'A key/value pair data type',
+    date      => '2010-10-18T15:24:21Z',
+    dist      => 'pair',
+    key       => 'pair',
+    name      => 'pair',
+    user      => 'theory',
+    user_name => 'David E. Wheeler',
+    version   => '0.1.0',
 }, 'Should have extension index data';
 
 # Now make sure that it has the updated release metadata.
@@ -550,8 +550,8 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     dist        => 'otherdist',
     key         => 'pair',
     name        => 'pair',
-    nickname    => 'theory',
-    username    => 'David E. Wheeler',
+    user        => 'theory',
+    user_name   => 'David E. Wheeler',
     version     => '0.1.2',
 }, 'Should have otherdidst extension index data';
 
@@ -579,14 +579,14 @@ ok $indexer->update_extensions($params),
     'Update the extension to 0.1.2.';
 
 is_deeply shift @{ $indexer->to_index->{extension} }, {
-    abstract => 'A key/value pair dåtå type',
-    date     => '2010-11-10T12:18:03Z',
-    dist     => 'pair',
-    key      => 'pair',
-    name     => 'pair',
-    nickname => 'theory',
-    username => 'David E. Wheeler',
-    version  => '0.1.2',
+    abstract  => 'A key/value pair dåtå type',
+    date      => '2010-11-10T12:18:03Z',
+    dist      => 'pair',
+    key       => 'pair',
+    name      => 'pair',
+    user      => 'theory',
+    user_name => 'David E. Wheeler',
+    version   => '0.1.2',
 }, 'Should have extension index data again';
 
 $exp->{latest} = 'stable';
@@ -638,15 +638,15 @@ unlike $body, qr/&[^;];/, 'Should have nothing that looks like an entity';
 unlike $body, qr/    Contents/ms, 'Should not have contents';
 
 is_deeply shift @{ $indexer->to_index->{doc} }, {
-    abstract => 'A key/value pair data type',
-    date     => '2010-10-18T15:24:21Z',
-    dist     => 'pair',
-    key      => 'pair/doc/pair',
-    nickname => 'theory',
-    path     => 'doc/pair',
-    title    => 'pair 0.1.0',
-    username => 'David E. Wheeler',
-    version  => '0.1.0',
+    abstract  => 'A key/value pair data type',
+    date      => '2010-10-18T15:24:21Z',
+    dist      => 'pair',
+    key       => 'pair/doc/pair',
+    user      => 'theory',
+    path      => 'doc/pair',
+    title     => 'pair 0.1.0',
+    user_name => 'David E. Wheeler',
+    version   => '0.1.0',
 }, 'Should have document data for indexing';
 
 is_deeply $indexer->to_index->{doc}, [], 'Should be no other documents to index';
@@ -734,6 +734,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair data type',
     'It should have the distribution';
 is $res->{hits}[0]{version}, '0.1.0', 'It should be 0.1.0';
 
+# Search the docs.
 ok $res = $searcher->search(doc => {query => 'composite'}),
     'Search docs for "composite"';
 is $res->{count}, 1, 'Should have one result';
@@ -743,6 +744,7 @@ like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
     'It should have the excerpt';
 is $res->{hits}[0]{dist}, 'pair', 'It should be in dist "pair"';
 is $res->{hits}[0]{version}, '0.1.0', 'It should be in 0.1.0';
+
 
 ##############################################################################
 # Now index 0.1.1 (testing).
@@ -806,4 +808,3 @@ like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
     'It should have the same excerpt';
 is $res->{hits}[0]{dist}, 'pair', 'It should still be in dist "pair"';
 is $res->{hits}[0]{version}, '0.1.1', 'It should now be in 0.1.1';
-
