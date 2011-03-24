@@ -90,7 +90,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         ]],
         [ dist => [
             [ key         => $indexed ],
-            [ name        => $fti     ],
+            [ dist        => $fti     ],
             [ abstract    => $ftih    ],
             [ description => $fti     ],
             [ readme      => $fti     ],
@@ -102,7 +102,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         ]],
         [ extension => [
             [ key         => $indexed ],
-            [ name        => $fti     ],
+            [ extension   => $fti     ],
             [ abstract    => $ftih    ],
             [ dist        => $stored  ],
             [ version     => $stored  ],
@@ -112,7 +112,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         ]],
         [ user => [
             [ key         => $indexed ],
-            [ nickname    => $fti     ],
+            [ user        => $fti     ],
             [ name        => $fti     ],
             [ email       => $indexed ],
             [ uri         => $indexed ],
@@ -120,7 +120,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         ]],
         [ tag => [
             [ key         => $indexed ],
-            [ name        => $fti     ],
+            [ tag         => $fti     ],
         ]],
     ) {
         my ($name, $fields) = @{ $spec };
@@ -229,7 +229,7 @@ sub merge_distmeta {
     # Index it if it's a new stable release.
     $self->_index( dist => {
         key         => $meta->{name},
-        name        => $meta->{name},
+        dist        => $meta->{name},
         abstract    => $meta->{abstract},
         description => $meta->{description},
         readme      => $self->_readme($p),
@@ -265,7 +265,7 @@ sub update_user {
     if ($p->{meta}->{release_status} eq 'stable') {
         my $data = {
             key      => $user->{nickname},
-            nickname => $user->{nickname},
+            user     => $user->{nickname},
             name     => $user->{name},
             email    => $user->{email},
             uri      => $user->{uri},
@@ -276,7 +276,7 @@ sub update_user {
             "\n",
             grep { $_ }
              map { $user->{$_} }
-            sort grep { !$data->{$_} && !ref $user->{$_} }
+            sort grep { !$data->{$_} && !ref $user->{$_} && $_ ne 'nickname' }
             keys %{ $user }
         );
         $self->_index(user => $data);
@@ -296,8 +296,8 @@ sub update_tags {
         say "    $tag" if $self->verbose > 1;
         my $data = $self->_update_releases('by-tag' => $meta, tag => $tag);
         $self->_index(tag => {
-            key  => $tag,
-            name => $tag,
+            key => $tag,
+            tag => $tag,
         }) if $p->{meta}->{release_status} eq 'stable';
     }
     return $self;
@@ -367,7 +367,7 @@ sub update_extensions {
         $api->write_json_to($doc_file => $mir_meta);
         $self->_index(extension => {
             key         => $mir_meta->{extension},
-            name        => $mir_meta->{extension},
+            extension   => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
             dist        => $meta->{name},
             version     => $mir_meta->{stable}{version},

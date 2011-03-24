@@ -154,8 +154,8 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
     abstract    => 'A key/value pair data type',
     date        => '2010-10-18T15:24:21Z',
     description => "This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.",
+    dist        => 'pair',
     key         => 'pair',
-    name        => 'pair',
     user        => 'theory',
     readme      => $readme,
     tags        => "ordered pair\003pair",
@@ -246,8 +246,8 @@ is_deeply shift @{ $indexer->to_index->{user} }, {
     email    => 'david@justatheory.com',
     key      => 'theory',
     name     => 'David E. Wheeler',
-    nickname => 'theory',
     uri      => 'http://justatheory.com/',
+    user     => 'theory',
 }, 'Should have index data';
 
 # Now make sure that it has the updated release metadata.
@@ -303,8 +303,8 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-11-10T12:18:03Z',
     description => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.',
+    dist        => 'pair',
     key         => 'pair',
-    name        => 'pair',
     user        => 'theory',
     readme      => undef,
     tags        => "ordered pair\003pair\003key value",
@@ -313,12 +313,12 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
 }, 'New version should be queued for indexing';
 
 is_deeply shift @{ $indexer->to_index->{user} }, {
-    details  => '',
-    email    => 'david@justatheory.com',
-    key      => 'theory',
-    name     => 'David E. Wheeler',
-    nickname => 'theory',
-    uri      => 'http://justatheory.com/',
+    details => '',
+    email   => 'david@justatheory.com',
+    key     => 'theory',
+    name    => 'David E. Wheeler',
+    uri     => 'http://justatheory.com/',
+    user    => 'theory',
 }, 'Should have user index data again';
 
 ##############################################################################
@@ -336,13 +336,13 @@ file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
 
 is_deeply shift @{ $indexer->to_index->{tag} }, {
-    key  => 'ordered pair',
-    name => 'ordered pair',
+    key => 'ordered pair',
+    tag => 'ordered pair',
 }, 'Should have "ordered pair" index data';
 
 is_deeply shift @{ $indexer->to_index->{tag} }, {
-    key  => 'pair',
-    name => 'pair',
+    key => 'pair',
+    tag => 'pair',
 }, 'Should have "pair" index data';
 
 my $pgtap = { stable => [{ version => "0.25.0", date => '2011-01-22T08:34:51Z'}] };
@@ -421,18 +421,18 @@ fcopy catfile(qw(t data kv-tag-updated.json)),
 ok $indexer->update_tags($params), 'Update the tags to 0.1.2';
 
 is_deeply shift @{ $indexer->to_index->{tag} }, {
-    key  => 'ordered pair',
-    name => 'ordered pair',
+    key => 'ordered pair',
+    tag => 'ordered pair',
 }, 'Should have "ordered pair" index data';
 
 is_deeply shift @{ $indexer->to_index->{tag} }, {
-    key  => 'pair',
-    name => 'pair',
+    key => 'pair',
+    tag => 'pair',
 }, 'Should have "pair" index data';
 
 is_deeply shift @{ $indexer->to_index->{tag} }, {
-    key  => 'key value',
-    name => 'key value',
+    key => 'key value',
+    tag => 'key value',
 }, 'Should have "key value" index data';
 
 # Make sure all tags are updated.
@@ -474,8 +474,8 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract  => 'A key/value pair data type',
     date      => '2010-10-18T15:24:21Z',
     dist      => 'pair',
+    extension => 'pair',
     key       => 'pair',
-    name      => 'pair',
     user      => 'theory',
     user_name => 'David E. Wheeler',
     version   => '0.1.0',
@@ -548,8 +548,8 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-10-29T22:46:45Z',
     dist        => 'otherdist',
+    extension   => 'pair',
     key         => 'pair',
-    name        => 'pair',
     user        => 'theory',
     user_name   => 'David E. Wheeler',
     version     => '0.1.2',
@@ -582,8 +582,8 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract  => 'A key/value pair dåtå type',
     date      => '2010-11-10T12:18:03Z',
     dist      => 'pair',
+    extension => 'pair',
     key       => 'pair',
-    name      => 'pair',
     user      => 'theory',
     user_name => 'David E. Wheeler',
     version   => '0.1.2',
@@ -693,7 +693,7 @@ is_deeply $indexer->to_index, {
 }, 'Should start with no docs to index';
 $doc = {
     key      => 'foo',
-    name     => 'explain',
+    dist     => 'explain',
     abstract => 'explanation: 0.1.3, 0.2.4',
 };
 
