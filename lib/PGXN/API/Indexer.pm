@@ -91,9 +91,9 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         [ dist => [
             [ key         => $indexed ],
             [ dist        => $fti     ],
-            [ abstract    => $ftih    ],
+            [ abstract    => $fti     ],
             [ description => $fti     ],
-            [ readme      => $fti     ],
+            [ readme      => $ftih    ],
             [ tags        => $list    ],
             [ version     => $stored  ],
             [ date        => $stored  ],
