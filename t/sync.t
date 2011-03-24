@@ -193,7 +193,7 @@ is_deeply \@dists, \@found, 'And it should have passed them to the indexer';
 ##############################################################################
 # digest_for()
 my $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.pgz);
-is $sync->digest_for($pgz), 'db9bcf1280ecc3776460ea3d09ee98a43a82239f',
+is $sync->digest_for($pgz), '585214bf8a733524f2ba0d83c229128d0152f537',
     'Should get expected digest from digest_for()';
 
 ##############################################################################
@@ -227,7 +227,7 @@ my @files = (qw(
     META.json
     Makefile
     README.md
-),  catfile(qw(doc pair.txt)),
+),  catfile(qw(doc pair.md)),
     catfile(qw(sql pair.sql)),
     catfile(qw(sql uninstall_pair.sql)),
     catfile(qw(test sql base.sql)),

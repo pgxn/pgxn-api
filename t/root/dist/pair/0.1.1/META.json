@@ -9,7 +9,7 @@
    "date": "2010-10-29T22:46:45Z",
    "release_status": "testing",
    "user": "theory",
-   "sha1": "db9bcf1280ecc3776460ea3d09ee98a43a82239f",
+   "sha1": "585214bf8a733524f2ba0d83c229128d0152f537",
    "license": "postgresql",
    "provides": {
       "pair": {
