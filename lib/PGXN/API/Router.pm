@@ -6,15 +6,21 @@ use PGXN::API;
 use Plack::Builder;
 use Plack::App::File;
 use Plack::App::Directory;
+use PGXN::API::Searcher;
+use JSON;
+use Plack::Request;
+use Encode;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
 
 sub app {
     my $root = PGXN::API->instance->doc_root;
+    my $index = catdir $root, '_index';
 
     # Identify distribution files as zip files.
     my ($zip_ext) = PGXN::API->instance->uri_templates->{dist} =~ /([.][^.]+)$/;
     $Plack::MIME::MIME_TYPES->{$zip_ext} = $Plack::MIME::MIME_TYPES->{'.zip'};
+    my %bys = map { $_ => undef } qw(dist extension user tag);
 
     builder {
         # Sever most stuff as plain files.
@@ -25,13 +31,30 @@ sub app {
             $dirs->($env);
         };
 
-        mount '/_index' => sub {
-            # Never allow access here.
+        # Handle searches.
+        mount '/by' => sub {
+            my $req = Plack::Request->new(shift);
+
+            # Make sure we have a valid request.
+            local $1;
             return [
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
-            ];
+            ] if $req->path_info && $req->path_info !~ m{^/($|dist|extension|user|tag)/?$};
+
+            # Give 'em the results.
+            my $by = $1 || 'doc';
+            my $searcher = PGXN::API::Searcher->new($index);
+            return [
+                200,
+                ['Content-Type' => 'text/json'],
+                [encode_json $searcher->search( $by => {
+                    query  => decode_utf8($req->param('q')),
+                    offset => $req->param('o'),
+                    limit  => $req->param('l'),
+                })],
+            ]
         };
 
         # Disable HTML in /src.
@@ -47,6 +70,16 @@ sub app {
             local $Plack::MIME::MIME_TYPES = $mimes;
             $src_dir->(shift)
         };
+
+        mount '/_index' => sub {
+            # Never allow access here.
+            return [
+                404,
+                ['Content-Type' => 'text/plain', 'Content-Length' => 9],
+                ['not found']
+            ];
+        };
+
     };
 }
 

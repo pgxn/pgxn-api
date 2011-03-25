@@ -2,9 +2,10 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 45;
+use Test::More tests => 97;
 #use Test::More 'no_plan';
 use Plack::Test;
+use Test::MockModule;
 use HTTP::Request::Common;
 use File::Spec::Functions qw(catdir catfile);
 use File::Copy::Recursive qw(dircopy fcopy);
@@ -132,3 +133,32 @@ test_psgi +PGXN::API::Router->app => sub {
         is $res->code, 404, "$uri should 404";
     }
 };
+
+# Give the search engine a spin.
+test_psgi +PGXN::API::Router->app => sub {
+    my $cb = shift;
+    my $mocker = Test::MockModule->new('PGXN::API::Searcher');
+    my @params;
+    $mocker->mock(new => sub { bless {} => shift });
+    $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
+    my $q = 'q=whü&o=2&l=10';
+    my $exp = { query  => 'whü', offset => 2, limit  => 10 };
+    for my $by ('', qw(dist extension user tag)) {
+        for my $uri ("/by/$by", "/by/$by/") {
+            $uri = '/by' if $uri eq '/by//';
+            ok my $res = $cb->(GET "$uri?$q"), "Fetch $uri";
+            ok $res->is_success, "$uri should return success";
+            is $res->content, '{"foo":1}', 'Content should be JSON of results';
+            is_deeply \@params, [ $by || 'doc' => $exp],
+                "$uri should properly dispatch to the searcher";
+        }
+    }
+
+    # Now make sure we get the proper 404s.
+    for my $uri (qw(/by/foo /by/foo/ /by/tag/foo /by/tag/foo/)) {
+        ok my $res = $cb->(GET $uri), "Fetch $uri";
+        ok $res->is_error, "$uri should respond with an error";
+        is $res->code, 404, "$uri should 404";
+    }
+};
+

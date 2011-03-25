@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 126;
-use Test::More 'no_plan';
+use Test::More tests => 196;
+#use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
