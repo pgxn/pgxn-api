@@ -1,9 +1,10 @@
 Revision history for Perl extension PGXN::API
 
-0.5.6
+0.6.0
       - The /src directory is now served with Plack::App::Directory, so that a
         listing of the files in a directory will be presented. Elsewhere,
         directory requests return a 404.
+      - Added full-text search indexing. Requests go to /by.
 
 0.5.5   2011-03-17T23:07:43
       - Changed doc JSON to have a hash for each value: a title and an
