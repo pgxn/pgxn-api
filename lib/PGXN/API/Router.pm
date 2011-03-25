@@ -43,6 +43,12 @@ sub app {
             ] if $req->path_info && $req->path_info
                 !~ m{^/($|d(?:oc|ist)|extension|user|tag)/?$};
 
+            my $q = $req->param('q') or return [
+                400,
+                ['Content-Type' => 'text/plain', 'Content-Length' => 36],
+                ['Bad request: q query param required.']
+            ];
+
             # Give 'em the results.
             my $by = $1 || 'doc';
             my $searcher = PGXN::API::Searcher->new($root);
@@ -50,7 +56,7 @@ sub app {
                 200,
                 ['Content-Type' => 'text/json'],
                 [encode_json $searcher->search( $by => {
-                    query  => decode_utf8($req->param('q')),
+                    query  => decode_utf8($q),
                     offset => $req->param('o'),
                     limit  => $req->param('l'),
                 })],

@@ -2,7 +2,7 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 105;
+use Test::More tests => 109;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -160,4 +160,12 @@ test_psgi +PGXN::API::Router->app => sub {
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 404, "$uri should 404";
     }
+
+    # And that we get a 400 when there's no q param.
+    my $uri = '/by';
+    ok my $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_error, "$uri should respond with an error";
+    is $res->code, 400, "$uri should 400";
+    is $res->content, 'Bad request: q query param required.',
+        'Should get proper error message';
 };
