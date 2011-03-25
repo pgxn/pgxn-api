@@ -40,7 +40,8 @@ sub app {
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
-            ] if $req->path_info && $req->path_info !~ m{^/($|dist|extension|user|tag)/?$};
+            ] if $req->path_info && $req->path_info
+                !~ m{^/($|d(?:oc|ist)|extension|user|tag)/?$};
 
             # Give 'em the results.
             my $by = $1 || 'doc';

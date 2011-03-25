@@ -2,7 +2,7 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 97;
+use Test::More tests => 105;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -143,7 +143,7 @@ test_psgi +PGXN::API::Router->app => sub {
     $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
     my $q = 'q=whü&o=2&l=10';
     my $exp = { query  => 'whü', offset => 2, limit  => 10 };
-    for my $by ('', qw(dist extension user tag)) {
+    for my $by ('', qw(doc dist extension user tag)) {
         for my $uri ("/by/$by", "/by/$by/") {
             $uri = '/by' if $uri eq '/by//';
             ok my $res = $cb->(GET "$uri?$q"), "Fetch $uri";
@@ -161,4 +161,3 @@ test_psgi +PGXN::API::Router->app => sub {
         is $res->code, 404, "$uri should 404";
     }
 };
-
