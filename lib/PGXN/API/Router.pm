@@ -15,7 +15,6 @@ use namespace::autoclean;
 
 sub app {
     my $root = PGXN::API->instance->doc_root;
-    my $index = catdir $root, '_index';
 
     # Identify distribution files as zip files.
     my ($zip_ext) = PGXN::API->instance->uri_templates->{dist} =~ /([.][^.]+)$/;
@@ -45,7 +44,7 @@ sub app {
 
             # Give 'em the results.
             my $by = $1 || 'doc';
-            my $searcher = PGXN::API::Searcher->new($index);
+            my $searcher = PGXN::API::Searcher->new($root);
             return [
                 200,
                 ['Content-Type' => 'text/json'],

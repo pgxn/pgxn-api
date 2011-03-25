@@ -723,8 +723,7 @@ $mock->unmock_all;
 $params = { meta => $meta, zip => $zip };
 ok $indexer->add_distribution($params), 'Index pair 0.1.0';
 
-my $dir = catdir +PGXN::API->instance->doc_root, '_index';
-ok my $searcher = PGXN::API::Searcher->new($dir), 'Instantiate a searcher';
+ok my $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate a searcher';
 
 # Let's search it!
 ok my $res = $searcher->search(dist => {query => 'data'}),
@@ -757,7 +756,7 @@ ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 ok $indexer->add_distribution($params), 'Index pair 0.1.1';
 
 # The previous stable release should still be indxed.
-ok $searcher = PGXN::API::Searcher->new($dir), 'Instantiate another searcher';
+ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate another searcher';
 ok $res = $searcher->search(dist => {query => 'data'}),
     'Search dists for "data" again';
 is $res->{count}, 1, 'Should have one result';
@@ -782,7 +781,7 @@ $meta_011->{release_status} = 'stable';
 ok $indexer->add_distribution($params), 'Index pair 0.1.1 stable';
 
 # Now it should be updated.
-ok $searcher = PGXN::API::Searcher->new($dir), 'Instantiate the searcher';
+ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate the searcher';
 ok $res = $searcher->search(dist => {query => 'dåtå'}),
     'Search dists for "dåtå"';
 is $res->{count}, 1, 'Should have one result';
