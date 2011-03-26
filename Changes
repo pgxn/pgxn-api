@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.6.0
+0.6.0   2011-03-26T03:14:12
       - The /src directory is now served with Plack::App::Directory, so that a
         listing of the files in a directory will be presented. Elsewhere,
         directory requests return a 404.
