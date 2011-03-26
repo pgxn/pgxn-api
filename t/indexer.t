@@ -718,14 +718,12 @@ is_deeply $indexer->to_index, {
 
 ##############################################################################
 # Test _get_user_name().
-$ENV{FOO} = 1;
 is $indexer->_get_user_name({ user => 'theory'}), 'David E. Wheeler',
     '_get_user_name() should work';
 is $indexer->_get_user_name({ user => 'theory'}), 'David E. Wheeler',
     '_get_user_name() should return same name for same nick';
 is $indexer->_get_user_name({user => 'fred'}), 'Fred Flintstone',
     '_get_user_name() should return diff name for diff nick';
-delete $ENV{FOO};
 
 ##############################################################################
 # Time to actually add some stuff to the index.
