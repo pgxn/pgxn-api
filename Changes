@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.6.2
+      - Search requests go to /search instead of /by. The latter is used for
+        metadata files.
 
 0.6.1   2011-03-26T04:12:42
       - Fixed error in indexer for distributions with no tags.

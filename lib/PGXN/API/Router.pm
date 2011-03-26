@@ -31,7 +31,7 @@ sub app {
         };
 
         # Handle searches.
-        mount '/by' => sub {
+        mount '/search' => sub {
             my $req = Plack::Request->new(shift);
 
             # Make sure we have a valid request.

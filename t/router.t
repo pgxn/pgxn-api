@@ -144,8 +144,8 @@ test_psgi +PGXN::API::Router->app => sub {
     my $q = 'q=whü&o=2&l=10';
     my $exp = { query  => 'whü', offset => 2, limit  => 10 };
     for my $by ('', qw(doc dist extension user tag)) {
-        for my $uri ("/by/$by", "/by/$by/") {
-            $uri = '/by' if $uri eq '/by//';
+        for my $uri ("/search/$by", "/search/$by/") {
+            $uri = '/search' if $uri eq '/search//';
             ok my $res = $cb->(GET "$uri?$q"), "Fetch $uri";
             ok $res->is_success, "$uri should return success";
             is $res->content, '{"foo":1}', 'Content should be JSON of results';
@@ -155,14 +155,14 @@ test_psgi +PGXN::API::Router->app => sub {
     }
 
     # Now make sure we get the proper 404s.
-    for my $uri (qw(/by/foo /by/foo/ /by/tag/foo /by/tag/foo/)) {
+    for my $uri (qw(/search/foo /search/foo/ /search/tag/foo /search/tag/foo/)) {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 404, "$uri should 404";
     }
 
     # And that we get a 400 when there's no q param.
-    my $uri = '/by';
+    my $uri = '/search';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_error, "$uri should respond with an error";
     is $res->code, 400, "$uri should 400";
