@@ -231,9 +231,9 @@ sub merge_distmeta {
         key         => $meta->{name},
         dist        => $meta->{name},
         abstract    => $meta->{abstract},
-        description => $meta->{description},
+        description => $meta->{description} || '',
         readme      => $self->_readme($p),
-        tags        => join("\003" => @{ $meta->{tags} }),
+        tags        => join("\003" => @{ $meta->{tags} || [] }),
         version     => $meta->{version},
         date        => $meta->{date},
         user_name   => $self->_get_user_name($meta),
@@ -595,8 +595,8 @@ sub _readme {
     my ($member) = $zip->membersMatching(
         qr{^$prefix/(?i:README(?:[.][^.]+)?)$}
     );
-    return undef unless $member;
-    my $contents = $member->contents;
+    return '' unless $member;
+    my $contents = $member->contents || '';
     utf8::decode $contents;
     return $contents;
 }
