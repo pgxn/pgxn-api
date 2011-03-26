@@ -561,9 +561,9 @@ sub _commit {
 sub _uri_for {
     my ($self, $name, $meta, @params) = @_;
     PGXN::API->instance->uri_templates->{$name}->process(
-        dist    => $meta->{name},
-        version => $meta->{version},
-        user    => $meta->{user},
+        dist    => $meta->{name}    || '',
+        version => $meta->{version} || '',
+        user    => $meta->{user}    || '',
         @params,
     );
 }
