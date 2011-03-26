@@ -22,6 +22,8 @@ has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
     map { $_ => [] } qw(doc dist extension user tag)
 } });
 
+has _user_names => (is => 'ro', isa => 'HashRef', default => sub { +{ } });
+
 has libxml   => (is => 'ro', isa => 'XML::LibXML', lazy => 1, default => sub {
     XML::LibXML->new(
         recover    => 2,
@@ -487,7 +489,7 @@ sub _idx_distmeta {
 
 sub _get_user_name {
     my ($self, $meta) = @_;
-    return $self->{_user_name} ||= do {
+    return $self->_user_names->{ $meta->{user} } ||= do {
         my $user = PGXN::API->instance->read_json_from(
             $self->mirror_file_for('by-user' => $meta)
         );

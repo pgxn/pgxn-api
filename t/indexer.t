@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 196;
+use Test::More tests => 199;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -306,7 +306,7 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
     dist        => 'pair',
     key         => 'pair',
     user        => 'theory',
-    readme      => undef,
+    readme      => '',
     tags        => "ordered pair\003pair\003key value",
     user_name   => 'David E. Wheeler',
     version     => "0.1.2",
@@ -715,6 +715,15 @@ file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
 is_deeply $indexer->to_index, {
     map { $_ => [] } qw(doc dist extension user tag)
 }, 'Should once again have no docs to index';
+
+##############################################################################
+# Test _get_user_name().
+is $indexer->_get_user_name({ user => 'theory'}), 'David E. Wheeler',
+    '_get_user_name() should work';
+is $indexer->_get_user_name({ user => 'theory'}), 'David E. Wheeler',
+    '_get_user_name() should return same name for same nick';
+is $indexer->_get_user_name({user => 'fred'}), 'Fred Flintstone',
+    '_get_user_name() should return diff name for diff nick';
 
 ##############################################################################
 # Time to actually add some stuff to the index.
