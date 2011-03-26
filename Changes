@@ -1,6 +1,9 @@
 Revision history for Perl extension PGXN::API
 
 0.6.1
+      - Fixed error in indexer for distributions with no tags.
+      - Fixed "Use of uninitialized value in subroutine entry" warnings from
+        the full text indexer in PGXN::API::Indexer.
 
 0.6.0   2011-03-26T03:14:12
       - The /src directory is now served with Plack::App::Directory, so that a
