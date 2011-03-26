@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.6.2
+
 0.6.1   2011-03-26T04:12:42
       - Fixed error in indexer for distributions with no tags.
       - Fixed "Use of uninitialized value in subroutine entry" warnings from
