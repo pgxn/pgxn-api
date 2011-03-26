@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.6.3
+
 0.6.2   2011-03-26T05:29:36
       - Search requests go to /search instead of /by. The latter is used for
         metadata files.
