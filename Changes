@@ -1,5 +1,9 @@
 Revision history for Perl extension PGXN::API
 
+0.6.5
+      - The search API no longer fails when only "q" query parameter is
+        passed.
+
 0.6.4   2011-03-28T03:07:13
       - Updated for PGXN::API::Searcher v0.6.1. 
       - Now only one search URL, `/search`. The index is specified via the

@@ -2,7 +2,7 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 85;
+use Test::More tests => 89;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -165,4 +165,14 @@ test_psgi +PGXN::API::Router->app => sub {
     is $res->code, 400, "$uri should 400";
     is $res->content, 'Bad request: q query param required.',
         'Should get proper error message';
+
+
+    # Make sure it works with a query and nothing else.
+    $uri .= '?q=hi';
+    ok $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_success, "$uri should return success";
+        is $res->content, '{"foo":1}', 'Content should be JSON of results';
+        is_deeply \@params,
+            [index => undef, query => 'hi', offset => undef, limit => undef ],
+            "$uri should properly dispatch to the searcher";
 };
