@@ -143,13 +143,12 @@ test_psgi +PGXN::API::Router->app => sub {
     $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
     my $q = 'q=whü&o=2&l=10';
     my $uri = '/search';
-    my $exp = { query  => 'whü', offset => 2, limit  => 10 };
+    my @exp = ( query  => 'whü', offset => 2, limit  => 10 );
     for my $in ('', qw(doc dist extension user tag)) {
         ok my $res = $cb->(GET "$uri?$q&in=$in"), "Fetch $in $uri";
         ok $res->is_success, "$in $uri should return success";
         is $res->content, '{"foo":1}', 'Content should be JSON of results';
-        $exp->{index} = $in;
-        is_deeply \@params, [$exp],
+        is_deeply \@params, [index => $in, @exp],
             "$in $uri should properly dispatch to the searcher";
     }
 

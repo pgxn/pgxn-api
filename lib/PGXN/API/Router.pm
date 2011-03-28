@@ -53,12 +53,12 @@ sub app {
             return [
                 200,
                 ['Content-Type' => 'text/json'],
-                [encode_json $searcher->search({
+                [encode_json $searcher->search(
                     index  => $req->param('in'),
                     query  => decode_utf8($q),
                     offset => $req->param('o'),
                     limit  => $req->param('l'),
-                })],
+                )],
             ]
         };
 
