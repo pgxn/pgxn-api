@@ -77,8 +77,8 @@ my $trig = sub {
          File::Copy::Recursive::fcopy($idx, $dir)
              or die "Cannot copy $idx to $dir: $!\n";
 
-         # Pre-generate the by/ directories.
-         File::Path::make_path(catdir $dir, 'by', $_)
+         # Pre-generate the metadata directories.
+         File::Path::make_path(catdir $dir, $_)
              for qw(user tag dist extension);
      } elsif (!-d $dir) {
          die qq{Location for document root "$dir" is not a directory\n};

@@ -181,7 +181,7 @@ sub copy_files {
     say "  Copying $meta->{name}-$meta->{version} files" if $self->verbose;
 
     # Need to copy the README, zip file, and dist meta file.
-    for my $file (qw(dist readme)) {
+    for my $file (qw(download readme)) {
         my $src = $self->mirror_file_for($file => $meta);
         my $dst = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
@@ -199,9 +199,9 @@ sub merge_distmeta {
 
     # Merge the list of versions into the meta file.
     my $api = PGXN::API->instance;
-    my $by_dist_file = $self->mirror_file_for('by-dist' => $meta);
-    my $by_dist_meta = $api->read_json_from($by_dist_file);
-    $meta->{releases} = $by_dist_meta->{releases};
+    my $dist_file = $self->mirror_file_for(dist => $meta);
+    my $dist_meta = $api->read_json_from($dist_file);
+    $meta->{releases} = $dist_meta->{releases};
 
     # Add a list of special files and docs.
     $meta->{special_files} = $self->_source_files($p);
@@ -212,10 +212,10 @@ sub merge_distmeta {
     make_path dirname $fn;
     $api->write_json_to($fn, $meta);
 
-    $by_dist_file = $self->doc_root_file_for('by-dist' => $meta );
+    $dist_file = $self->doc_root_file_for(dist => $meta );
     if ($meta->{release_status} eq 'stable') {
-        # Copy it to its by-dist home.
-        fcopy $fn, $by_dist_file or die "Cannot copy $fn to $by_dist_file: $!\n";
+        # Copy it to its dist home.
+        fcopy $fn, $dist_file or die "Cannot copy $fn to $dist_file: $!\n";
     } else {
         # Determine latest stable release or fall back on testing, unstable.
         for my $status (qw(stable testing unstable)) {
@@ -224,8 +224,8 @@ sub merge_distmeta {
             last;
         }
 
-        # Now rite out the by-dist version.
-        $api->write_json_to($by_dist_file => $meta);
+        # Now rite out the dist version.
+        $api->write_json_to($dist_file => $meta);
     }
 
     # Index it if it's a new stable release.
@@ -262,7 +262,7 @@ sub merge_distmeta {
 sub update_user {
     my ($self, $p) = @_;
     say "  Updating user $p->{meta}{user}" if $self->verbose;
-    my $user = $self->_update_releases('by-user' => $p->{meta});
+    my $user = $self->_update_releases(user => $p->{meta});
 
     if ($p->{meta}->{release_status} eq 'stable') {
         my $data = {
@@ -296,7 +296,7 @@ sub update_tags {
 
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
-        my $data = $self->_update_releases('by-tag' => $meta, tag => $tag);
+        my $data = $self->_update_releases(tag => $meta, tag => $tag);
         $self->_index(tag => {
             key => $tag,
             tag => $tag,
@@ -316,15 +316,15 @@ sub update_extensions {
         say "    $ext" if $self->verbose > 1;
         # Read in extension metadata from the mirror.
         my $mir_file = $self->mirror_file_for(
-            'by-extension' => $meta,
-            extension      => $ext,
+            extension => $meta,
+            extension => $ext,
         );
         my $mir_meta = $api->read_json_from($mir_file);
 
         # Read in extension metadata from the doc root.
         my $doc_file = $self->doc_root_file_for(
-            'by-extension' => $meta,
-            extension      => $ext,
+            extension => $meta,
+            extension => $ext,
         );
         my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : {};
 
@@ -491,7 +491,7 @@ sub _get_user_name {
     my ($self, $meta) = @_;
     return $self->_user_names->{ $meta->{user} } ||= do {
         my $user = PGXN::API->instance->read_json_from(
-            $self->mirror_file_for('by-user' => $meta)
+            $self->mirror_file_for(user => $meta)
         );
         $user->{name};
     };

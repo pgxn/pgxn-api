@@ -17,7 +17,7 @@ sub app {
     my $root = PGXN::API->instance->doc_root;
 
     # Identify distribution files as zip files.
-    my ($zip_ext) = PGXN::API->instance->uri_templates->{dist} =~ /([.][^.]+)$/;
+    my ($zip_ext) = PGXN::API->instance->uri_templates->{download} =~ /([.][^.]+)$/;
     $Plack::MIME::MIME_TYPES->{$zip_ext} = $Plack::MIME::MIME_TYPES->{'.zip'};
     my %bys = map { $_ => undef } qw(dist extension user tag);
 

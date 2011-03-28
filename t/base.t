@@ -5,7 +5,7 @@ use warnings;
 use File::Spec::Functions qw(catdir catfile);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 34;
+use Test::More tests => 35;
 #use Test::More 'no_plan';
 use Test::File::Contents;
 use File::Copy::Recursive qw(fcopy);
@@ -32,7 +32,7 @@ is +$CLASS->instance, $pgxn, 'new() should return a singleton';
 
 ##############################################################################
 # Test read_json_from()
-my $file = catfile qw(t root by tag pair.json);
+my $file = catfile qw(t root tag pair.json);
 open my $fh, '<:raw', $file or die "Cannot open $file: $!\n";
 my $data = do {
     local $/;
@@ -58,8 +58,8 @@ END { remove_tree $doc_root }
 is $pgxn->doc_root, $doc_root,  'Should have doc root';
 file_exists_ok $doc_root, 'Doc root should now exist';
 file_exists_ok(
-    catdir($doc_root, 'by', $_),
-    "Subdiretory by/$_ should have been created"
+    catdir($doc_root, $_),
+    "Subdiretory $_ should have been created"
 ) for qw(user tag dist extension);
 
 # Make sure index.html was created.

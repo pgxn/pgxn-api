@@ -85,7 +85,7 @@ my @rsync_out = do {
 };
 
 # Test the dist template regex.
-ok my $regex = $sync->regex_for_uri_template('dist'),
+ok my $regex = $sync->regex_for_uri_template('download'),
     'Get distribution regex';
 my @found;
 for (@rsync_out) {
@@ -116,49 +116,49 @@ is_deeply \@found, [qw(
 )], 'It should recognize the meta files.';
 
 # Test the user template regex.
-ok $regex = $sync->regex_for_uri_template('by-user'),
-    'Get by-user regex';
+ok $regex = $sync->regex_for_uri_template('user'),
+    'Get user regex';
 @found = ();
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
 
 is_deeply \@found, [qw(
-    by/user/daamien.json
-    by/user/theory.json
-    by/user/umitanuki.json
+    user/daamien.json
+    user/theory.json
+    user/umitanuki.json
 )], 'It should recognize the user files.';
 
 # Test the extension template regex.
-ok $regex = $sync->regex_for_uri_template('by-extension'),
-    'Get by-extension regex';
+ok $regex = $sync->regex_for_uri_template('extension'),
+    'Get extension regex';
 @found = ();
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
 
 is_deeply \@found, [qw(
-    by/extension/pair.json
-    by/extension/pg_french_datatypes.json
-    by/extension/tinyint.json
+    extension/pair.json
+    extension/pg_french_datatypes.json
+    extension/tinyint.json
 )], 'It should recognize the extension files.';
 
 # Test the tag template regex.
-ok $regex = $sync->regex_for_uri_template('by-tag'),
-    'Get by-tag regex';
+ok $regex = $sync->regex_for_uri_template('tag'),
+    'Get tag regex';
 @found = ();
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
 
 is_deeply \@found, [
-   "by/tag/data types.json",
-   "by/tag/france.json",
-   "by/tag/key value pair.json",
-   "by/tag/key value.json",
-   "by/tag/ordered pair.json",
-   "by/tag/pair.json",
-   "by/tag/variadic function.json",
+   "tag/data types.json",
+   "tag/france.json",
+   "tag/key value pair.json",
+   "tag/key value.json",
+   "tag/ordered pair.json",
+   "tag/pair.json",
+   "tag/variadic function.json",
 ], 'It should recognize the tag files.';
 
 ##############################################################################

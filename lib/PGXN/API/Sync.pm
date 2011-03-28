@@ -118,7 +118,7 @@ sub validate_distribution {
 
 sub dist_for {
     my ($self, $meta) = @_;
-    my $dist_uri = PGXN::API->instance->uri_templates->{dist}->process(
+    my $dist_uri = PGXN::API->instance->uri_templates->{download}->process(
         dist    => $meta->{name},
         version => $meta->{version},
     );
