@@ -1,6 +1,9 @@
 Revision history for Perl extension PGXN::API
 
 0.6.4
+      - Updated for PGXN::API::Searcher v0.6.1. 
+      - Now only one search URL, `/search`. The index is specified via the
+        `in` query parameter.
 
 0.6.3   2011-03-28T02:08:01
       - Updated for new URI template names in PGXN::Manager v0.10.4.

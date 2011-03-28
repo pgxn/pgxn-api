@@ -735,7 +735,7 @@ ok $indexer->add_distribution($params), 'Index pair 0.1.0';
 ok my $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate a searcher';
 
 # Let's search it!
-ok my $res = $searcher->search(dist => {query => 'data'}),
+ok my $res = $searcher->search({query => 'data', index => 'dist'}),
     'Search dists for "data"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -743,7 +743,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair data type',
 is $res->{hits}[0]{version}, '0.1.0', 'It should be 0.1.0';
 
 # Search the docs.
-ok $res = $searcher->search(doc => {query => 'composite'}),
+ok $res = $searcher->search({query => 'composite', index => 'doc'}),
     'Search docs for "composite"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -766,7 +766,7 @@ ok $indexer->add_distribution($params), 'Index pair 0.1.1';
 
 # The previous stable release should still be indxed.
 ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate another searcher';
-ok $res = $searcher->search(dist => {query => 'data'}),
+ok $res = $searcher->search({query => 'data', index => 'dist'}),
     'Search dists for "data" again';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -774,7 +774,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair data type',
 is $res->{hits}[0]{version}, '0.1.0', 'It should still be 0.1.0';
 
 # Search docs.
-ok $res = $searcher->search(doc => {query => 'composite'}),
+ok $res = $searcher->search({query => 'composite'}),
     'Search docs for "composite" again';
 is $res->{count}, 1, 'Should also have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -791,7 +791,7 @@ ok $indexer->add_distribution($params), 'Index pair 0.1.1 stable';
 
 # Now it should be updated.
 ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate the searcher';
-ok $res = $searcher->search(dist => {query => 'dåtå'}),
+ok $res = $searcher->search({query => 'dåtå', index => 'dist'}),
     'Search dists for "dåtå"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
@@ -799,7 +799,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
 is $res->{hits}[0]{version}, '0.1.1', 'It should still be 0.1.1';
 
 # The query for "data" should stil return the one record.
-ok $res = $searcher->search(dist => {query => 'data'}),
+ok $res = $searcher->search({query => 'data', index => 'dist'}),
     'Search dists for "data" one last time';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
@@ -807,7 +807,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
 is $res->{hits}[0]{version}, '0.1.1', 'It should still be 0.1.1';
 
 # Search docs.
-ok $res = $searcher->search(doc => {query => 'composite'}),
+ok $res = $searcher->search({query => 'composite'}),
     'Search docs for "composite" once more';
 is $res->{count}, 1, 'Should again have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',

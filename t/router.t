@@ -2,7 +2,7 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 109;
+use Test::More tests => 85;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -142,16 +142,15 @@ test_psgi +PGXN::API::Router->app => sub {
     $mocker->mock(new => sub { bless {} => shift });
     $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
     my $q = 'q=whü&o=2&l=10';
+    my $uri = '/search';
     my $exp = { query  => 'whü', offset => 2, limit  => 10 };
-    for my $by ('', qw(doc dist extension user tag)) {
-        for my $uri ("/search/$by", "/search/$by/") {
-            $uri = '/search' if $uri eq '/search//';
-            ok my $res = $cb->(GET "$uri?$q"), "Fetch $uri";
-            ok $res->is_success, "$uri should return success";
-            is $res->content, '{"foo":1}', 'Content should be JSON of results';
-            is_deeply \@params, [ $by || 'doc' => $exp],
-                "$uri should properly dispatch to the searcher";
-        }
+    for my $in ('', qw(doc dist extension user tag)) {
+        ok my $res = $cb->(GET "$uri?$q&in=$in"), "Fetch $in $uri";
+        ok $res->is_success, "$in $uri should return success";
+        is $res->content, '{"foo":1}', 'Content should be JSON of results';
+        $exp->{index} = $in;
+        is_deeply \@params, [$exp],
+            "$in $uri should properly dispatch to the searcher";
     }
 
     # Now make sure we get the proper 404s.
@@ -162,7 +161,6 @@ test_psgi +PGXN::API::Router->app => sub {
     }
 
     # And that we get a 400 when there's no q param.
-    my $uri = '/search';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_error, "$uri should respond with an error";
     is $res->code, 400, "$uri should 400";

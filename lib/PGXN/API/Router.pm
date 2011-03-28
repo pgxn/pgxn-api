@@ -40,8 +40,7 @@ sub app {
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
-            ] if $req->path_info && $req->path_info
-                !~ m{^/($|d(?:oc|ist)|extension|user|tag)/?$};
+            ] if $req->path_info;
 
             my $q = $req->param('q') or return [
                 400,
@@ -50,12 +49,12 @@ sub app {
             ];
 
             # Give 'em the results.
-            my $by = $1 || 'doc';
             my $searcher = PGXN::API::Searcher->new($root);
             return [
                 200,
                 ['Content-Type' => 'text/json'],
-                [encode_json $searcher->search( $by => {
+                [encode_json $searcher->search({
+                    index  => $req->param('in'),
                     query  => decode_utf8($q),
                     offset => $req->param('o'),
                     limit  => $req->param('l'),
