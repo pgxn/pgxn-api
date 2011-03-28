@@ -22,6 +22,10 @@ sub app {
     my %bys = map { $_ => undef } qw(dist extension user tag);
 
     builder {
+        enable 'ErrorDocument', 500, '/error', subrequest => 1;
+        enable 'HTTPExceptions';
+        enable 'StackTrace', no_print_errors => 1;
+
         # Sever most stuff as plain files.
         my $dirs = Plack::App::File->new(root => $root)->to_app;
         mount '/' => sub {
@@ -82,6 +86,50 @@ sub app {
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
+            ];
+        };
+
+        mount '/error' => sub {
+            my $env = shift;
+
+            # Pull together the original request environment.
+            my $err_env = { map {
+                my $k = $_;
+                s/^psgix[.]errordocument[.]//
+                    ? /plack[.]stacktrace[.]/ ? () : ($_ => $env->{$k} )
+                    : ();
+            } keys %{ $env } };
+            my $uri = Plack::Request->new($err_env)->uri;
+
+            if (%{ $err_env }) {
+                # Send an email to the administrator.
+                # XXX Need configuration.
+                require Email::MIME;
+                require Email::Sender::Simple;
+                require Data::Dump;
+                my $email = Email::MIME->create(
+                    header     => [
+                        From    => 'errors@pgxn.org',
+                        To      => 'pgxn@pgexperts.com',
+                        Subject => 'PGXN API Internal Server Error',
+                    ],
+                    attributes => {
+                        content_type => 'text/plain',
+                        charset      => 'UTF-8',
+                    },
+                    body    => "An error occurred during a request to $uri.\n\n"
+                             . "Environment:\n\n" . Data::Dump::pp($err_env)
+                             . "\n\nTrace:\n\n"
+                             . ($env->{'plack.stacktrace.text'} || 'None found. :-(')
+                             . "\n",
+                );
+                Email::Sender::Simple->send($email);
+            }
+
+            return [
+                200, # Only handled by ErrorDocument, which keeps 500.
+                ['Content-Type' => 'text/plain', 'Content-Length' => 21],
+                ['internal server error']
             ];
         };
 

@@ -2,7 +2,8 @@
 
 use 5.12.0;
 use utf8;
-use Test::More tests => 89;
+BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
+use Test::More tests => 99;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -176,3 +177,49 @@ test_psgi +PGXN::API::Router->app => sub {
             [index => undef, query => 'hi', offset => undef, limit => undef ],
             "$uri should properly dispatch to the searcher";
 };
+
+# Test /error basics.
+my $app = PGXN::API::Router->app;
+my $err_app = sub {
+    my $env = shift;
+    $env->{'psgix.errordocument.PATH_INFO'} = '/what';
+    $env->{'psgix.errordocument.SCRIPT_NAME'} = '';
+    $env->{'psgix.errordocument.SCRIPT_NAME'} = '';
+    $env->{'psgix.errordocument.HTTP_HOST'} = 'localhost';
+    $env->{'plack.stacktrace.text'} = 'This is the trace';
+    $app->($env);
+};
+
+test_psgi $err_app => sub {
+    my $cb = shift;
+    ok my $res = $cb->(GET '/error'), "GET /error";
+    ok $res->is_success, q{Should be success (because it's only served as a subrequest)};
+    is $res->content, 'internal server error', 'body should be error message';
+
+    # Check the alert email.
+    ok my $deliveries = Email::Sender::Simple->default_transport->deliveries,
+        'Should have email deliveries.';
+    is @{ $deliveries }, 1, 'Should have one message';
+    is @{ $deliveries->[0]{successes} }, 1, 'Should have been successfully delivered';
+
+    my $email = $deliveries->[0]{email};
+    is $email->get_header('Subject'), 'PGXN API Internal Server Error',
+        'The subject should be set';
+    is $email->get_header('From'), 'errors@pgxn.org',
+        'From header should be set';
+    is $email->get_header('To'), 'pgxn@pgexperts.com',
+        'To header should be set';
+    is $email->get_body, 'An error occurred during a request to http://localhost/what.
+
+Environment:
+
+{ HTTP_HOST => "localhost", PATH_INFO => "/what", SCRIPT_NAME => "" }
+
+Trace:
+
+This is the trace
+',
+    'The body should be correct';
+    Email::Sender::Simple->default_transport->clear_deliveries;
+};
+

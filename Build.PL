@@ -28,6 +28,8 @@ $class->new(
         'Archive::Zip'                 => '1.30',
         'Cwd'                          => '3.33',
         'Digest::SHA1'                 => '2.13',
+        'Email::MIME::Creator'         => '1.905',
+        'Email::Sender::Simple'        => '0.102370',
         'File::Path'                   => '2.08',
         'File::Copy::Recursive'        => '0.38',
         'File::Spec'                   => '3.33',

@@ -3,6 +3,7 @@ Revision history for Perl extension PGXN::API
 0.6.5
       - The search API no longer fails when only "q" query parameter is
         passed.
+      - Added a 500 error handler that sends an email on error.
 
 0.6.4   2011-03-28T03:07:13
       - Updated for PGXN::API::Searcher v0.6.1. 
