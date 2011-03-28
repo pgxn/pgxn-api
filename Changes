@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.6.4
+
 0.6.3   2011-03-28T02:08:01
       - Updated for new URI template names in PGXN::Manager v0.10.4.
       - Updated tests for new default metadata URI template paths.
