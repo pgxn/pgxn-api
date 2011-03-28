@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.6.6
+
 0.6.5   2011-03-28T03:57:52
       - The search API no longer fails when only "q" query parameter is
         passed.
