@@ -25,7 +25,7 @@ can_ok $CLASS => qw(
     run_rsync
     update_index
     validate_distribution
-    dist_for
+    download_for
     digest_for
     unzip
 );
