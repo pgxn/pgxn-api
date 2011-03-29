@@ -14,12 +14,69 @@ PGXN::API - Maintain and serve a REST API to search PGXN mirrors
 
 =head1 Synopsis
 
-  use PGXN::API;
-  my $api = PGXN::API->instance;
+In a cron job:
+
+  * * * * 42 pgxn_api_sync --root /var/www/api rsync://master.pgxn.org/pgxn/
+
+In a system start script:
+
+  plackup pgxn_api.psgi doc_root    /var/www/api \
+                        errors_from oops@example.com \
+                        errors_to   alerts@example.com
 
 =head1 Description
 
-More to come.
+PGXN::API creates a REST API for PGXN networks. Of course, any PGXN mirror
+provides a simple REST interface all on its own. PGXN::API is a superset of
+that interface, adding additional metadata to all of the usual PGXN mirror
+JSON files, as well as a search interface and browsable access to all packages
+on the mirror. Hit the L<PGXN API server|http://api.pgxn.org/> for the
+canonical deployment of this module.
+
+There are two simple steps to setting up your own API server using this
+module:
+
+=over
+
+=item * F<pgxn_api_sync>
+
+This script syncs to a PGXN mirror via rsync and processes newly-synced data
+to provide the additional data and APIs. Any PGXN mirror will do. If you need
+to create your own network of mirrors first, see L<PGXN::Manager>. Consult the
+L<pgxn_api_sync> documentation for details on its (minimal) options.
+
+=item * F<pgxn_api.psgi>
+
+A L<Plack> server for the API. In addition to the usual L<plackup> options, it
+has a few of this own, specified as simple strings with no leading dashes:
+
+=over
+
+=item C<doc_root>
+
+The path to use for the API document root. This is the same directory as you
+manage via L<pgxn_api_sync> in a cron job. Optional. If not specified, it will
+default to a directory named F<www> in the parent directory above the F<PGXN>
+directory in which this module is installed. If you're running the API from a
+Git checkout, that should be fine. Otherwise you should probably specify a
+document root you're you'll never be able to find it.
+
+=item C<errors_to>
+
+An email address to which error emails should be sent. In the event of an
+internal server error, the server will send an email to this address with
+diagnostic information.
+
+=item C<errors_from>
+
+An email address from which alert emails should be sent.
+
+=back
+
+=back
+
+And that's it. If you're interested in the internals of PGXN::API or in
+hacking on it, read on. Otherwise, just enjoy your own API server!
 
 =head1 Interface
 
@@ -30,7 +87,7 @@ More to come.
   my $app = PGXN::Manager->instance;
 
 Returns the singleton instance of PGXN::Manager. This is the recommended way
-to get the PGXN::Manager object.
+to get the PGXN::API object.
 
 =head2 Attributes
 
@@ -39,8 +96,9 @@ to get the PGXN::Manager object.
   my $templates = $pgxn->uri_templates;
 
 Returns a hash reference of the URI templates for the various files stored in
-the mirror root. The keys are the names of the templates, and the values are
-L<URI::Template> objects.
+the API document root. The keys are the names of the templates, and the values
+are L<URI::Template> objects. Includes the additional URI templates added by
+L<PGXN::API::Indexer/update_mirror_meta>.
 
 =cut
 
@@ -170,6 +228,53 @@ __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
+
+=head1 Support
+
+This module is stored in an open L<GitHub
+repository|http://github.com/theory/pgxn-api/>. Feel free to fork and
+contribute!
+
+Please file bug reports via L<GitHub
+Issues|http://github.com/theory/pgxn-api/issues/> or by sending mail to
+L<bug-PGXN-API@rt.cpan.org|mailto:bug-PGXN-API@rt.cpan.org>.
+
+=head1 See Also
+
+=over
+
+=item L<PGXN::Manager>
+
+The heart of any PGXN network, PGXN::Manager manages distribution uploads and
+mirror maintenance. You'll want to look at it if you plan to build your own
+network.
+
+=item L<WWW::PGXN>
+
+A Perl interface over a PGXN mirror or API. Able to read the mirror or API via
+HTTP or from the local file system.
+
+=item L<PGXN::Site>
+
+A layer over the PGXN API providing a nicely-formatted Web site for folks to
+perform full text searches, read documentation, or browse information about
+users, distributions, tags, and extensions.
+
+=item L<PGXN::API::Sync>
+
+The implementation for L<pgxn_api_sync>.
+
+=item L<PGXN::API::Indexer>
+
+Does the heavy lifting of processing distributions and indexing them for the
+API.
+
+=item L<PGXN::API::Searcher>
+
+Interface for accessing the PGXN::API full text indexes. Used to do the work
+of the C</search> API.
+
+=back
 
 =head1 Author
 

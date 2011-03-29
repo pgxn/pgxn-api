@@ -15,3 +15,5 @@ browsable
 SHA
 pgTAP
 API's
+APIs
+PGXN
