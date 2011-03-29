@@ -13,3 +13,4 @@ crontab
 Plack
 browsable
 SHA
+pgTAP

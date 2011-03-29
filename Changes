@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.7.0
+      - Added "search" URI template to the API server's `/index.json`.
+      - Added full documentation for Sync and Indexer.
 
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with

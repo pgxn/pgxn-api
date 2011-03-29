@@ -183,12 +183,6 @@ PGXN::API::Sync - Sync from a PGXN mirror and update the index
       verbose    => $verbose,
   )->run;
 
-=head1 Usage
-
-  pgxn_api_sync --root /path/to/api/doc/root \
-                --rsync /path/to/rsync \
-                http://master.pgxn.org/pgxn/
-
 =head1 Description
 
 This module provides the implementation for C<pgxn_api_sync>, the command-line
@@ -196,15 +190,6 @@ utility for syncing to a PGXN mirror and creating the API. It syncs to the
 specified PGXN rsync source URL, which should be a PGXN mirror server, and
 then verifies and unpacks newly-uploaded distributions and hands them off to
 L<PGXN::API::Indexer> to index.
-
-=head1 Options
-
-  -r --rsync      Path to rsync.
-  -d --root       Path to API document root.
-  -V --verbose    Incremental verbose mode.
-  -h --help       Print a usage statement and exit.
-  -M --man        Print the complete documentation and exit.
-  -v --version    Print the version number and exit.
 
 =head1 Class Interface
 

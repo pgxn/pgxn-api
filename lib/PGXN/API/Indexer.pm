@@ -154,6 +154,7 @@ sub update_mirror_meta {
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
+    $tmpl->{search} = '/search';
     ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 
@@ -233,7 +234,7 @@ sub merge_distmeta {
             last;
         }
 
-        # Now rite out the dist version.
+        # Now write out the dist version.
         $api->write_json_to($dist_file => $meta);
     }
 
@@ -887,16 +888,59 @@ PGXN::API::Index - PGXN API distribution indexer
 =head1 Synopsis
 
   use PGXN::API::Indexer;
-  PGXN::API::Indexer->add_distribution({
-      meta    => $meta,
-      src_dir => File::Spec->catdir(
-          $self->source_dir, "$meta->{name}-$meta->{version}"
-      ),
-  });
+  my $indexer = PGXN::API::Indexer->new(verbose => $verbosity);
+  $indexer->add_distribution({ meta => $dist_meta, zip => $zip });
 
 =head1 Description
 
-More to come.
+This module does the heavy lifting of indexing a PGXN distribution for the API
+server. Simply hand off the metadata loaded from a distribution F<META.json>
+file and an L<Archive::Zip> object loaded with the distribution download file
+and it will:
+
+=over
+
+=item 1
+
+Copy the distribution files from the local mirror to the API document root.
+
+=item 2
+
+Merge the distribution metadata between the metadata files matching the
+C<meta> and C<dist> URI templates. The templates are themselves loaded from
+the F</index.json> file from the mirror root. The two metadata documents each
+get additional data useful for API calls and become identical, as well.
+
+=item 3
+
+Searches for any and all C<README> files and documentation files and parses
+them into HTML. The format of all documentation files may be any recognized by
+L<Text::Markup>. The parsed HTML is then cleaned up and an table of contents
+added before being saved to its new home as a partial HTML document. See the
+pgTAP documentation L<on the PGXN API
+server|http://api.pgxn.org/dist/pgTAP/doc/pgtap.html> for a nice example of
+the resulting format (generated from a L<Markdown document in the pgTAP
+distribution|http://github.org/theory/pgtap/doc/pgtap.md>) and the same
+document used L<on the PGXN
+site|http://www.pgxn.org/dist/pgTAP/doc/pgtap.html> for how it can be used.
+
+=item 4
+
+Merges the user, tag, and extension metadata for the distribution, adding
+extra data points useful for the API.
+
+=item 5
+
+Adds all documentation as well as, distribution, extension, user, and tag
+metadata, to full text indexes. These may be queried via the API server
+(provided by F<bin/pgxn_api.psgi> or locally with L<PGXN::API::Searcher>.
+
+=back
+
+The result is a robust API with much more information than is provided by the
+spare metadata JSON files on a normal PGXN mirror. The interface offered via
+the F<pgxn_api.psgi> server is then a superset of that offered by a normal
+mirror. It's a PGXN mirror + more!
 
 =head1 Author
 
