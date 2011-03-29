@@ -1,6 +1,13 @@
 Revision history for Perl extension PGXN::API
 
 0.6.6
+      - Changed `{+path}` in the doc URI template to `{+doc}`, since that
+        will be more meaningful in other contexts.
+      - Added the `doc` key to the `provides` hashes in the distribution
+        metadata. It contains the doc path (as used by the doc URI template)
+        to the doc with the same base name as the provided extension.
+      - Added the `doc` key to the extension search index, so it's easy to
+        link to the documentation page from extension search results.
 
 0.6.5   2011-03-28T03:57:52
       - The search API no longer fails when only "q" query parameter is

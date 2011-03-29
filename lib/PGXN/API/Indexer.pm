@@ -85,7 +85,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ body        => $ftih    ],
             [ dist        => $fti     ],
             [ version     => $stored  ],
-            [ path        => $stored  ],
+            [ doc         => $stored  ],
             [ date        => $stored  ],
             [ user        => $stored  ],
             [ user_name   => $stored  ],
@@ -106,6 +106,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ key         => $indexed ],
             [ extension   => $fti     ],
             [ abstract    => $ftih    ],
+            [ doc         => $stored  ],
             [ dist        => $stored  ],
             [ version     => $stored  ],
             [ date        => $stored  ],
@@ -153,7 +154,7 @@ sub update_mirror_meta {
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+path}.html};
+    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 
     # Copy meta.
@@ -206,6 +207,14 @@ sub merge_distmeta {
     # Add a list of special files and docs.
     $meta->{special_files} = $self->_source_files($p);
     $meta->{docs}          = $self->parse_docs($p);
+
+    # Add doc paths to provided extensions where possible.
+    while (my ($ext, $data) = each %{ $meta->{provides} }) {
+        $data->{doc} = first {
+            my ($basename) = m{([^/]+)$};
+            $basename eq $ext;
+        } keys %{ $meta->{docs} };
+    }
 
     # Write the merge metadata to the file.
     my $fn = $self->doc_root_file_for(meta => $meta);
@@ -332,6 +341,9 @@ sub update_extensions {
         my $status = $meta->{release_status};
         $mir_meta->{$status}{abstract} = $data->{abstract};
 
+        # Add a doc path if there is one.
+        $mir_meta->{doc} = $data->{doc} if $data->{doc};
+
         # Copy the other release status data from the doc data.
         $mir_meta->{$_} = $doc_meta->{$_} for grep {
             $doc_meta->{$_} && $_ ne $status
@@ -371,6 +383,7 @@ sub update_extensions {
             key         => $mir_meta->{extension},
             extension   => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
+            doc         => $mir_meta->{doc} || '',
             dist        => $meta->{name},
             version     => $mir_meta->{stable}{version},
             date        => $meta->{date},
@@ -414,9 +427,9 @@ sub parse_docs {
             # XXX Nasty hack until we get + operator in URI Template v4.
             local $URI::Escape::escapes{'/'} = '/';
             my $dst  = $self->doc_root_file_for(
-                doc     => $meta,
-                path    => $noext,
-                '+path' => $noext, # XXX Part of above-mentioned hack.
+                doc    => $meta,
+                doc    => $noext,
+                '+doc' => $noext, # XXX Part of above-mentioned hack.
             );
             make_path dirname $dst;
 
@@ -445,7 +458,7 @@ sub parse_docs {
             # Add it to the search index.
             $self->_index(doc => {
                 key       => "$meta->{name}/$noext",
-                path      => $noext,
+                doc      => $noext,
                 title     => $title,
                 abstract  => $abstract,
                 body      => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 199;
+use Test::More tests => 200;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -77,7 +77,7 @@ file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should n
 # Make sure it has all the templates we need.
 my $tmpl = $api->read_json_from(catfile qw(t root index.json));
 $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-$tmpl->{doc} = "/dist/{dist}/{version}/{+path}.html";
+$tmpl->{doc} = "/dist/{dist}/{version}/{+doc}.html";
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 
@@ -132,7 +132,11 @@ $meta->{name} = 'pair';
 # Now merge the distribution metadata files.
 my $dist_file = catfile $api->doc_root, qw(dist pair 0.1.0 META.json);
 my $dist   = catfile $api->doc_root, qw(dist pair.json);
-$mock->mock(parse_docs => 'docs_here');
+my $docs = { 'docs/pair' => {
+    title => 'pair',
+    abstract => 'Key value pair',
+}};
+$mock->mock(parse_docs => $docs);
 
 # Set up zip archive.
 my $zip       = Archive::Zip->new;
@@ -173,7 +177,9 @@ is_deeply $meta->{releases},
     'Meta should now have release info';
 is_deeply $meta->{special_files}, [qw(README.md META.json Makefile)],
     'And it should have special files';
-is $meta->{docs}, 'docs_here', 'Should have docs from parse_docs';
+is_deeply $meta->{docs}, $docs, 'Should have docs from parse_docs';
+is $meta->{provides}{pair}{doc}, 'docs/pair',
+    'Should have extension doc path in provides';
 
 # So have a look at the contents.
 ok my $dist_meta = $api->read_json_from($dist_file),
@@ -474,6 +480,7 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract  => 'A key/value pair data type',
     date      => '2010-10-18T15:24:21Z',
     dist      => 'pair',
+    doc       => 'docs/pair',
     extension => 'pair',
     key       => 'pair',
     user      => 'theory',
@@ -485,6 +492,7 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
 $exp = {
     extension => 'pair',
     latest    => 'stable',
+    doc       => 'docs/pair',
     stable    => {
         abstract => 'A key/value pair data type',
         dist     => 'pair',
@@ -548,6 +556,7 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-10-29T22:46:45Z',
     dist        => 'otherdist',
+    doc       => 'docs/pair',
     extension   => 'pair',
     key         => 'pair',
     user        => 'theory',
@@ -582,6 +591,7 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     abstract  => 'A key/value pair dåtå type',
     date      => '2010-11-10T12:18:03Z',
     dist      => 'pair',
+    doc       => '',
     extension => 'pair',
     key       => 'pair',
     user      => 'theory',
@@ -589,6 +599,7 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     version   => '0.1.2',
 }, 'Should have extension index data again';
 
+delete $exp->{doc};
 $exp->{latest} = 'stable';
 $exp->{stable}{version} = '0.1.2';
 $exp->{stable}{abstract} = 'A key/value pair dåtå type';
@@ -643,7 +654,7 @@ is_deeply shift @{ $indexer->to_index->{doc} }, {
     dist      => 'pair',
     key       => 'pair/doc/pair',
     user      => 'theory',
-    path      => 'doc/pair',
+    doc       => 'doc/pair',
     title     => 'pair 0.1.0',
     user_name => 'David E. Wheeler',
     version   => '0.1.0',
