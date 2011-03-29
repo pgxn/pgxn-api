@@ -179,11 +179,27 @@ know that this is the class that Plack uses to fire up the app.
 
 =head3 C<app>
 
-  PGXN::API->app;
+  PGXN::API->app(%params);
 
-Returns the PGXN::API Plack app. See F<bin/pgxn_api.pgsgi> for an example
-usage. It's not much to look at. But Plack uses the returned code reference to
-power the application.
+Returns the PGXN::API Plack app. The supported parameters are:
+
+=over
+
+=item C<doc_root>
+
+The path to use for the API document root.
+
+=item C<errors_to>
+
+An email address to which error emails should be sent.
+
+=item C<errors_from>
+
+An email address from which alert emails should be sent.
+
+=back
+
+See F<bin/pgxn_api.pgsgi> for an example usage.
 
 =head1 Author
 
