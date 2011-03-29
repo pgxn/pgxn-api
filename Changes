@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.7.0
+
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with
         the options we care about. Otherwise it fails to start when running
