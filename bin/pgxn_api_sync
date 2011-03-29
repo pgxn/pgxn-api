@@ -10,6 +10,7 @@ Getopt::Long::Configure( qw(bundling) );
 
 GetOptions(
     'rsync|r=s'  => \my $rsync,
+    'root|d=s'   => \my $root,
     'verbose|V+' => \my $verbose,
     'help|h'     => \my $help,
     'man|m'      => \my $man,
@@ -28,6 +29,8 @@ if ($version) {
 }
 
 my $source = shift or _pod2usage();
+
+PGXN::API->instance->doc_root($root) if $root;
 
 PGXN::API::Sync->new(
     source => $source,
@@ -66,6 +69,7 @@ hour, put this in your crontab:
 =head1 Options
 
   -r --rsync          Location of rsync if it's not in your path.
+  -d --root           Directory to use for the API doc root.
   -V --verbose        Incremental verbosity to STDOUT.
   -h --help           Print a usage statement and exit.
   -m --man            Print the complete documentation and exit.
