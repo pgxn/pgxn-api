@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 200;
+use Test::More tests => 202;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -676,6 +676,21 @@ file_contents_like $doc, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0},
     'Doc should have preformatted HTML';
 file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
 file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
+
+# Make sure we skip files that should not be indexed.
+$meta->{no_index} = { file => ['doc/pair.md']};
+$docs = $indexer->parse_docs($params);
+is_deeply $docs, {
+    'README'   => { title => 'pair 0.1.0' },
+}, 'Doc parser should ignore no_index-specified doc file';
+
+$meta->{no_index} = { directory => ['doc']};
+$docs = $indexer->parse_docs($params);
+is_deeply $docs, {
+    'README'   => { title => 'pair 0.1.0' },
+}, 'Doc parser should ignore no_index-specified doc directory';
+
+delete $meta->{no_index};
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.

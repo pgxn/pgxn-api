@@ -404,6 +404,7 @@ sub parse_docs {
     my $dir    = $self->doc_root_file_for(source => $meta);
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
     my $libxml = $self->libxml;
+    my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
 
     # Find all doc files and write them out.
     my %docs;
@@ -413,8 +414,13 @@ sub parse_docs {
     ) {
         for my $member ($zip->membersMatching(qr{^$prefix/$regex})) {
             next if $member->isDirectory;
-            # XXX Read no_index and skip as appropriate.
+
+            # Skip files that should not be indexed.
             (my $fn = $member->fileName) =~ s{^$prefix/}{};
+            next if first { $fn eq $_ } @{ $skip->{file} };
+            next if first { $fn =~ /^\Q$_/ } @{ $skip->{directory} };
+
+            # XXX Read no_index and skip as appropriate.
             my $src = catfile $dir, $fn;
             my $doc = $libxml->parse_html_string($markup->parse(file => $src), {
                 suppress_warnings => 1,
