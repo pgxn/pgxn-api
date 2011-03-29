@@ -25,6 +25,17 @@ sub app {
         enable 'ErrorDocument', 500, '/error', subrequest => 1;
         enable 'HTTPExceptions';
         enable 'StackTrace', no_print_errors => 1;
+        enable sub {
+            my $app = shift;
+            sub {
+                my $res = $app->(@_);
+                Plack::Util::response_cb($res, sub {
+                    my $res = shift;
+                    push @{ $res->[1] },
+                        'X-PGXN-API-Version' => __PACKAGE__->VERSION;
+                });
+            };
+        };
 
         # Sever most stuff as plain files.
         my $dirs = Plack::App::File->new(root => $root)->to_app;

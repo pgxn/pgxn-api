@@ -1,6 +1,7 @@
 Revision history for Perl extension PGXN::API
 
 0.6.8
+      - Added X-PGXN-API-Version header to all HTTP responses.
 
 0.6.7   2011-03-29T02:18:01
       - Moved the doc path in the extension JSON file under the release status
