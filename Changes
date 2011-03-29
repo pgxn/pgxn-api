@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.6.6
+0.6.6   2011-03-29T01:13:48
       - Changed `{+path}` in the doc URI template to `{+doc}`, since that
         will be more meaningful in other contexts.
       - Added the `doc` key to the `provides` hashes in the distribution
