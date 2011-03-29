@@ -219,7 +219,7 @@ a PGXN Manager server.
 
 An incremental integer specifying the level of verbosity to use during a sync.
 By default, PGXN::API::Sync runs in quiet mode, where only errors are emitted
-to C<STDERRR>.
+to C<STDERR>.
 
 =back
 

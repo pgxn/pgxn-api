@@ -948,6 +948,301 @@ spare metadata JSON files on a normal PGXN mirror. The interface offered via
 the F<pgxn_api.psgi> server is then a superset of that offered by a normal
 mirror. It's a PGXN mirror + more!
 
+=head1 Class Interface
+
+=head2 Constructor
+
+=head3 C<new>
+
+  my $indexer = PGXN::API::Indexer->new(verbose => $verbosity);
+
+Constructs and returns a new PGXN::API::Indexer object. There is only one
+parameter, C<verbose>, an incremental integer specifying the level of
+verbosity to use while indexing. Defaults to 0, which is as quiet as possible.
+
+=head1 Instance Interface
+
+=head2 Instance Methods
+
+=head3 C<update_mirror_meta>
+
+Updates the mirror metadata, copying the mirror templates from the mirror's
+F</index.json> to the API's F</index.json>. Specifically, it adds three
+additional templates:
+
+=over
+
+=item C<source>
+
+URI for browsing the source of a distribution. Its value is
+
+  /src/{dist}/{dist}-{version}/
+
+=item C<search>
+
+The URI for search, simply F</search>.
+
+=item C<doc>
+
+The URI for a documentation file. It's format is copied form the "meta"
+template, with the trailing C<META.json> replaced with `{+doc}.html}`.
+`{+doc}` is the path to a documentation file (without a file extension) and
+may include slashes.
+
+=back
+
+=head3 C<add_distribution>
+
+  $indexer->add_distribution({ meta => $meta, zip => $zip });
+
+Adds a distribution to the index. This is the main method called to do all the
+work of indexing a distribution. The two required parameters are:
+
+=over
+
+=item C<meta>
+
+The metadata file loaded from a distribution F<META.json> file.
+
+=item c<zip>
+
+An L<Archive::Zip> object loaded up with the distribution download file.
+
+=back
+
+=head3 C<copy_files>
+
+  $indexer->copy_files($params);
+
+Copies a distribution download and C<README> files from the mirror to the API
+document root. The supported parameters are the same as those for
+C<add_distribution()>, by which this method is called internally.
+
+=head3 C<merge_distmeta>
+
+  $indexer->copy_files($params);
+
+Merges the distribution metadata between the C<meta> file and the C<dist>
+file. These are the names of URI templates in the F</index.json> file. The
+supported parameters are the same as those for C<add_distribution()>, by which
+this method is called internally.
+
+Once the merge is complete, the two files will be identical, although the
+C<dist> file will only be updated if the new distribution's release status is
+"stable" (or if there are no stable distributions). In addition to the data
+they provided via the mirror server, they will also have the following new
+keys:
+
+=over
+
+=item C<special_files>
+
+An array of the names of special files in the distribution. These include any
+files which match the following regular expressions:
+
+=over
+
+=item C<qr{Change(?:s|Log)(?:[.][^.]+)?}i>
+
+=item C<qr{README(?:[.][^.]+)?}i>
+
+=item C<qr{LICENSE(?:[.][^.]+)?}i>
+
+=item C<qr{META[.]json}>
+
+=item C<qr{Makefile}>
+
+=item C<qr{MANIFEST}>
+
+=back
+
+=item C<docs>
+
+A hash (dictionary) listing the documentation files found in the distribution.
+These include a C<README> file and any files found under the F<doc> or F<docs>
+directory. The keys are paths to each document (without the file name
+extension) and the values are document titles.
+
+=item C<provides/$extension/doc>
+
+Each extension listed under C<provides> will get a new key, C<doc>, if there
+is a document in the C<docs> hash with the same base name as the extension.
+This is on the assumption that an included extension will have for its
+documentation a file with the same name (minus the file name extension) as the
+extension itself. The value will be the path to the document, the same as the
+key for the same document in the C<docs> hash.
+
+=back
+
+Getting all of this documentation information is handled via a call to
+C<parse_docs()>, which of course also parses any docs it finds.
+
+And finally, this method updates all other "dist" files for previous versions
+of the distribution with the latest C<releases> information, so that they all
+have a complete list of all releases of the distribution.
+
+=head3 C<parse_docs>
+
+  $indexer->parse_docs($params);
+
+Searches the distribution download file fora C<README> and for documentation
+files in a F<doc> or F<docs> directory, parses them into HTML (using
+L<Text::Markup>), and the runs them through L<XML::LibXML> to remove all
+unsafe HTML, to generate a table of contents, and to save them as partial HTML
+files. Their contents are also added to the "doc" full text index. Files
+matching the rules under the C<no_index> key in the metadata (if any) will be
+ignored.
+
+Returns a hash reference with information about the documentation, with the
+keys being paths to the documentation (without file name extensions) and the
+values being the titles of the documents. The supported parameters are the
+same as those for C<add_distribution()>; this method is called internally by
+C<merge_distmeta()>.
+
+=head3 C<update_extensions>
+
+  $indexer->update_extensions($params);
+
+Iterates over the list of extensions under the C<provides> key in the metadata
+and updates their respective metadata files (as specified by the "extension"
+URI template) and updates them with additional information.The supported
+parameters are the same as those for C<add_distribution()>, by which this
+method is called internally.
+
+The additional metadata added to the extension files is:
+
+=over
+
+=item C<$release_status/doc>
+
+The path to the documentation (without the file name extension) for the
+extension for the given release status.
+
+
+=item C<$release_status/abstract>
+
+The abstract for the latest release of the given release status.
+
+=item C<versions/$version/date>
+
+The date of a given release.
+
+=back
+
+The contents of the extension, including is name, abstract, distribution,
+distribution version, and doc path are added to the "extension" full text
+index.
+
+=head3 C<update_tags>
+
+  $indexer->update_tags($params);
+
+Iterates over the list of tags under the C<tags> key in the metadata and
+updates their respective metadata files (as specified by the "tag" URI
+template). The supported parameters are the same as those for
+C<add_distribution()>, by which this method is called internally.
+
+The data added to each tag metadata file is the list of releases copied from
+the distribution metadata. A tag metadata file thus ends up with a complete
+list of all distribution releases associated with the tag. The tag is then
+added to the "tag" full text index.
+
+=head3 C<update_user>
+
+  $indexer->update_user($params);
+
+Updates the metadata for the user specified under the C<user> key in the
+distribution metadata. The updated file is specified by the "user" URI
+template. The supported parameters are the same as those for
+C<add_distribution()>, by which this method is called internally.
+
+The data added to each user metadata file is the list of releases copied from
+the distribution metadata. A user metadata file thus ends up with a complete
+list of all distribution releases made by the user. The user is then added to
+the "user" full text index, where the name, nickname, email address, URI, and
+other metadata are indexed.
+
+=head3 C<doc_root_file_for>
+
+  my $doc_root_file = $indexer->doc_root_file_for($tmpl_name, $meta);
+
+Returns the full path to a file in the API document root for the specified URI
+template, and using the specified distribution metadata to populate the
+variable values in the template. Used internally to figure out what files
+to write to.
+
+=head3 C<mirror_file_for>
+
+  my $mirror_file = $indexer->mirror_file_for($tmpl_name, $meta);
+
+Returns the full path to a file in local PGXN mirror directory for the
+specified URI template, and using the specified distribution metadata to
+populate the variable values in the template. Used internally to figure out
+what files to read from.
+
+=head3 C<indexer_for>
+
+  my $ksi = $indexer->indexer_for($index_name);
+
+Returns a L<KinoSearch::Index::Indexer> object for updating named full text
+index. Used internally for updating the appropriate full text index when a
+distribution has been fully updated.
+
+=head2 Instance Accessors
+
+=head3 C<verbose>
+
+  my $verbose = $indexer->verbose;
+  $indexer->verbose($verbose);
+
+Get or set an incremental verbosity. The higher the integer specified, the
+more verbose the indexing.
+
+=head3 C<to_index>
+
+  push @{ $indexer->to_index->{ $index } } => $data;
+
+Stores a hash reference of array references of data to be added to full text
+indexes. As a distribution is merged and updated, data for adding to the full
+text index is added to this hash. Once the updating and merging has completed
+successfully, the data is read from this attribute and written to the
+appropriate full text indexes.
+
+=head3 C<libxml>
+
+  my $libxml = $indexer->libxml;
+
+Returns the L<XML::LibXML> object used for parsing and cleaning HTML documents.
+
+=head3 C<index_dir>
+
+  my $index_dir = $indexer->index_dir;
+
+Returns the path to the parent directory of all of the full-text indexes.
+
+=head3 C<schemas>
+
+  my $schema = $indexer->schemas->{$index_name};
+
+Returns a hash reference of L<KinoSearch::Plan::Schema> objects used to define
+the structure of the full text indexes. The keys identify the indexes and the
+values are the corresponding L<KinoSearch::Plan::Schema> objects. The supported
+indexes are:
+
+=over
+
+=item doc
+
+=item dist
+
+=item extension
+
+=item tag
+
+=item user
+
+=back
+
 =head1 Author
 
 David E. Wheeler <david.wheeler@pgexperts.com>
