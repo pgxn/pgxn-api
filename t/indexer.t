@@ -492,9 +492,9 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
 $exp = {
     extension => 'pair',
     latest    => 'stable',
-    doc       => 'docs/pair',
     stable    => {
         abstract => 'A key/value pair data type',
+        doc      => 'docs/pair',
         dist     => 'pair',
         version => '0.1.0',
         sha1     => '1234567890abcdef1234567890abcdef12345678',
@@ -527,6 +527,7 @@ is_deeply $indexer->to_index, {
 $exp->{latest} = 'testing';
 $exp->{testing} = {
     abstract => 'A key/value pair dåtå type',
+    doc      => 'docs/pair',
     dist     => 'pair',
     version  => '0.1.1',
     sha1     => 'c552c961400253e852250c5d2f3def183c81adb3',
@@ -573,9 +574,10 @@ unshift @{ $exp->{versions}{'0.1.1'} } => {
 };
 $exp->{stable} = {
     abstract => 'A key/value pair dåtå type',
-    dist => 'pair',
-    sha1 => 'cebefd23151b4b797239646f7ae045b03d028fcf',
-    version => '0.1.2',
+    doc      => 'docs/pair',
+    dist     => 'pair',
+    sha1     => 'cebefd23151b4b797239646f7ae045b03d028fcf',
+    version  => '0.1.2',
 };
 is_deeply $doc_data, $exp,
     "The second distribution's metadata should new be present";
@@ -599,7 +601,7 @@ is_deeply shift @{ $indexer->to_index->{extension} }, {
     version   => '0.1.2',
 }, 'Should have extension index data again';
 
-delete $exp->{doc};
+delete $exp->{stable}{doc};
 $exp->{latest} = 'stable';
 $exp->{stable}{version} = '0.1.2';
 $exp->{stable}{abstract} = 'A key/value pair dåtå type';

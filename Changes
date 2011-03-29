@@ -1,5 +1,9 @@
 Revision history for Perl extension PGXN::API
 
+0.6.7
+      - Moved the doc path in the extension JSON file under the release status
+        key.
+
 0.6.6   2011-03-29T01:13:48
       - Changed `{+path}` in the doc URI template to `{+doc}`, since that
         will be more meaningful in other contexts.

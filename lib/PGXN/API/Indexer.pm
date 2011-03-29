@@ -337,12 +337,10 @@ sub update_extensions {
         );
         my $doc_meta = -e $doc_file ? $api->read_json_from($doc_file) : {};
 
-        # Add the abstract to the mirror data.
+        # Add the abstract and doc path to the mirror data.
         my $status = $meta->{release_status};
         $mir_meta->{$status}{abstract} = $data->{abstract};
-
-        # Add a doc path if there is one.
-        $mir_meta->{doc} = $data->{doc} if $data->{doc};
+        $mir_meta->{$status}{doc} = $data->{doc} if $data->{doc};
 
         # Copy the other release status data from the doc data.
         $mir_meta->{$_} = $doc_meta->{$_} for grep {
@@ -372,7 +370,7 @@ sub update_extensions {
             if ($dist->{dist} eq $meta->{name}
                 && $dist->{version} eq $meta->{version}
             ) {
-                # Got it. Add the release date
+                # Got it. Add the release date.
                 $dist->{date} = $meta->{date};
             }
         }
@@ -383,7 +381,7 @@ sub update_extensions {
             key         => $mir_meta->{extension},
             extension   => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
-            doc         => $mir_meta->{doc} || '',
+            doc         => $data->{doc} || '',
             dist        => $meta->{name},
             version     => $mir_meta->{stable}{version},
             date        => $meta->{date},
