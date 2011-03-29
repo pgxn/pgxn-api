@@ -2,7 +2,7 @@ Revision history for Perl extension PGXN::API
 
 0.7.0
       - Added "search" URI template to the API server's `/index.json`.
-      - Added full documentation for Sync and Indexer.
+      - Added full documentation.
       - The indexer now respects the `no_index` key in the meta file.
         Specifically, it will ignore any documentation files that match the
         no_index spec. They won't be indexed.
