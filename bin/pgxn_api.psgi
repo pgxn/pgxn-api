@@ -4,4 +4,14 @@ use 5.12.0;
 use utf8;
 use lib 'lib';
 use PGXN::API::Router;
-PGXN::API::Router->app;
+
+my $self = shift;
+unless (@ARGV >= 4) {
+    say STDERR "\n  Usage: $self \\
+         errors_to alert\@example.com \\
+         errors_from pgxn-api\@example.com \\
+         [doc_root /path/to/doc/root]\n";
+    exit 1;
+}
+
+PGXN::API::Router->app(@ARGV);

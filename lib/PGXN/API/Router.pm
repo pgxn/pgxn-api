@@ -14,6 +14,14 @@ use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
 
 sub app {
+    my ($class, %params) = @_;
+
+    unless ($params{errors_to} && $params{errors_from}) {
+        die "Missing required parameters errors_to and errors_from\n";
+    }
+
+    PGXN::API->instance->doc_root(delete $params{doc_root})
+        if $params{doc_root};
     my $root = PGXN::API->instance->doc_root;
 
     # Identify distribution files as zip files.
@@ -120,8 +128,8 @@ sub app {
                 require Data::Dump;
                 my $email = Email::MIME->create(
                     header     => [
-                        From    => 'errors@pgxn.org',
-                        To      => 'pgxn@pgexperts.com',
+                        From    => $params{errors_from},
+                        To      => $params{errors_to},
                         Subject => 'PGXN API Internal Server Error',
                     ],
                     attributes => {

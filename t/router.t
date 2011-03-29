@@ -3,7 +3,7 @@
 use 5.12.0;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
-use Test::More tests => 126;
+use Test::More tests => 127;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -24,8 +24,18 @@ END { remove_tree $doc_root }
 dircopy catdir(qw(t root)), $doc_root;
 $api->mirror_root(catdir 't', 'root');
 
+local $@;
+eval { PGXN::API::Router->app };
+is $@, "Missing required parameters errors_to and errors_from\n",
+    'Should get proper error for missing parameters';
+
+my $app = PGXN::API::Router->app(
+    errors_to   => 'alerts@pgxn.org',
+    errors_from => 'api@pgxn.org',
+);
+
 # Test the root index.json.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     ok my $res = $cb->(GET '/index.json'), 'Fetch /index.json';
     ok $res->is_success, 'It should be a success';
@@ -35,7 +45,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try a subdirectory JSON file.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = '/dist/pair/0.1.1/META.json';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -46,7 +56,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try a readme file.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = '/dist/pair/0.1.1/README.txt';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -58,7 +68,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try a distribution file.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = '/dist/pair/0.1.1/pair-0.1.1.pgz';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -70,7 +80,7 @@ test_psgi +PGXN::API::Router->app => sub {
 
 # Try an HTML file.
 my $html = catfile qw(var index.html);
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
     my $uri = '/index.html';
@@ -82,7 +92,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try the root directory.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     local $ENV{FOO} = 1;
     fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
@@ -100,7 +110,7 @@ dircopy $src, $dst or die "Cannot copy dir $src to $dst: $!\n";
 fcopy $html, $dst or die "Cannot copy $html to $dst: $!\n";
 
 # Try a src/json file.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = 'src/pair/0.1.0/META.json';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -111,7 +121,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try a src/readme file
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = 'src/pair/0.1.1/README.txt';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -122,7 +132,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try a src/html file.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = 'src/pair/index.html';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -133,7 +143,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Try a src directory..
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $uri = 'src/pair/';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -146,7 +156,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Make sure /_index always 404s.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     for my $uri (qw( _index _index/ _index/foo _index/index.html)) {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
@@ -158,7 +168,7 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Give the search engine a spin.
-test_psgi +PGXN::API::Router->app => sub {
+test_psgi $app => sub {
     my $cb = shift;
     my $mocker = Test::MockModule->new('PGXN::API::Searcher');
     my @params;
@@ -209,7 +219,6 @@ test_psgi +PGXN::API::Router->app => sub {
 };
 
 # Test /error basics.
-my $app = PGXN::API::Router->app;
 my $err_app = sub {
     my $env = shift;
     $env->{'psgix.errordocument.PATH_INFO'} = '/what';
@@ -237,9 +246,9 @@ test_psgi $err_app => sub {
     my $email = $deliveries->[0]{email};
     is $email->get_header('Subject'), 'PGXN API Internal Server Error',
         'The subject should be set';
-    is $email->get_header('From'), 'errors@pgxn.org',
+    is $email->get_header('From'), 'api@pgxn.org',
         'From header should be set';
-    is $email->get_header('To'), 'pgxn@pgexperts.com',
+    is $email->get_header('To'), 'alerts@pgxn.org',
         'To header should be set';
     is $email->get_body, 'An error occurred during a request to http://localhost/what.
 
