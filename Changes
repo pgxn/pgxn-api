@@ -8,6 +8,8 @@ Revision history for Perl extension PGXN::API
         no_index spec. They won't be indexed.
       - Changed the default `mirror_root` subdirectory from "pgxn" to
         "mirror".
+      - Added query parameter validation to the `/search` API. Any invalid
+        parameters now return 400.
 
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with

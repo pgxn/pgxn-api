@@ -67,9 +67,26 @@ sub app {
 
             my $q = $req->param('q') or return [
                 400,
-                ['Content-Type' => 'text/plain', 'Content-Length' => 36],
-                ['Bad request: q query param required.']
+                ['Content-Type' => 'text/plain', 'Content-Length' => 38],
+                ['Bad request: "q" query param required.']
             ];
+
+            # Should have a valid "in" param.
+            return [
+                400,
+                ['Content-Type' => 'text/plain', 'Content-Length' => 38],
+                ['Bad request: invalid "in" query param.']
+            ] unless $req->param('in') ~~ [undef, '', qw(doc dist extension tag user)];
+
+            # Make sure "o" and "l" params are valid.
+            for my $param (qw(o l)) {
+                my $val = $req->param($param);
+                return [
+                    400,
+                    ['Content-Type' => 'text/plain', 'Content-Length' => 37],
+                    [qq{Bad request: invalid "$param" query param.}]
+                ] if $val && $val !~ /^\d+$/;
+            }
 
             # Give 'em the results.
             my $searcher = PGXN::API::Searcher->new($root);
