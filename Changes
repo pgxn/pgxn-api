@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.6.9
+
 0.6.8   2011-03-29T04:18:30
       - Added X-PGXN-API-Version header to all HTTP responses.
       - Added required `errors_to` and `errors_from` parameters to the router.
