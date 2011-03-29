@@ -78,7 +78,7 @@ file_exists_ok $src_dir, 'Source dir should now exist';
 ok -d $src_dir, 'Source dir should be a directory';
 
 # Test mirror_root().
-my $mirror_root = catdir $pgxn->doc_root, 'pgxn';
+my $mirror_root = catdir $pgxn->doc_root, 'mirror';
 file_not_exists_ok $mirror_root, 'Mirror dir should not yet exist';
 is $pgxn->mirror_root, $mirror_root, 'Should have expected source directory';
 file_exists_ok $mirror_root, 'Mirror dir should now exist';

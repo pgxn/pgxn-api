@@ -176,12 +176,12 @@ has source_dir => (is => 'ro', 'isa' => 'Str', lazy => 1, default => sub {
   my $mirror_root = $pgxn->mirror_root;
 
 Returns the directory on the file system where the PGXN mirror lives, which is
-just the F<pgxn> subdirectory of C<doc_root>.
+just the F<mirror> subdirectory of C<doc_root>.
 
 =cut
 
 has mirror_root => (is => 'rw', 'isa' => 'Str', lazy => 1, default => sub {
-    my $dir = catdir shift->doc_root, 'pgxn';
+    my $dir = catdir shift->doc_root, 'mirror';
     if (!-e $dir) {
         require File::Path;
         File::Path::make_path($dir);

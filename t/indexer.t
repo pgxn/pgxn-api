@@ -259,7 +259,7 @@ is_deeply shift @{ $indexer->to_index->{user} }, {
 
 # Now make sure that it has the updated release metadata.
 ok my $mir_data = $api->read_json_from(
-    catfile $doc_root, qw(pgxn user theory.json)
+    catfile $doc_root, qw(mirror user theory.json)
 ),'Read the mirror user data file';
 ok my $doc_data = $api->read_json_from($user_file),
     'Read the doc root user data file';

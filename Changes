@@ -6,6 +6,8 @@ Revision history for Perl extension PGXN::API
       - The indexer now respects the `no_index` key in the meta file.
         Specifically, it will ignore any documentation files that match the
         no_index spec. They won't be indexed.
+      - Changed the default `mirror_root` subdirectory from "pgxn" to
+        "mirror".
 
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with
