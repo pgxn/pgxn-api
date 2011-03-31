@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.7.0
+0.7.0   2011-03-31T20:55:51
       - Added "search" URI template to the API server's `/index.json`.
       - Added full documentation.
       - The indexer now respects the `no_index` key in the meta file.
