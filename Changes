@@ -16,6 +16,8 @@ Revision history for Perl extension PGXN::API
         `/search/users`, and `/search/tags`.
       - To be in sync with the above, the search indexes now have plural names
         rather than singular.
+      - Fixed "Cannot copy directory" errors in tests when run from a
+        distribution.
 
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with

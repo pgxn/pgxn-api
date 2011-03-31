@@ -18,6 +18,7 @@ use utf8;
 
 my $CLASS;
 BEGIN {
+    $File::Copy::Recursive::KeepMode = 0;
     $CLASS = 'PGXN::API::Indexer';
     use_ok $CLASS or die;
 }

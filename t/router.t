@@ -13,6 +13,7 @@ use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 
 BEGIN {
+    $File::Copy::Recursive::KeepMode = 0;
     use_ok 'PGXN::API::Router' or die;
 }
 
