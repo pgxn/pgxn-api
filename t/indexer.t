@@ -125,7 +125,7 @@ $meta->{name} = 'nonexistent';
 my $src = catfile $api->mirror_root, qw(dist nonexistent 0.1.0 nonexistent-0.1.0.pgz);
 my $dst = catfile $api->doc_root,    qw(dist nonexistent 0.1.0 nonexistent-0.1.0.pgz);
 throws_ok { $indexer->copy_files($params ) }
-    qr{Cannot copy \E$src\Q to \E$dst\Q: No such file or directory},
+    qr{Cannot copy \Q$src\E to \Q$dst\E: No such file or directory},
     'Should get exception with file names for bad copy';
 $meta->{name} = 'pair';
 
