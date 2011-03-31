@@ -10,6 +10,10 @@ Revision history for Perl extension PGXN::API
         "mirror".
       - Added query parameter validation to the `/search` API. Any invalid
         parameters now return 400.
+      - Restored required index specification to the search API path, rather
+        than a query parameter. So `/search` is now a 404. Use `/search/docs`
+        instead. Can also use `/search/dists`, `/search/extensions`,
+        `/search/users`, and `/search/tags`.
 
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with

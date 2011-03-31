@@ -3,7 +3,7 @@
 use 5.12.0;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
-use Test::More tests => 142;
+use Test::More tests => 144;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -175,20 +175,28 @@ test_psgi $app => sub {
     $mocker->mock(new => sub { bless {} => shift });
     $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
     my $q = 'q=whü&o=2&l=10';
-    my $uri = '/search';
     my @exp = ( query  => 'whü', offset => 2, limit  => 10 );
-    for my $in ('', qw(doc dist extension user tag)) {
-        ok my $res = $cb->(GET "$uri?$q&in=$in"), "Fetch $in $uri";
-        ok $res->is_success, "$in $uri should return success";
+    for my $in (qw(doc dist extension user tag)) {
+        my $uri = "/search/${in}s?$q";
+        ok my $res = $cb->(GET $uri), "Fetch $uri";
+        ok $res->is_success, "$uri should return success";
         is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
             'Should have API version in the header';
         is $res->content, '{"foo":1}', 'Content should be JSON of results';
         is_deeply \@params, [index => $in, @exp],
-            "$in $uri should properly dispatch to the searcher";
+            "$uri should properly dispatch to the searcher";
     }
 
     # Now make sure we get the proper 404s.
-    for my $uri (qw(/search/foo /search/foo/ /search/tag/foo /search/tag/foo/)) {
+    for my $uri (qw(
+        /search
+        /search/doc
+        /search/tag
+        /search/foo
+        /search/foo/
+        /search/tag/foo
+        /search/tag/foo/
+    )) {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 404, "$uri should 404";
@@ -197,6 +205,7 @@ test_psgi $app => sub {
     }
 
     # And that we get a 400 when there's no q param.
+    my $uri = '/search/docs';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_error, "$uri should respond with an error";
     is $res->code, 400, "$uri should 400";
@@ -207,11 +216,10 @@ test_psgi $app => sub {
 
     # And that we get a 400 for invalid params.
     for my $spec (
-        ['in=foo' => 'Bad request: invalid "in" query param.'],
         ['l=foo' => 'Bad request: invalid "l" query param.'],
         ['o=foo' => 'Bad request: invalid "o" query param.'],
     ) {
-        my $uri = "/search?q=whu&$spec->[0]";
+        my $uri = "/search/docs?q=whu&$spec->[0]";
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 400, "$uri should 400";
@@ -228,7 +236,7 @@ test_psgi $app => sub {
         'Should have API version in the header';
     is $res->content, '{"foo":1}', 'Content should be JSON of results';
     is_deeply \@params,
-        [index => undef, query => 'hi', offset => undef, limit => undef ],
+        [index => 'doc', query => 'hi', offset => undef, limit => undef ],
         "$uri should properly dispatch to the searcher";
 };
 

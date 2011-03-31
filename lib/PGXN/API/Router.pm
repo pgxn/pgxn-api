@@ -63,20 +63,14 @@ sub app {
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
-            ] if $req->path_info;
+            ] if $req->path_info !~ m{^/(d(?:oc|ist)|extension|user|tag)s$};
+            my $index = $1;
 
             my $q = $req->param('q') or return [
                 400,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 38],
                 ['Bad request: "q" query param required.']
             ];
-
-            # Should have a valid "in" param.
-            return [
-                400,
-                ['Content-Type' => 'text/plain', 'Content-Length' => 38],
-                ['Bad request: invalid "in" query param.']
-            ] unless $req->param('in') ~~ [undef, '', qw(doc dist extension tag user)];
 
             # Make sure "o" and "l" params are valid.
             for my $param (qw(o l)) {
@@ -94,7 +88,7 @@ sub app {
                 200,
                 ['Content-Type' => 'text/json'],
                 [encode_json $searcher->search(
-                    index  => scalar $req->param('in'),
+                    index  => $index,
                     query  => decode_utf8($q),
                     offset => scalar $req->param('o'),
                     limit  => scalar $req->param('l'),
