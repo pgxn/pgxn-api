@@ -176,14 +176,14 @@ test_psgi $app => sub {
     $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
     my $q = 'q=whü&o=2&l=10';
     my @exp = ( query  => 'whü', offset => 2, limit  => 10 );
-    for my $in (qw(doc dist extension user tag)) {
-        my $uri = "/search/${in}s?$q";
+    for my $in (qw(docs dists extensions users tags)) {
+        my $uri = "/search/$in?$q";
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_success, "$uri should return success";
         is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
             'Should have API version in the header';
         is $res->content, '{"foo":1}', 'Content should be JSON of results';
-        is_deeply \@params, [index => $in, @exp],
+        is_deeply \@params, [in => $in, @exp],
             "$uri should properly dispatch to the searcher";
     }
 
@@ -236,7 +236,7 @@ test_psgi $app => sub {
         'Should have API version in the header';
     is $res->content, '{"foo":1}', 'Content should be JSON of results';
     is_deeply \@params,
-        [index => 'doc', query => 'hi', offset => undef, limit => undef ],
+        [in => 'docs', query => 'hi', offset => undef, limit => undef ],
         "$uri should properly dispatch to the searcher";
 };
 

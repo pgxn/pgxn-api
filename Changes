@@ -14,6 +14,8 @@ Revision history for Perl extension PGXN::API
         than a query parameter. So `/search` is now a 404. Use `/search/docs`
         instead. Can also use `/search/dists`, `/search/extensions`,
         `/search/users`, and `/search/tags`.
+      - To be in sync with the above, the search indexes now have plural names
+        rather than singular.
 
 0.6.9   2011-03-29T04:43:53
       - Fixed option processing in `pgxn_api.psgi` so that it deals only with

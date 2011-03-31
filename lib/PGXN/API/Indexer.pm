@@ -19,7 +19,7 @@ use namespace::autoclean;
 
 has verbose  => (is => 'rw', isa => 'Int', default => 0);
 has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 } });
 
 has _user_names => (is => 'ro', isa => 'HashRef', default => sub { +{ } });
@@ -78,7 +78,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 
     my %schemas;
     for my $spec (
-        [ doc => [
+        [ docs => [
             [ key         => $indexed ],
             [ title       => $fti     ],
             [ abstract    => $fti     ],
@@ -90,7 +90,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ user        => $stored  ],
             [ user_name   => $stored  ],
         ]],
-        [ dist => [
+        [ dists => [
             [ key         => $indexed ],
             [ dist        => $fti     ],
             [ abstract    => $fti     ],
@@ -102,7 +102,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ user_name   => $stored  ],
             [ user        => $stored  ],
         ]],
-        [ extension => [
+        [ extensions => [
             [ key         => $indexed ],
             [ extension   => $fti     ],
             [ abstract    => $ftih    ],
@@ -113,7 +113,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ user_name   => $stored  ],
             [ user        => $stored  ],
         ]],
-        [ user => [
+        [ users => [
             [ key         => $indexed ],
             [ user        => $fti     ],
             [ name        => $fti     ],
@@ -121,7 +121,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ uri         => $indexed ],
             [ details     => $ftih    ],
         ]],
-        [ tag => [
+        [ tags => [
             [ key         => $indexed ],
             [ tag         => $fti     ],
         ]],
@@ -138,9 +138,9 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 sub indexer_for {
     my ($self, $iname) = @_;
     KinoSearch::Index::Indexer->new(
-        index    => catdir($self->index_dir, $iname),
-        schema   => $self->schemas->{$iname},
-        create   => 1,
+        index  => catdir($self->index_dir, $iname),
+        schema => $self->schemas->{$iname},
+        create => 1,
     );
 }
 
@@ -239,7 +239,7 @@ sub merge_distmeta {
     }
 
     # Index it if it's a new stable release.
-    $self->_index( dist => {
+    $self->_index(dists => {
         key         => $meta->{name},
         dist        => $meta->{name},
         abstract    => $meta->{abstract},
@@ -291,7 +291,7 @@ sub update_user {
             sort grep { !$data->{$_} && !ref $user->{$_} && $_ ne 'nickname' }
             keys %{ $user }
         );
-        $self->_index(user => $data);
+        $self->_index(users => $data);
     }
 
     return $self;
@@ -307,7 +307,7 @@ sub update_tags {
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
         my $data = $self->_update_releases(tag => $meta, tag => $tag);
-        $self->_index(tag => {
+        $self->_index(tags => {
             key => $tag,
             tag => $tag,
         }) if $p->{meta}->{release_status} eq 'stable';
@@ -378,7 +378,7 @@ sub update_extensions {
 
         # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
-        $self->_index(extension => {
+        $self->_index(extensions => {
             key         => $mir_meta->{extension},
             extension   => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
@@ -461,7 +461,7 @@ sub parse_docs {
             };
 
             # Add it to the search index.
-            $self->_index(doc => {
+            $self->_index(docs => {
                 key       => "$meta->{name}/$noext",
                 doc      => $noext,
                 title     => $title,

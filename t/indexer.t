@@ -155,7 +155,7 @@ file_exists_ok $dist,      'pair.json should now exist';
 my $readme = $zip->memberNamed('pair-0.1.0/README.md')->contents;
 utf8::decode $readme;
 
-is_deeply shift @{ $indexer->to_index->{dist} }, {
+is_deeply shift @{ $indexer->to_index->{dists} }, {
     abstract    => 'A key/value pair data type',
     date        => '2010-10-18T15:24:21Z',
     description => "This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.",
@@ -205,7 +205,7 @@ $params->{zip} = $zip_011;
 ok $indexer->merge_distmeta($params), 'Merge the distmeta';
 file_exists_ok $dist_011_file, 'pair/0.1.1/META.json should now exist';
 
-is_deeply $indexer->to_index->{dist}, [],
+is_deeply $indexer->to_index->{dists}, [],
     'Testing distribution should not be queued for indexing';
 
 files_eq_or_diff $dist_011_file, $dist,
@@ -248,7 +248,7 @@ $params->{meta} = $meta;
 ok $indexer->update_user($params), 'Update the user metadata';
 file_exists_ok $user_file, "$user_file should now exist";
 
-is_deeply shift @{ $indexer->to_index->{user} }, {
+is_deeply shift @{ $indexer->to_index->{users} }, {
     details  => '',
     email    => 'david@justatheory.com',
     key      => 'theory',
@@ -274,7 +274,7 @@ fcopy catfile(qw(t data theory-updated.json)),
 $params->{meta} = $meta_011;
 ok $indexer->update_user($params),
     'Update the user metadata for pair 0.1.1';
-is_deeply $indexer->to_index->{user}, [],
+is_deeply $indexer->to_index->{users}, [],
     'Should have no index update for test dist';
 
 $mir_data->{releases}{pair}{stable} = [
@@ -306,7 +306,7 @@ ok $doc_data = $api->read_json_from($user_file),
 is_deeply $doc_data, $mir_data,
     'The doc root data should have the the metadata for 0.1.2';
 
-is_deeply shift @{ $indexer->to_index->{dist} }, {
+is_deeply shift @{ $indexer->to_index->{dists} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-11-10T12:18:03Z',
     description => 'This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing pairs.',
@@ -319,7 +319,7 @@ is_deeply shift @{ $indexer->to_index->{dist} }, {
     version     => "0.1.2",
 }, 'New version should be queued for indexing';
 
-is_deeply shift @{ $indexer->to_index->{user} }, {
+is_deeply shift @{ $indexer->to_index->{users} }, {
     details => '',
     email   => 'david@justatheory.com',
     key     => 'theory',
@@ -342,12 +342,12 @@ file_exists_ok $pairkw_file, "$pairkw_file should now exist";
 file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
 
-is_deeply shift @{ $indexer->to_index->{tag} }, {
+is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'ordered pair',
     tag => 'ordered pair',
 }, 'Should have "ordered pair" index data';
 
-is_deeply shift @{ $indexer->to_index->{tag} }, {
+is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'pair',
     tag => 'pair',
 }, 'Should have "pair" index data';
@@ -384,7 +384,7 @@ fcopy catfile(qw(t data pair-tag-updated.json)),
 ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
 file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 }, 'Should have no index updates for test dist';
 
 # Check the JSON data.
@@ -427,17 +427,17 @@ fcopy catfile(qw(t data kv-tag-updated.json)),
       catfile($api->mirror_root, qw(tag), 'key value.json');
 ok $indexer->update_tags($params), 'Update the tags to 0.1.2';
 
-is_deeply shift @{ $indexer->to_index->{tag} }, {
+is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'ordered pair',
     tag => 'ordered pair',
 }, 'Should have "ordered pair" index data';
 
-is_deeply shift @{ $indexer->to_index->{tag} }, {
+is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'pair',
     tag => 'pair',
 }, 'Should have "pair" index data';
 
-is_deeply shift @{ $indexer->to_index->{tag} }, {
+is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'key value',
     tag => 'key value',
 }, 'Should have "key value" index data';
@@ -477,7 +477,7 @@ $params->{meta} = $meta;
 ok $indexer->update_extensions($params), 'Update the extension metadata';
 file_exists_ok $ext_file, "$ext_file should now exist";
 
-is_deeply shift @{ $indexer->to_index->{extension} }, {
+is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract  => 'A key/value pair data type',
     date      => '2010-10-18T15:24:21Z',
     dist      => 'pair',
@@ -522,7 +522,7 @@ $params->{meta} = $meta_011;
 ok $indexer->update_extensions($params),
     'Update the extension metadata to 0.1.1';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 }, 'Should have no indexed extensions for testing dist';
 
 $exp->{latest} = 'testing';
@@ -554,7 +554,7 @@ fcopy catfile(qw(t data pair-ext-updated2.json)),
 ok $indexer->update_extensions($params),
     'Add the extension to another distribution';
 
-is_deeply shift @{ $indexer->to_index->{extension} }, {
+is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-10-29T22:46:45Z',
     dist        => 'otherdist',
@@ -590,7 +590,7 @@ $params->{meta} = $meta_012;
 ok $indexer->update_extensions($params),
     'Update the extension to 0.1.2.';
 
-is_deeply shift @{ $indexer->to_index->{extension} }, {
+is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract  => 'A key/value pair dåtå type',
     date      => '2010-11-10T12:18:03Z',
     dist      => 'pair',
@@ -632,7 +632,7 @@ file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
 file_not_exists_ok $doc, 'dist/pair/pair/0.1.0/doc/pair.html should not exist';
 
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 }, 'Should start with no docs to index';
 
 $meta->{docs} = $indexer->parse_docs($params);
@@ -643,7 +643,7 @@ is_deeply $meta->{docs}, {
 ok !exists $meta->{provides}{README},
     'Should hot have autovivified README into provides';
 
-ok my $body = delete $indexer->to_index->{doc}[0]{body},
+ok my $body = delete $indexer->to_index->{docs}[0]{body},
     'Should have document body';
 
 like $body, qr/^pair 0[.]1[.]0$/ms, 'Should look like plain text';
@@ -651,7 +651,7 @@ unlike $body, qr/<[^>]+>/, 'Should have nothing that looks like HTML';
 unlike $body, qr/&[^;];/, 'Should have nothing that looks like an entity';
 unlike $body, qr/    Contents/ms, 'Should not have contents';
 
-is_deeply shift @{ $indexer->to_index->{doc} }, {
+is_deeply shift @{ $indexer->to_index->{docs} }, {
     abstract  => 'A key/value pair data type',
     date      => '2010-10-18T15:24:21Z',
     dist      => 'pair',
@@ -663,7 +663,7 @@ is_deeply shift @{ $indexer->to_index->{doc} }, {
     version   => '0.1.0',
 }, 'Should have document data for indexing';
 
-is_deeply $indexer->to_index->{doc}, [], 'Should be no other documents to index';
+is_deeply $indexer->to_index->{docs}, [], 'Should be no other documents to index';
 
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair/0.1.0/readme.html should now exist';
@@ -678,7 +678,7 @@ file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
 file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
 
 # Make sure we skip files that should not be indexed.
-$meta->{no_index} = { file => ['doc/pair.md']};
+$meta->{no_index} = { file => ['doc/pair.md'] };
 $docs = $indexer->parse_docs($params);
 is_deeply $docs, {
     'README'   => { title => 'pair 0.1.0' },
@@ -718,7 +718,7 @@ $mock->unmock_all;
 # Make sure transaction stuff works.
 ok !$indexer->_rollback, 'Rollback';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 }, 'Should start with no docs to index';
 $doc = {
     key      => 'foo',
@@ -726,23 +726,23 @@ $doc = {
     abstract => 'explanation: 0.1.3, 0.2.4',
 };
 
-ok $indexer->_index(dist =>$doc), 'Index a doc';
-is_deeply $indexer->to_index->{dist}, [$doc], 'Should have it in docs';
+ok $indexer->_index(dists =>$doc), 'Index a doc';
+is_deeply $indexer->to_index->{dists}, [$doc], 'Should have it in docs';
 ok !$indexer->_rollback, 'Rollback should return false';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 }, 'Should have no docs to index again';
 
 # Test full text search indexing.
-ok $indexer->_index(dist => $doc), 'Index a doc again';
+ok $indexer->_index(dists => $doc), 'Index a doc again';
 file_not_exists_ok catdir($doc_root, '_index'), 'Should not have index dir yet';
 
 isa_ok $indexer->indexer_for($_), 'KinoSearch::Index::Indexer', "$_ indexer"
-    for qw(doc dist extension user tag);
+    for qw(docs dists extensions users tags);
 ok $indexer->_commit, 'Commit that doc';
 file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
 is_deeply $indexer->to_index, {
-    map { $_ => [] } qw(doc dist extension user tag)
+    map { $_ => [] } qw(docs dists extensions users tags)
 }, 'Should once again have no docs to index';
 
 ##############################################################################
@@ -764,7 +764,7 @@ ok $indexer->add_distribution($params), 'Index pair 0.1.0';
 ok my $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate a searcher';
 
 # Let's search it!
-ok my $res = $searcher->search(query => 'data', index => 'dist'),
+ok my $res = $searcher->search(query => 'data', in => 'dists'),
     'Search dists for "data"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -772,7 +772,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair data type',
 is $res->{hits}[0]{version}, '0.1.0', 'It should be 0.1.0';
 
 # Search the docs.
-ok $res = $searcher->search(query => 'composite', index => 'doc'),
+ok $res = $searcher->search(query => 'composite', in => 'docs'),
     'Search docs for "composite"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -795,7 +795,7 @@ ok $indexer->add_distribution($params), 'Index pair 0.1.1';
 
 # The previous stable release should still be indxed.
 ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate another searcher';
-ok $res = $searcher->search(query => 'data', index => 'dist'),
+ok $res = $searcher->search(query => 'data', in => 'dists'),
     'Search dists for "data" again';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair data type',
@@ -820,7 +820,7 @@ ok $indexer->add_distribution($params), 'Index pair 0.1.1 stable';
 
 # Now it should be updated.
 ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate the searcher';
-ok $res = $searcher->search(query => 'dåtå', index => 'dist'),
+ok $res = $searcher->search(query => 'dåtå', in => 'dists'),
     'Search dists for "dåtå"';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
@@ -828,7 +828,7 @@ is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',
 is $res->{hits}[0]{version}, '0.1.1', 'It should still be 0.1.1';
 
 # The query for "data" should stil return the one record.
-ok $res = $searcher->search(query => 'data', index => 'dist'),
+ok $res = $searcher->search(query => 'data', in => 'dists'),
     'Search dists for "data" one last time';
 is $res->{count}, 1, 'Should have one result';
 is $res->{hits}[0]{abstract}, 'A key/value pair dåtå type',

@@ -63,8 +63,8 @@ sub app {
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
-            ] if $req->path_info !~ m{^/(d(?:oc|ist)|extension|user|tag)s$};
-            my $index = $1;
+            ] if $req->path_info !~ m{^/((?:d(?:oc|ist)|extension|user|tag)s)$};
+            my $in = $1;
 
             my $q = $req->param('q') or return [
                 400,
@@ -88,7 +88,7 @@ sub app {
                 200,
                 ['Content-Type' => 'text/json'],
                 [encode_json $searcher->search(
-                    index  => $index,
+                    in     => $in,
                     query  => decode_utf8($q),
                     offset => scalar $req->param('o'),
                     limit  => scalar $req->param('l'),
