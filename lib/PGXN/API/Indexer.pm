@@ -57,6 +57,11 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
         highlightable => 1,
     );
 
+    my $string = KinoSearch::Plan::StringType->new(
+        indexed => 1,
+        stored  => 1,
+    );
+
     my $indexed = KinoSearch::Plan::StringType->new(
         indexed => 1,
         stored  => 0,
@@ -117,8 +122,8 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ key         => $indexed ],
             [ user        => $fti     ],
             [ name        => $fti     ],
-            [ email       => $indexed ],
-            [ uri         => $indexed ],
+            [ email       => $string  ],
+            [ uri         => $string  ],
             [ details     => $ftih    ],
         ]],
         [ tags => [

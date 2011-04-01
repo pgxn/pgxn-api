@@ -9,6 +9,9 @@ Revision history for Perl extension PGXN::API
         /search API. This is because PGXN::API::Searcher v0.7.1 properly
         reconnects in the event of a changed index, so we don't have to worry
         about it here.
+      - Fixed the `uri` and `email` fields in the user search index so that
+        they are both stored *and* indexed. They were previously just indexed,
+        and so might be missing from search results.
 
 0.7.0   2011-03-31T20:55:51
       - Added "search" URI template to the API server's `/index.json`.
