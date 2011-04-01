@@ -25,6 +25,10 @@ END { remove_tree $doc_root }
 dircopy catdir(qw(t root)), $doc_root;
 $api->mirror_root(catdir 't', 'root');
 
+my $search_mock = Test::MockModule->new('PGXN::API::Searcher');
+my @params;
+$search_mock->mock(new => sub { bless {} => shift });
+
 local $@;
 eval { PGXN::API::Router->app };
 is $@, "Missing required parameters errors_to and errors_from\n",
@@ -171,10 +175,9 @@ test_psgi $app => sub {
 # Give the search engine a spin.
 test_psgi $app => sub {
     my $cb = shift;
-    my $mocker = Test::MockModule->new('PGXN::API::Searcher');
-    my @params;
-    $mocker->mock(new => sub { bless {} => shift });
-    $mocker->mock(search => sub { shift; @params = @_; return { foo => 1 } });
+    $search_mock->mock(search => sub {
+        shift; @params = @_; return { foo => 1 }
+    });
     my $q = 'q=whü&o=2&l=10';
     my @exp = ( query  => 'whü', offset => 2, limit  => 10 );
     for my $in (qw(docs dists extensions users tags)) {

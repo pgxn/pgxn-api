@@ -54,6 +54,7 @@ sub app {
         };
 
         # Handle searches.
+        my $searcher = PGXN::API::Searcher->new($root);
         mount '/search' => sub {
             my $req = Plack::Request->new(shift);
 
@@ -83,7 +84,6 @@ sub app {
             }
 
             # Give 'em the results.
-            my $searcher = PGXN::API::Searcher->new($root);
             return [
                 200,
                 ['Content-Type' => 'text/json'],
