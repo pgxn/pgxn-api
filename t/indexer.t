@@ -155,6 +155,9 @@ file_exists_ok $dist,      'pair.json should now exist';
 
 my $readme = $zip->memberNamed('pair-0.1.0/README.md')->contents;
 utf8::decode $readme;
+$readme =~ s/^\s+//;
+$readme =~ s/\s+$//;
+$readme =~ s/[\t\n\r]+|\s{2,}/ /gms;
 
 is_deeply shift @{ $indexer->to_index->{dists} }, {
     abstract    => 'A key/value pair data type',
@@ -647,7 +650,7 @@ ok !exists $meta->{provides}{README},
 ok my $body = delete $indexer->to_index->{docs}[0]{body},
     'Should have document body';
 
-like $body, qr/^pair 0[.]1[.]0$/ms, 'Should look like plain text';
+like $body, qr/^pair 0[.]1[.]0\b/ms, 'Should look like plain text';
 unlike $body, qr/<[^>]+>/, 'Should have nothing that looks like HTML';
 unlike $body, qr/&[^;];/, 'Should have nothing that looks like an entity';
 unlike $body, qr/    Contents/ms, 'Should not have contents';

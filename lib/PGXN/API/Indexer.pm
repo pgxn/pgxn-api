@@ -522,6 +522,11 @@ sub _strip_html {
               : $elem->nodeType == XML_ELEMENT_NODE && $elem->nodeName eq 'br' ? ' '
               : _strip_html($elem->childNodes);
     }
+
+    # Normalize whitespace.
+    $ret =~ s/^\s+//;
+    $ret =~ s/\s+$//;
+    $ret =~ s/[\t\n\r]+|\s{2,}/ /gms;
     return $ret;
 }
 
@@ -618,6 +623,10 @@ sub _readme {
     return '' unless $member;
     my $contents = $member->contents || '';
     utf8::decode $contents;
+    # Normalize whitespace.
+    $contents =~ s/^\s+//;
+    $contents =~ s/\s+$//;
+    $contents =~ s/[\t\n\r]+|\s{2,}/ /gms;
     return $contents;
 }
 
