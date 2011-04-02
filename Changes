@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.8.0
+0.8.0   2011-04-02T20:32:02
       - Documentation and README documents now have their white space
         normalized to single spaces before indexing. This allows highlighting
         to work better in result sets. Suggested by Marvin Humphrey.
