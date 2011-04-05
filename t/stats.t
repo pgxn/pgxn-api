@@ -54,16 +54,18 @@ ok $dbh->selectcol_arrayref(
 # Great, now update a dist.
 my $dist_path = catfile $pgxn->mirror_root, qw(dist pair.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair"';
-is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM dists WHERE name = 'pair'}
-)->[0], 1, 'DB should have release count for dist "pair"';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT rel_count, version, date FROM dists WHERE name = 'pair'}
+), [1, '0.1.0', '2010-10-19T03:59:54Z'],
+    'DB should have release count, version, and date for dist "pair"';
 
 # Try updating.
 $dist_path = catfile qw(t data pair-updated.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair" again';
-is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM dists WHERE name = 'pair'}
-)->[0], 3, 'DB should have new release count for dist "pair"';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT rel_count, version, date FROM dists WHERE name = 'pair'}
+), [3, '0.1.1', '2010-10-29T22:44:42Z'],
+    'DB should have new release count, version, and date for dist "pair"';
 
 ##############################################################################
 # Great, now update a extension.

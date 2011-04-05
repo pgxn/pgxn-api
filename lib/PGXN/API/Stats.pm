@@ -8,7 +8,7 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use DBIx::Connector;
 use DBD::SQLite;
-use List::Util qw(sum);
+use List::Util qw(sum first);
 use namespace::autoclean;
 
 has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
@@ -26,11 +26,20 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
             # Build the schema.
             if ($version < 1) {
                 $dbh->begin_work;
+                $dbh->do(q{
+                    CREATE TABLE dists (
+                        name      TEXT      NOT NULL PRIMARY KEY,
+                        rel_count INT       NOT NULL,
+                        version   TEXT      NOT NULL,
+                        date      TIMESTAMP NOT NULL
+                    )
+                });
                 $dbh->do(qq{
                     CREATE TABLE $_ (
                         name      TEXT NOT NULL PRIMARY KEY,
                         rel_count INT  NOT NULL
-                )}) for qw( dists extensions users tags);
+                    )
+                }) for qw(extensions users tags);
                 $dbh->do(q{PRAGMA schema_version = 1});
                 $dbh->commit;
                 return;
@@ -43,7 +52,7 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
 });
 
 sub _summarize {
-    my ($self, $thing, $name, $count) = @_;
+    my ($self, $thing, $name, $count, $date) = @_;
     $self->conn->txn(sub {
         my $dbh = shift;
         $dbh->do(
@@ -60,11 +69,25 @@ sub _summarize {
 sub update_dist {
     my ($self, $path) = @_;
     my $data = PGXN::API->instance->read_json_from($path);
-    $self->_summarize(
-        'dists',
-        $data->{name},
+    my $rel  = $data->{releases}{ first { $data->{releases}{$_} } qw(stable testing unstable) }[0];
+    my @params = (
+        undef,
         sum(map { scalar @{ $data->{releases}{$_} } } keys %{ $data->{releases} }),
+        $rel->{version},
+        $rel->{date},
+        $data->{name},
     );
+    $self->conn->txn(sub {
+        my $dbh = shift;
+        $dbh->do(
+            'INSERT INTO dists (rel_count, version, date, name) VALUES (?, ?, ?, ?)',
+            @params
+        ) if $dbh->do(
+            "UPDATE dists SET rel_count = ?, version = ?, date = ? WHERE name = ?",
+            @params
+        ) eq '0E0';
+    });
+    return $self;
 }
 
 sub update_extension {
