@@ -8,6 +8,7 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use DBIx::Connector;
 use DBD::SQLite;
+use Encode;
 use List::Util qw(sum first);
 use namespace::autoclean;
 
@@ -36,7 +37,9 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                         name      TEXT      NOT NULL PRIMARY KEY,
                         rel_count INT       NOT NULL,
                         version   TEXT      NOT NULL,
-                        date      TIMESTAMP NOT NULL
+                        date      TIMESTAMP NOT NULL,
+                        user      TEXT      NOT NULL,
+                        abstract  TEXT      NOT NULL
                     )
                 });
                 $dbh->do(qq{
@@ -56,7 +59,6 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
     $conn;
 });
 
-
 sub _summarize {
     my ($self, $thing, $name, $count, $date) = @_;
     $self->conn->txn(sub {
@@ -74,24 +76,35 @@ sub _summarize {
 
 sub update_dist {
     my ($self, $path) = @_;
-    my $data = PGXN::API->instance->read_json_from($path);
+    my $api  = PGXN::API->instance;
+    my $data = $api->read_json_from($path);
     my $rel  = $data->{releases}{ first { $data->{releases}{$_} } qw(stable testing unstable) }[0];
-    my @params = (
-        undef,
-        sum(map { scalar @{ $data->{releases}{$_} } } keys %{ $data->{releases} }),
-        $rel->{version},
-        $rel->{date},
-        $data->{name},
+    my $meta = $api->read_json_from(
+        catfile $api->mirror_root, $api->uri_templates->{meta}->process({
+            dist    => $data->{name},
+            version => $rel->{version},
+        })->path_segments
     );
+
+    my @params = map { encode_utf8 $_ } (
+        sum(map { scalar @{ $data->{releases}{$_} } } keys %{ $data->{releases} }),
+        $meta->{version},
+        $meta->{date},
+        $meta->{user},
+        $meta->{abstract},
+        $meta->{name},
+    );
+
     $self->conn->txn(sub {
         my $dbh = shift;
-        $dbh->do(
-            'INSERT INTO dists (rel_count, version, date, name) VALUES (?, ?, ?, ?)',
-            @params
-        ) if $dbh->do(
-            "UPDATE dists SET rel_count = ?, version = ?, date = ? WHERE name = ?",
-            @params
-        ) eq '0E0';
+        $dbh->do(q{
+            INSERT INTO dists (rel_count, version, date, user, abstract, name)
+            VALUES (?, ?, ?, ?, ?, ?)
+        }, undef, @params) if $dbh->do(q{
+            UPDATE dists
+               SET rel_count = ?, version = ?, date = ?, user = ?, abstract = ?
+             WHERE name = ?
+         }, undef, @params) eq '0E0';
     });
     $self->dists_updated(1);
 }
@@ -147,7 +160,7 @@ sub write_dist_stats {
 
         my $data = {};
         my $sth = $dbh->prepare(q{
-            SELECT name AS dist, version, date
+            SELECT name AS dist, version, date, user, abstract
               FROM dists
              ORDER BY date DESC
              LIMIT 128

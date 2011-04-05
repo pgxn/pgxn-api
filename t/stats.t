@@ -20,6 +20,7 @@ $pgxn->doc_root(catdir 't', 'test_doc_root');
 END { remove_tree $pgxn->doc_root }
 
 dircopy catdir(qw(t root)), $pgxn->mirror_root;
+fcopy catfile(qw(t root index.json)), $pgxn->doc_root;
 
 my $stats = new_ok $CLASS;
 
@@ -57,8 +58,8 @@ my $dist_path = catfile $pgxn->mirror_root, qw(dist pair.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair"';
 ok $stats->dists_updated, 'dists_updated should now be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, version, date FROM dists WHERE name = 'pair'}
-), [1, '0.1.0', '2010-10-19T03:59:54Z'],
+    q{SELECT rel_count, version, date, user, abstract FROM dists WHERE name = 'pair'}
+), [1, '0.1.0', '2010-10-18T15:24:21Z', 'theory', 'A key/value pair data type'],
     'DB should have release count, version, and date for dist "pair"';
 
 # Try updating.
@@ -66,8 +67,8 @@ $dist_path = catfile qw(t data pair-updated.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair" again';
 ok $stats->dists_updated, 'dists_updated should still be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, version, date FROM dists WHERE name = 'pair'}
-), [3, '0.1.1', '2010-10-29T22:44:42Z'],
+    q{SELECT rel_count, version, date, user, abstract FROM dists WHERE name = 'pair'}
+), [3, '0.1.1', '2010-10-29T22:46:45Z', 'theory', 'A key/value pair dåtå type'],
     'DB should have new release count, version, and date for dist "pair"';
 
 ##############################################################################
@@ -140,9 +141,11 @@ ok $stats->write_dist_stats, 'Write dist stats';
 file_exists_ok $dists_file, 'Dists stats file should now exist';
 is_deeply $pgxn->read_json_from($dists_file), { count => 1, recent => [
     {
-        dist    => 'pair',
-        version => '0.1.1',
-        date    => '2010-10-29T22:44:42Z',
+        dist     => 'pair',
+        version  => '0.1.1',
+        date     => '2010-10-29T22:46:45Z',
+        user     => 'theory',
+        abstract => 'A key/value pair dåtå type',
     },
 ] }, 'Its contents should be correct';
 
