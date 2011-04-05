@@ -59,7 +59,7 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
     $conn;
 });
 
-sub _summarize {
+sub _update {
     my ($self, $thing, $name, $count, $date) = @_;
     $self->conn->txn(sub {
         my $dbh = shift;
@@ -112,7 +112,7 @@ sub update_dist {
 sub update_extension {
     my ($self, $path) = @_;
     my $data = PGXN::API->instance->read_json_from($path);
-    $self->_summarize(
+    $self->_update(
         'extensions',
         $data->{extension},
         scalar keys %{ $data->{versions} },
@@ -123,7 +123,7 @@ sub update_extension {
 sub update_user {
     my ($self, $path) = @_;
     my $data = PGXN::API->instance->read_json_from($path);
-    $self->_summarize(
+    $self->_update(
         'users',
         $data->{nickname},
         scalar keys %{ $data->{releases} },
@@ -134,7 +134,7 @@ sub update_user {
 sub update_tag {
     my ($self, $path) = @_;
     my $data = PGXN::API->instance->read_json_from($path);
-    $self->_summarize(
+    $self->_update(
         'tags',
         $data->{tag},
         scalar keys %{ $data->{releases} },
