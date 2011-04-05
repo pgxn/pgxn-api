@@ -5,7 +5,7 @@ use warnings;
 use File::Spec::Functions qw(catdir catfile);
 use File::Path qw(remove_tree);
 use Test::File;
-use Test::More tests => 35;
+use Test::More tests => 36;
 #use Test::More 'no_plan';
 use Test::File::Contents;
 use File::Copy::Recursive qw(fcopy);
@@ -60,7 +60,7 @@ file_exists_ok $doc_root, 'Doc root should now exist';
 file_exists_ok(
     catdir($doc_root, $_),
     "Subdiretory $_ should have been created"
-) for qw(user tag dist extension);
+) for qw(user tag dist extension stats);
 
 # Make sure index.html was created.
 file_exists_ok catfile($doc_root, 'index.html'), 'index.html should exist';

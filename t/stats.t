@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 37;
+use Test::More tests => 66;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(remove_tree);
@@ -52,8 +52,10 @@ ok $dbh->selectcol_arrayref(
 
 ##############################################################################
 # Great, now update a dist.
+ok !$stats->dists_updated, 'dists_updated should start out false';
 my $dist_path = catfile $pgxn->mirror_root, qw(dist pair.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair"';
+ok $stats->dists_updated, 'dists_updated should now be true';
 is_deeply $dbh->selectrow_arrayref(
     q{SELECT rel_count, version, date FROM dists WHERE name = 'pair'}
 ), [1, '0.1.0', '2010-10-19T03:59:54Z'],
@@ -62,6 +64,7 @@ is_deeply $dbh->selectrow_arrayref(
 # Try updating.
 $dist_path = catfile qw(t data pair-updated.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair" again';
+ok $stats->dists_updated, 'dists_updated should still be true';
 is_deeply $dbh->selectrow_arrayref(
     q{SELECT rel_count, version, date FROM dists WHERE name = 'pair'}
 ), [3, '0.1.1', '2010-10-29T22:44:42Z'],
@@ -69,8 +72,10 @@ is_deeply $dbh->selectrow_arrayref(
 
 ##############################################################################
 # Great, now update a extension.
+ok !$stats->extensions_updated, 'extensions_updated should start out false';
 my $extension_path = catfile $pgxn->mirror_root, qw(extension pair.json);
 ok $stats->update_extension($extension_path), 'Update extension "pair"';
+ok $stats->extensions_updated, 'extensions_updated should now be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM extensions WHERE name = 'pair'}
 )->[0], 1, 'DB should have release count for extension "pair"';
@@ -78,14 +83,17 @@ is $dbh->selectrow_arrayref(
 # Try updating.
 $extension_path = catfile qw(t data pair-ext-updated3.json);
 ok $stats->update_extension($extension_path), 'Update extension "pair" again';
+ok $stats->extensions_updated, 'extensions_updated should still be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM extensions WHERE name = 'pair'}
 )->[0], 3, 'DB should have new release count for extension "pair"';
 
 ##############################################################################
 # Great, now update a user.
+ok !$stats->users_updated, 'users_updated should start out false';
 my $user_path = catfile $pgxn->mirror_root, qw(user theory.json);
 ok $stats->update_user($user_path), 'Update user "theory"';
+ok $stats->users_updated, 'users_updated should now be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM users WHERE name = 'theory'}
 )->[0], 3, 'DB should have release count for user "theory"';
@@ -93,14 +101,17 @@ is $dbh->selectrow_arrayref(
 # Try updating.
 $user_path = catfile qw(t data theory-updated2.json);
 ok $stats->update_user($user_path), 'Update user "theory" again';
+ok $stats->users_updated, 'users_updated should still be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM users WHERE name = 'theory'}
 )->[0], 4, 'DB should have new release count for user "theory"';
 
 ##############################################################################
 # Great, now update a tag.
+ok !$stats->tags_updated, 'tags_updated should start out false';
 my $tag_path = catfile $pgxn->mirror_root, qw(tag pair.json);
 ok $stats->update_tag($tag_path), 'Update tag "pair"';
+ok $stats->tags_updated, 'tags_updated should now be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM tags WHERE name = 'pair'}
 )->[0], 2, 'DB should have release count for tag "pair"';
@@ -108,6 +119,7 @@ is $dbh->selectrow_arrayref(
 # Make sure updating works.
 $dbh->do('UPDATE tags SET rel_count = 1');
 ok $stats->update_tag($tag_path), 'Update tag "pair" again';
+ok $stats->tags_updated, 'tags_updated should still be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM tags WHERE name = 'pair'}
 )->[0], 2, 'DB should have updated release count for tag "pair"';
@@ -115,6 +127,49 @@ is $dbh->selectrow_arrayref(
 # Try a different tag.
 $tag_path = catfile $pgxn->mirror_root, 'tag', 'key value.json';
 ok $stats->update_tag($tag_path), 'Update tag "key value"';
+ok $stats->tags_updated, 'tags_updated should _still_ be true';
 is $dbh->selectrow_arrayref(
     q{SELECT rel_count FROM tags WHERE name = 'key value'}
 )->[0], 1, 'DB should have updated release count for tag "key value"';
+
+##############################################################################
+# Great, now write all of the stats files.
+my $dists_file = catfile($pgxn->doc_root, qw(stats dists.json));
+file_not_exists_ok $dists_file, 'Dists stats file should not exist';
+ok $stats->write_dist_stats, 'Write dist stats';
+file_exists_ok $dists_file, 'Dists stats file should now exist';
+is_deeply $pgxn->read_json_from($dists_file), { count => 1, recent => [
+    {
+        dist    => 'pair',
+        version => '0.1.1',
+        date    => '2010-10-29T22:44:42Z',
+    },
+] }, 'Its contents should be correct';
+
+my $tags_file = catfile($pgxn->doc_root, qw(stats tags.json));
+file_not_exists_ok $tags_file, 'Tags stats file should not exist';
+ok $stats->write_tag_stats, 'Write tag stats';
+file_exists_ok $tags_file, 'Tags stats file should now exist';
+is_deeply $pgxn->read_json_from($tags_file), {
+   count => 2,
+   popular => {
+      'key value' => 1,
+      pair => 2
+   }
+}, 'Its contents should be correct';
+
+my $users_file = catfile($pgxn->doc_root, qw(stats users.json));
+file_not_exists_ok $users_file, 'Users stats file should not exist';
+ok $stats->write_user_stats, 'Write user stats';
+file_exists_ok $users_file, 'Users stats file should now exist';
+is_deeply $pgxn->read_json_from($users_file), {
+   count => 1, prolific => { theory => 4 }
+}, 'Its contents should be correct';
+
+my $extensions_file = catfile($pgxn->doc_root, qw(stats extensions.json));
+file_not_exists_ok $extensions_file, 'Extensions stats file should not exist';
+ok $stats->write_extension_stats, 'Write extension stats';
+file_exists_ok $extensions_file, 'Extensions stats file should now exist';
+is_deeply $pgxn->read_json_from($extensions_file), {
+   count => 1, prolific => { pair => 3 }
+}, 'Its contents should be correct';

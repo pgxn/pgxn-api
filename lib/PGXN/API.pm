@@ -137,7 +137,7 @@ my $trig = sub {
 
          # Pre-generate the metadata directories.
          File::Path::make_path(catdir $dir, $_)
-             for qw(user tag dist extension);
+             for qw(user tag dist extension stats);
      } elsif (!-d $dir) {
          die qq{Location for document root "$dir" is not a directory\n};
      }

@@ -11,6 +11,11 @@ use DBD::SQLite;
 use List::Util qw(sum first);
 use namespace::autoclean;
 
+has dists_updated      => (is => 'rw', isa => 'Bool', default => 0);
+has extensions_updated => (is => 'rw', isa => 'Bool', default => 0);
+has tags_updated       => (is => 'rw', isa => 'Bool', default => 0);
+has users_updated      => (is => 'rw', isa => 'Bool', default => 0);
+
 has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
     my $dir   = catdir +PGXN::API->instance->doc_root, '_index';
     make_path $dir;
@@ -51,6 +56,7 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
     $conn;
 });
 
+
 sub _summarize {
     my ($self, $thing, $name, $count, $date) = @_;
     $self->conn->txn(sub {
@@ -87,7 +93,7 @@ sub update_dist {
             @params
         ) eq '0E0';
     });
-    return $self;
+    $self->dists_updated(1);
 }
 
 sub update_extension {
@@ -98,6 +104,7 @@ sub update_extension {
         $data->{extension},
         scalar keys %{ $data->{versions} },
     );
+    $self->extensions_updated(1);
 }
 
 sub update_user {
@@ -108,6 +115,7 @@ sub update_user {
         $data->{nickname},
         scalar keys %{ $data->{releases} },
     );
+    $self->users_updated(1);
 }
 
 sub update_tag {
@@ -118,6 +126,91 @@ sub update_tag {
         $data->{tag},
         scalar keys %{ $data->{releases} },
     );
+    $self->tags_updated(1);
+}
+
+sub write_stats {
+    my $self = shift;
+    $self->write_dist_stats;
+    $self->write_extension_stats;
+    $self->write_user_stats;
+    $self->write_tag_stats;
+}
+
+sub write_dist_stats {
+    my $self = shift;
+    $self->conn->run(sub {
+        my $dbh = shift;
+        my $count = $dbh->selectcol_arrayref(
+            'SELECT COUNT(*) FROM dists'
+        )->[0];
+
+        my $data = {};
+        my $sth = $dbh->prepare(q{
+            SELECT name AS dist, version, date
+              FROM dists
+             ORDER BY date DESC
+             LIMIT 128
+          });
+
+        $sth->execute;
+        my @recent;
+
+        while (my $row = $sth->fetchrow_hashref) { push @recent => $row }
+
+        my $api = PGXN::API->instance;
+        $api->write_json_to(
+            catfile($api->doc_root, qw(stats dists.json)),
+            { count => $count, recent => \@recent },
+        );
+    });
+
+    return $self;
+}
+
+sub _write_stats {
+    my ($self, $things, $label) = @_;
+
+    $self->conn->run(sub {
+        my $dbh = shift;
+        my $count = $dbh->selectcol_arrayref(
+            "SELECT COUNT(*) FROM $things"
+        )->[0];
+
+        my $sth = $dbh->prepare(qq{
+            SELECT name, rel_count
+              FROM $things
+             ORDER BY rel_count DESC
+             LIMIT 128
+          });
+
+        $sth->execute;
+        $sth->bind_columns(\my ($name, $rel_count));
+        my $data;
+        while ($sth->fetch) {
+            $data->{$name} = $rel_count;
+        }
+
+        my $api = PGXN::API->instance;
+        $api->write_json_to(
+            catfile($api->doc_root, 'stats', "$things.json"),
+            {count => $count, $label => $data },
+        );
+    });
+
+    return $self;
+}
+
+sub write_user_stats {
+    shift->_write_stats('users', 'prolific');
+}
+
+sub write_tag_stats {
+    shift->_write_stats('tags', 'popular');
+}
+
+sub write_extension_stats {
+    shift->_write_stats('extensions', 'prolific');
 }
 
 __PACKAGE__->meta->make_immutable;

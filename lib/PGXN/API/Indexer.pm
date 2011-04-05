@@ -160,6 +160,7 @@ sub update_mirror_meta {
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
     $tmpl->{search} = '/search';
+    $tmpl->{stats}  = '/stats/{name}.json';
     ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 

@@ -80,12 +80,13 @@ my $tmpl = $api->read_json_from(catfile qw(t root index.json));
 $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
 $tmpl->{doc} = "/dist/{dist}/{version}/{+doc}.html";
 $tmpl->{search} = '/search';
+$tmpl->{stats}  = '/stats/{name}.json';
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 
 # Make sure that PGXN::API is aware of them.
 is_deeply [sort keys %{ $api->uri_templates } ],
-    [qw(dist doc download extension meta mirrors readme search source tag user)],
+    [qw(dist doc download extension meta mirrors readme search source stats tag user)],
     'PGXN::API should see the additional templates';
 
 # Do it again, just for good measure.
