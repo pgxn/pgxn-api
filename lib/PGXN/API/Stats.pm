@@ -150,39 +150,8 @@ sub write_stats {
     $self->write_tag_stats;
 }
 
-sub write_dist_stats {
-    my $self = shift;
-    $self->conn->run(sub {
-        my $dbh = shift;
-        my $count = $dbh->selectcol_arrayref(
-            'SELECT COUNT(*) FROM dists'
-        )->[0];
-
-        my $data = {};
-        my $sth = $dbh->prepare(q{
-            SELECT name AS dist, version, date, user, abstract
-              FROM dists
-             ORDER BY date DESC
-             LIMIT 128
-          });
-
-        $sth->execute;
-        my @recent;
-
-        while (my $row = $sth->fetchrow_hashref) { push @recent => $row }
-
-        my $api = PGXN::API->instance;
-        $api->write_json_to(
-            catfile($api->doc_root, qw(stats dists.json)),
-            { count => $count, recent => \@recent },
-        );
-    });
-
-    return $self;
-}
-
 sub _write_stats {
-    my ($self, $things, $label) = @_;
+    my ($self, $things, $label, $cols) = @_;
 
     $self->conn->run(sub {
         my $dbh = shift;
@@ -191,39 +160,52 @@ sub _write_stats {
         )->[0];
 
         my $sth = $dbh->prepare(qq{
-            SELECT name, rel_count
+            SELECT $cols
               FROM $things
              ORDER BY rel_count DESC
              LIMIT 128
           });
 
         $sth->execute;
-        $sth->bind_columns(\my ($name, $rel_count));
-        my $data;
-        while ($sth->fetch) {
-            $data->{$name} = $rel_count;
-        }
+        my @sample;
+        while (my $row = $sth->fetchrow_hashref) { push @sample => $row }
 
         my $api = PGXN::API->instance;
         $api->write_json_to(
             catfile($api->doc_root, 'stats', "$things.json"),
-            {count => $count, $label => $data },
+            {count => $count, $label => \@sample },
         );
     });
 
     return $self;
 }
 
+sub write_dist_stats {
+    shift->_write_stats(
+        'dists', 'recent',
+        'name AS dist, version, date, user, abstract',
+    );
+}
+
 sub write_user_stats {
-    shift->_write_stats('users', 'prolific');
+    shift->_write_stats(
+        'users', 'prolific',
+        'name AS nickname, rel_count AS dist_count'
+    );
 }
 
 sub write_tag_stats {
-    shift->_write_stats('tags', 'popular');
+    shift->_write_stats(
+        'tags', 'popular',
+        'name AS tag, rel_count AS dist_count'
+    );
 }
 
 sub write_extension_stats {
-    shift->_write_stats('extensions', 'prolific');
+    shift->_write_stats(
+        'extensions', 'prolific',
+        'name AS extension, rel_count AS release_count'
+    );
 }
 
 __PACKAGE__->meta->make_immutable;

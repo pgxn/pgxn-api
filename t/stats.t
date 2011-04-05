@@ -155,10 +155,10 @@ ok $stats->write_tag_stats, 'Write tag stats';
 file_exists_ok $tags_file, 'Tags stats file should now exist';
 is_deeply $pgxn->read_json_from($tags_file), {
    count => 2,
-   popular => {
-      'key value' => 1,
-      pair => 2
-   }
+   popular => [
+       { tag => 'pair',      dist_count => 2 },
+       { tag => 'key value', dist_count => 1 },
+   ],
 }, 'Its contents should be correct';
 
 my $users_file = catfile($pgxn->doc_root, qw(stats users.json));
@@ -166,7 +166,10 @@ file_not_exists_ok $users_file, 'Users stats file should not exist';
 ok $stats->write_user_stats, 'Write user stats';
 file_exists_ok $users_file, 'Users stats file should now exist';
 is_deeply $pgxn->read_json_from($users_file), {
-   count => 1, prolific => { theory => 4 }
+   count    => 1,
+   prolific => [
+       { nickname => 'theory', dist_count => 4 }
+   ],
 }, 'Its contents should be correct';
 
 my $extensions_file = catfile($pgxn->doc_root, qw(stats extensions.json));
@@ -174,5 +177,8 @@ file_not_exists_ok $extensions_file, 'Extensions stats file should not exist';
 ok $stats->write_extension_stats, 'Write extension stats';
 file_exists_ok $extensions_file, 'Extensions stats file should now exist';
 is_deeply $pgxn->read_json_from($extensions_file), {
-   count => 1, prolific => { pair => 3 }
+   count    => 1,
+   prolific => [
+       { extension => 'pair', release_count => 3 },
+   ],
 }, 'Its contents should be correct';
