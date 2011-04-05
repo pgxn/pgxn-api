@@ -27,6 +27,8 @@ $class->new(
     requires => {
         'Archive::Zip'                 => '1.30',
         'Cwd'                          => '3.33',
+        'DBIx::Connector'              => '0.34',
+        'DBD::SQLite'                  => '1.30',
         'Digest::SHA1'                 => '2.13',
         'Email::MIME::Creator'         => '1.905',
         'Email::Sender::Simple'        => '0.102370',

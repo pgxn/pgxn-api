@@ -1,6 +1,12 @@
 Revision history for Perl extension PGXN::API
 
 0.8.1
+      - Requests for a dist, extension, user, or tag URI ending in "/" instead
+        or ".json" (as in "/tag/pair/" instead of "/tag/pair.json") now
+        returns the JSON file.
+      - Added PGXN::API::Stats. It's used during sync to generate stats for
+        all the objects managed by the API (distributions, users, extensions,
+        and tags).
 
 0.8.0   2011-04-02T20:32:02
       - Documentation and README documents now have their white space

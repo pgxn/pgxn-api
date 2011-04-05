@@ -897,6 +897,8 @@ sub _clean_html_body {
     return $doc;
 }
 
+__PACKAGE__->meta->make_immutable;
+
 1;
 
 __END__

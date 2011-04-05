@@ -5,6 +5,7 @@ use utf8;
 use Moose;
 use PGXN::API;
 use PGXN::API::Indexer;
+#use PGXN::API::Stats;
 use Digest::SHA1;
 use List::Util qw(first);
 use File::Spec::Functions qw(catfile path rel2abs tmpdir);
@@ -23,7 +24,7 @@ subtype Executable => as 'Str', where {
 has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync', required => 1);
 has source       => (is => 'rw', isa => 'Str', required => 1);
 has verbose      => (is => 'rw', isa => 'Int', default => 0);
-has log_file     => (is => 'rw', isa => 'Str', required =>1, default => sub {
+has log_file     => (is => 'rw', isa => 'Str', required => 1, default => sub {
     catfile tmpdir, "pgxn-api-sync-$$.txt"
 });
 
@@ -33,7 +34,11 @@ sub run {
     $self->update_index;
 }
 
-sub DESTROY { unlink shift->log_file }
+sub DESTROY {
+    my $self = shift;
+    unlink $self->log_file;
+    $self->SUPER::DESTROY;
+}
 
 sub run_rsync {
     my $self = shift;
@@ -55,17 +60,23 @@ sub update_index {
 
     # Update the mirror metadata.
     my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
+#    my $stats   = PGXN::API::Stats->new(verbose => $self->verbose);
     $indexer->update_mirror_meta;
 
-    my $regex = $self->regex_for_uri_template('meta');
-    my $log   = $self->log_file;
+    my $meta_re = $self->regex_for_uri_template('meta');
+    my $tag_re  = $self->regex_for_uri_template('tag');
+    my $log     = $self->log_file;
 
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
-        next if $line !~ $regex;
-        my $params = $self->validate_distribution($1) or next;
-        $indexer->add_distribution($params);
+        if ($line =~ $meta_re) {
+            if (my $params = $self->validate_distribution($1)) {
+                $indexer->add_distribution($params);
+            }
+        } elsif ($line =~ $tag_re) {
+#            $stats->update_tag($1);
+        }
     }
     close $fh or die "Cannot close $log: $!\n";
     say 'Sync complete' if $self->verbose;
@@ -165,6 +176,8 @@ sub unzip {
 sub _rel_to_mirror {
     return shift, catfile(+PGXN::API->instance->mirror_root, shift), @_;
 }
+
+__PACKAGE__->meta->make_immutable(inline_destructor => 0);
 
 1;
 
