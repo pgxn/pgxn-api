@@ -8,6 +8,7 @@ use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(make_path);
 use DBIx::Connector;
 use DBD::SQLite;
+use List::Util qw(sum);
 use namespace::autoclean;
 
 has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
@@ -25,21 +26,12 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
             # Build the schema.
             if ($version < 1) {
                 $dbh->begin_work;
-                $dbh->do($_) for (
-                    q{
-                        CREATE TABLE stats (
-                            thing TEXT NOT NULL PRIMARY KEY,
-                            count INT NOT NULL
-                        );
-                    },
-                    q{
-                        CREATE TABLE tags (
-                            name       TEXT NOT NULL PRIMARY KEY,
-                            dist_count INT NOT NULL
-                        );
-                    },
-                    q{PRAGMA schema_version = 1},
-                );
+                $dbh->do(qq{
+                    CREATE TABLE $_ (
+                        name      TEXT NOT NULL PRIMARY KEY,
+                        rel_count INT  NOT NULL
+                )}) for qw( dists extensions users tags);
+                $dbh->do(q{PRAGMA schema_version = 1});
                 $dbh->commit;
                 return;
             }
@@ -50,9 +42,59 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
     $conn;
 });
 
-sub summarize_tag {
+sub _summarize {
+    my ($self, $thing, $name, $count) = @_;
+    $self->conn->txn(sub {
+        my $dbh = shift;
+        $dbh->do(
+            "INSERT INTO $thing (rel_count, name) VALUES (?, ?)",
+            undef, $count, $name,
+        ) if $dbh->do(
+            "UPDATE $thing SET rel_count = ? WHERE name = ?",
+            undef, $count, $name,
+        ) eq '0E0';
+    });
+    return $self;
+}
+
+sub update_dist {
     my ($self, $path) = @_;
-    
+    my $data = PGXN::API->instance->read_json_from($path);
+    $self->_summarize(
+        'dists',
+        $data->{name},
+        sum(map { scalar @{ $data->{releases}{$_} } } keys %{ $data->{releases} }),
+    );
+}
+
+sub update_extension {
+    my ($self, $path) = @_;
+    my $data = PGXN::API->instance->read_json_from($path);
+    $self->_summarize(
+        'extensions',
+        $data->{extension},
+        scalar keys %{ $data->{versions} },
+    );
+}
+
+sub update_user {
+    my ($self, $path) = @_;
+    my $data = PGXN::API->instance->read_json_from($path);
+    $self->_summarize(
+        'users',
+        $data->{nickname},
+        scalar keys %{ $data->{releases} },
+    );
+}
+
+sub update_tag {
+    my ($self, $path) = @_;
+    my $data = PGXN::API->instance->read_json_from($path);
+    $self->_summarize(
+        'tags',
+        $data->{tag},
+        scalar keys %{ $data->{releases} },
+    );
 }
 
 __PACKAGE__->meta->make_immutable;

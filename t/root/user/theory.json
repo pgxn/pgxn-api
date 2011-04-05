@@ -4,11 +4,6 @@
    "email": "david@justatheory.com",
    "uri": "http://justatheory.com/",
    "releases": {
-      "explanation": {
-         "stable": [
-            {"version": "0.2.0", "date": "2011-02-21T20:14:56Z"}
-         ]
-      },
       "pair": {
          "stable": [
             {"version": "0.1.0", "date": "2010-10-19T03:59:54Z"}

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 37;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(remove_tree);
@@ -43,3 +43,76 @@ ok $dbh->{sqlite_unicode}, 'sqlite_unicode should be enabled';
 
 is $conn->run(sub { shift->selectrow_array('PRAGMA schema_version') }),
     1, 'Should be at schema version 1';
+
+# Make sure we have the tables.
+ok $dbh->selectcol_arrayref(
+    q{SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?},
+    undef, $_
+)->[0], "Should have table $_" for qw(dists extensions users tags);
+
+##############################################################################
+# Great, now update a dist.
+my $dist_path = catfile $pgxn->mirror_root, qw(dist pair.json);
+ok $stats->update_dist($dist_path), 'Update dist "pair"';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM dists WHERE name = 'pair'}
+)->[0], 1, 'DB should have release count for dist "pair"';
+
+# Try updating.
+$dist_path = catfile qw(t data pair-updated.json);
+ok $stats->update_dist($dist_path), 'Update dist "pair" again';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM dists WHERE name = 'pair'}
+)->[0], 3, 'DB should have new release count for dist "pair"';
+
+##############################################################################
+# Great, now update a extension.
+my $extension_path = catfile $pgxn->mirror_root, qw(extension pair.json);
+ok $stats->update_extension($extension_path), 'Update extension "pair"';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM extensions WHERE name = 'pair'}
+)->[0], 1, 'DB should have release count for extension "pair"';
+
+# Try updating.
+$extension_path = catfile qw(t data pair-ext-updated3.json);
+ok $stats->update_extension($extension_path), 'Update extension "pair" again';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM extensions WHERE name = 'pair'}
+)->[0], 3, 'DB should have new release count for extension "pair"';
+
+##############################################################################
+# Great, now update a user.
+my $user_path = catfile $pgxn->mirror_root, qw(user theory.json);
+ok $stats->update_user($user_path), 'Update user "theory"';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM users WHERE name = 'theory'}
+)->[0], 3, 'DB should have release count for user "theory"';
+
+# Try updating.
+$user_path = catfile qw(t data theory-updated2.json);
+ok $stats->update_user($user_path), 'Update user "theory" again';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM users WHERE name = 'theory'}
+)->[0], 4, 'DB should have new release count for user "theory"';
+
+##############################################################################
+# Great, now update a tag.
+my $tag_path = catfile $pgxn->mirror_root, qw(tag pair.json);
+ok $stats->update_tag($tag_path), 'Update tag "pair"';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM tags WHERE name = 'pair'}
+)->[0], 2, 'DB should have release count for tag "pair"';
+
+# Make sure updating works.
+$dbh->do('UPDATE tags SET rel_count = 1');
+ok $stats->update_tag($tag_path), 'Update tag "pair" again';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM tags WHERE name = 'pair'}
+)->[0], 2, 'DB should have updated release count for tag "pair"';
+
+# Try a different tag.
+$tag_path = catfile $pgxn->mirror_root, 'tag', 'key value.json';
+ok $stats->update_tag($tag_path), 'Update tag "key value"';
+is $dbh->selectrow_arrayref(
+    q{SELECT rel_count FROM tags WHERE name = 'key value'}
+)->[0], 1, 'DB should have updated release count for tag "key value"';
