@@ -60,7 +60,7 @@ ok $stats->dists_updated, 'dists_updated should now be true';
 is_deeply $dbh->selectrow_arrayref(
     q{SELECT rel_count, version, date, user, abstract FROM dists WHERE name = 'pair'}
 ), [1, '0.1.0', '2010-10-18T15:24:21Z', 'theory', 'A key/value pair data type'],
-    'DB should have release count, version, and date for dist "pair"';
+    'DB should have data for dist "pair"';
 
 # Try updating.
 $dist_path = catfile qw(t data pair-updated.json);
@@ -69,7 +69,7 @@ ok $stats->dists_updated, 'dists_updated should still be true';
 is_deeply $dbh->selectrow_arrayref(
     q{SELECT rel_count, version, date, user, abstract FROM dists WHERE name = 'pair'}
 ), [3, '0.1.1', '2010-10-29T22:46:45Z', 'theory', 'A key/value pair dåtå type'],
-    'DB should have new release count, version, and date for dist "pair"';
+    'DB should have new data for dist "pair"';
 
 ##############################################################################
 # Great, now update a extension.
@@ -77,17 +77,19 @@ ok !$stats->extensions_updated, 'extensions_updated should start out false';
 my $extension_path = catfile $pgxn->mirror_root, qw(extension pair.json);
 ok $stats->update_extension($extension_path), 'Update extension "pair"';
 ok $stats->extensions_updated, 'extensions_updated should now be true';
-is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM extensions WHERE name = 'pair'}
-)->[0], 1, 'DB should have release count for extension "pair"';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT rel_count, dist, version, date, user, abstract FROM extensions WHERE name = 'pair'}
+), [1, 'pair', '0.1.0', '2010-10-18T15:24:21Z', 'theory', 'A key/value pair data type'],
+ 'DB should have data for extension "pair"';
 
 # Try updating.
 $extension_path = catfile qw(t data pair-ext-updated3.json);
 ok $stats->update_extension($extension_path), 'Update extension "pair" again';
 ok $stats->extensions_updated, 'extensions_updated should still be true';
-is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM extensions WHERE name = 'pair'}
-)->[0], 3, 'DB should have new release count for extension "pair"';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT rel_count, dist, version, date, user, abstract FROM extensions WHERE name = 'pair'}
+), [3, 'pair', '0.1.2', '2010-11-10T12:18:03Z', 'theory', 'A key/value pair dåtå type'],
+ 'DB should have new data for extension "pair"';
 
 ##############################################################################
 # Great, now update a user.
@@ -179,6 +181,14 @@ file_exists_ok $extensions_file, 'Extensions stats file should now exist';
 is_deeply $pgxn->read_json_from($extensions_file), {
    count    => 1,
    prolific => [
-       { extension => 'pair', release_count => 3 },
+       {
+           extension => 'pair',
+           releases => 3,
+           dist => 'pair',
+           version => '0.1.2',
+           date => '2010-11-10T12:18:03Z',
+           user     => 'theory',
+           abstract => 'A key/value pair dåtå type',
+       },
    ],
 }, 'Its contents should be correct';

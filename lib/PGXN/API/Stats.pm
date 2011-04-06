@@ -12,6 +12,8 @@ use Encode;
 use List::Util qw(sum first);
 use namespace::autoclean;
 
+# XXX Consider moving this functionality to PGXN::Manager so it's on all mirrors?
+
 has dists_updated      => (is => 'rw', isa => 'Bool', default => 0);
 has extensions_updated => (is => 'rw', isa => 'Bool', default => 0);
 has tags_updated       => (is => 'rw', isa => 'Bool', default => 0);
@@ -42,12 +44,23 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                         abstract  TEXT      NOT NULL
                     )
                 });
+                $dbh->do(q{
+                    CREATE TABLE extensions (
+                        name      TEXT      NOT NULL PRIMARY KEY,
+                        rel_count INT       NOT NULL,
+                        dist      TEXT      NOT NULL,
+                        version   TEXT      NOT NULL,
+                        date      TIMESTAMP NOT NULL,
+                        user      TEXT      NOT NULL,
+                        abstract  TEXT      NOT NULL
+                    )
+                });
                 $dbh->do(qq{
                     CREATE TABLE $_ (
                         name      TEXT NOT NULL PRIMARY KEY,
                         rel_count INT  NOT NULL
                     )
-                }) for qw(extensions users tags);
+                }) for qw(users tags);
                 $dbh->do(q{PRAGMA schema_version = 1});
                 $dbh->commit;
                 return;
@@ -111,12 +124,35 @@ sub update_dist {
 
 sub update_extension {
     my ($self, $path) = @_;
+    my $api  = PGXN::API->instance;
     my $data = PGXN::API->instance->read_json_from($path);
-    $self->_update(
-        'extensions',
-        $data->{extension},
-        scalar keys %{ $data->{versions} },
+    my $meta = $api->read_json_from(
+        catfile $api->mirror_root, $api->uri_templates->{meta}->process(
+            $data->{ $data->{latest} }
+        )->path_segments
     );
+
+    my @params = map { encode_utf8 $_ } (
+        scalar keys %{ $data->{versions} },
+        $meta->{name},
+        $meta->{version},
+        $meta->{date},
+        $meta->{user},
+        $meta->{provides}{ $data->{extension} }{abstract},
+        $data->{extension},
+    );
+
+    $self->conn->txn(sub {
+        my $dbh = shift;
+        $dbh->do(q{
+            INSERT INTO extensions (rel_count, dist, version, date, user, abstract, name)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        }, undef, @params) if $dbh->do(q{
+            UPDATE extensions
+               SET rel_count = ?, dist = ?, version = ?, date = ?, user = ?, abstract = ?
+             WHERE name = ?
+         }, undef, @params) eq '0E0';
+    });
     $self->extensions_updated(1);
 }
 
@@ -204,7 +240,7 @@ sub write_tag_stats {
 sub write_extension_stats {
     shift->_write_stats(
         'extensions', 'prolific',
-        'name AS extension, rel_count AS release_count'
+        'rel_count AS releases, name AS extension, dist, version, date, user, abstract',
     );
 }
 
