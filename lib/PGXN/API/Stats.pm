@@ -64,8 +64,8 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                 });
                 $dbh->do(q{
                     CREATE TABLE tags (
-                        name      TEXT      NOT NULL PRIMARY KEY,
-                        rel_count INT       NOT NULL
+                        tag        TEXT      NOT NULL PRIMARY KEY,
+                        dist_count INT       NOT NULL
                     )
                 });
                 $dbh->do(q{PRAGMA schema_version = 1});
@@ -181,10 +181,10 @@ sub update_tag {
    $self->conn->txn(sub {
         my $dbh = shift;
         $dbh->do(
-            'INSERT INTO tags (rel_count, name) VALUES (?, ?)',
+            'INSERT INTO tags (dist_count, tag) VALUES (?, ?)',
             undef, @params
         ) if $dbh->do(
-            'UPDATE tags SET rel_count = ? WHERE name = ?',
+            'UPDATE tags SET dist_count = ? WHERE tag = ?',
             undef, @params
         ) eq '0E0';
     });
@@ -248,8 +248,8 @@ sub write_user_stats {
 sub write_tag_stats {
     shift->_write_stats(
         'tags', 'popular',
-        'name AS tag, rel_count AS dist_count',
-        'rel_count',
+        'tag, dist_count',
+        'dist_count',
     );
 }
 

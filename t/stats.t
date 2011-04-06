@@ -116,15 +116,15 @@ my $tag_path = catfile $pgxn->mirror_root, qw(tag pair.json);
 ok $stats->update_tag($tag_path), 'Update tag "pair"';
 ok $stats->tags_updated, 'tags_updated should now be true';
 is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM tags WHERE name = 'pair'}
+    q{SELECT dist_count FROM tags WHERE tag = 'pair'}
 )->[0], 2, 'DB should have release count for tag "pair"';
 
 # Make sure updating works.
-$dbh->do('UPDATE tags SET rel_count = 1');
+$dbh->do('UPDATE tags SET dist_count = 1');
 ok $stats->update_tag($tag_path), 'Update tag "pair" again';
 ok $stats->tags_updated, 'tags_updated should still be true';
 is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM tags WHERE name = 'pair'}
+    q{SELECT dist_count FROM tags WHERE tag = 'pair'}
 )->[0], 2, 'DB should have updated release count for tag "pair"';
 
 # Try a different tag.
@@ -132,7 +132,7 @@ $tag_path = catfile $pgxn->mirror_root, 'tag', 'key value.json';
 ok $stats->update_tag($tag_path), 'Update tag "key value"';
 ok $stats->tags_updated, 'tags_updated should _still_ be true';
 is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM tags WHERE name = 'key value'}
+    q{SELECT dist_count FROM tags WHERE tag = 'key value'}
 )->[0], 1, 'DB should have updated release count for tag "key value"';
 
 ##############################################################################
