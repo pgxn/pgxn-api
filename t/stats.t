@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 70;
-#use Test::More 'no_plan';
+#use Test::More tests => 70;
+use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(remove_tree);
 use File::Copy::Recursive qw(dircopy fcopy);
@@ -70,6 +70,15 @@ is_deeply $dbh->selectrow_arrayref(
     q{SELECT releases, version, date, user, abstract FROM dists WHERE dist = 'pair'}
 ), [3, '0.1.1', '2010-10-29T22:46:45Z', 'theory', 'A key/value pair dåtå type'],
     'DB should have new data for dist "pair"';
+
+# Add another one.
+$dist_path = catfile $pgxn->mirror_root, qw(dist pgTAP.json);
+ok $stats->update_dist($dist_path), 'Update dist "pgTAP" again';
+ok $stats->dists_updated, 'dists_updated should still be true';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT releases, version, date, user, abstract FROM dists WHERE dist = 'pgTAP'}
+), [1, '0.25.0', '2011-02-02T03:25:17Z', 'theory', 'Unit testing for PostgreSQL'],
+    'DB should have new data for dist "pgTAP"';
 
 ##############################################################################
 # Great, now update a extension.
@@ -142,7 +151,14 @@ file_not_exists_ok $dists_file, 'Dists stats file should not exist';
 ok $stats->write_dist_stats, 'Write dist stats';
 ok !$stats->dists_updated, 'dists_updated should now be false';
 file_exists_ok $dists_file, 'Dists stats file should now exist';
-is_deeply $pgxn->read_json_from($dists_file), { count => 1, recent => [
+is_deeply $pgxn->read_json_from($dists_file), { count => 2, recent => [
+    {
+        dist     => 'pgTAP',
+        version  => '0.25.0',
+        date     => '2011-02-02T03:25:17Z',
+        user     => 'theory',
+        abstract => 'Unit testing for PostgreSQL',
+    },
     {
         dist     => 'pair',
         version  => '0.1.1',

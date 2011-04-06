@@ -1,0 +1,8 @@
+{
+   "name": "pgTAP",
+   "releases": {
+      "stable": [
+         {"version": "0.25.0", "date": "2011-02-02T03:25:17Z"}
+      ]
+   }
+}
