@@ -100,6 +100,15 @@ is_deeply $dbh->selectrow_arrayref(
 ), [3, 'pair', '0.1.2', '2010-11-10T12:18:03Z', 'theory', 'A key/value pair dåtå type'],
  'DB should have new data for extension "pair"';
 
+# Add another one.
+$extension_path = catfile $pgxn->mirror_root, qw(extension pgtap.json);
+ok $stats->update_extension($extension_path), 'Update extension "pgtap"';
+ok $stats->extensions_updated, 'extensions_updated should now be true';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT releases, dist, version, date, user, abstract FROM extensions WHERE extension = 'pgtap'}
+), [1, 'pgTAP', '0.25.0', '2011-02-02T03:25:17Z', 'theory', 'Unit testing for PostgreSQL'],
+ 'DB should have data for extension "pgtap"';
+
 ##############################################################################
 # Great, now update a user.
 ok !$stats->users_updated, 'users_updated should start out false';
@@ -199,7 +208,7 @@ ok $stats->write_extension_stats, 'Write extension stats';
 ok !$stats->extensions_updated, 'extensions_updated should now be false';
 file_exists_ok $extensions_file, 'Extensions stats file should now exist';
 is_deeply $pgxn->read_json_from($extensions_file), {
-   count    => 1,
+   count    => 2,
    prolific => [
        {
            extension => 'pair',
@@ -209,6 +218,15 @@ is_deeply $pgxn->read_json_from($extensions_file), {
            date => '2010-11-10T12:18:03Z',
            user     => 'theory',
            abstract => 'A key/value pair dåtå type',
+       },
+       {
+           extension => 'pgtap',
+           releases  => 1,
+           dist      => 'pgTAP',
+           version   => '0.25.0',
+           date      => '2011-02-02T03:25:17Z',
+           user      => 'theory',
+           abstract  => 'Unit testing for PostgreSQL',
        },
    ],
 }, 'Its contents should be correct';

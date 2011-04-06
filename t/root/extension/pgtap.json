@@ -1,0 +1,10 @@
+{
+   "extension": "pgtap",
+   "latest": "stable",
+   "stable":  { "dist": "pgTAP", "version": "0.25.0", "sha1": "f7216d04ec2ca980a2491d8cbf6bed71c970dda9" },
+   "versions": {
+      "0.25.0": [
+         { "dist": "pgTAP", "version": "0.25.0" }
+      ]
+   }
+}
