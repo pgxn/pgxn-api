@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 50;
+use Test::More tests => 56;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
@@ -179,6 +179,14 @@ $idx_mock->mock(update_mirror_meta => sub {
     pass 'Should update mirror meta';
 });
 
+my $stat_mock = Test::MockModule->new('PGXN::API::Stats');
+my (@tag_files, @user_files, @ext_files, @dist_files);
+$stat_mock->mock(update_tag       => sub { push @tag_files  => $_[1] });
+$stat_mock->mock(update_user      => sub { push @user_files => $_[1] });
+$stat_mock->mock(update_dist      => sub { push @dist_files => $_[1] });
+$stat_mock->mock(update_extension => sub { push @ext_files  => $_[1] });
+$stat_mock->mock(write_stats => sub { pass 'write_stats should be called' });
+
 ok $sync->update_index, 'Update the index';
 is_deeply \@found, [qw(
     dist/pair/0.1.0/META.json
@@ -188,6 +196,35 @@ is_deeply \@found, [qw(
     dist/tinyint/0.1.0/META.json
 )], 'It should have processed the meta files';
 is_deeply \@dists, \@found, 'And it should have passed them to the indexer';
+
+# Check that the stats were updated.
+is_deeply \@tag_files, [ map { catfile $mirror_root, 'tag', "$_.json" }
+    'data types',
+    'france',
+    'key value pair',
+    'key value',
+    'ordered pair',
+    'pair',
+    'variadic function',
+], 'Tag stats should have been updated';
+
+is_deeply \@user_files, [ map { catfile $mirror_root, 'user', "$_.json" } qw(
+    daamien
+    theory
+    umitanuki
+)], 'User stats should have been updated';
+
+is_deeply \@ext_files, [ map { catfile $mirror_root, 'extension', "$_.json" } qw(
+    pair
+    pg_french_datatypes
+    tinyint
+)], 'Extension stats should have been updated';
+
+is_deeply \@dist_files, [ map { catfile $mirror_root, 'dist', "$_.json" } qw(
+    pair
+    pg_french_datatypes
+    tinyint
+)], 'Dist stats should have been updated';
 
 ##############################################################################
 # digest_for()

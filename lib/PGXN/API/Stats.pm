@@ -14,6 +14,7 @@ use namespace::autoclean;
 
 # XXX Consider moving this functionality to PGXN::Manager so it's on all mirrors?
 
+has verbose            => (is => 'rw', isa => 'Int',  default => 0);
 has dists_updated      => (is => 'rw', isa => 'Bool', default => 0);
 has extensions_updated => (is => 'rw', isa => 'Bool', default => 0);
 has tags_updated       => (is => 'rw', isa => 'Bool', default => 0);

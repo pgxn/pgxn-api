@@ -5,7 +5,7 @@ use utf8;
 use Moose;
 use PGXN::API;
 use PGXN::API::Indexer;
-#use PGXN::API::Stats;
+use PGXN::API::Stats;
 use Digest::SHA1;
 use List::Util qw(first);
 use File::Spec::Functions qw(catfile path rel2abs tmpdir);
@@ -57,28 +57,37 @@ sub run_rsync {
 
 sub update_index {
     my $self    = shift;
+    my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
+    my $stats   = PGXN::API::Stats->new(verbose => $self->verbose);
 
     # Update the mirror metadata.
-    my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
-#    my $stats   = PGXN::API::Stats->new(verbose => $self->verbose);
     $indexer->update_mirror_meta;
 
     my $meta_re = $self->regex_for_uri_template('meta');
     my $tag_re  = $self->regex_for_uri_template('tag');
+    my $user_re = $self->regex_for_uri_template('user');
+    my $dist_re = $self->regex_for_uri_template('dist');
+    my $ext_re  = $self->regex_for_uri_template('extension');
     my $log     = $self->log_file;
+    my $mroot   = PGXN::API->instance->mirror_root;
 
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
-        if ($line =~ $meta_re) {
-            if (my $params = $self->validate_distribution($1)) {
-                $indexer->add_distribution($params);
+        given ($line) {
+            when ($meta_re) {
+                if (my $params = $self->validate_distribution($1)) {
+                    $indexer->add_distribution($params);
+                }
             }
-        } elsif ($line =~ $tag_re) {
-#            $stats->update_tag($1);
+            when ($tag_re)  { $stats->update_tag(catfile $mroot, $1);       }
+            when ($dist_re) { $stats->update_dist(catfile $mroot, $1);      }
+            when ($user_re) { $stats->update_user(catfile $mroot, $1);      }
+            when ($ext_re)  { $stats->update_extension(catfile $mroot, $1); }
         }
     }
     close $fh or die "Cannot close $log: $!\n";
+    $stats->write_stats;
     say 'Sync complete' if $self->verbose;
     return $self;
 }
