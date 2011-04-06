@@ -55,12 +55,19 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                         abstract  TEXT      NOT NULL
                     )
                 });
-                $dbh->do(qq{
-                    CREATE TABLE $_ (
-                        name      TEXT NOT NULL PRIMARY KEY,
-                        rel_count INT  NOT NULL
+                $dbh->do(q{
+                    CREATE TABLE users (
+                        name      TEXT      NOT NULL PRIMARY KEY,
+                        rel_count INT       NOT NULL,
+                        full_name TEXT      NOT NULL
                     )
-                }) for qw(users tags);
+                });
+                $dbh->do(q{
+                    CREATE TABLE tags (
+                        name      TEXT      NOT NULL PRIMARY KEY,
+                        rel_count INT       NOT NULL
+                    )
+                });
                 $dbh->do(q{PRAGMA schema_version = 1});
                 $dbh->commit;
                 return;
@@ -71,21 +78,6 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
 
     $conn;
 });
-
-sub _update {
-    my ($self, $thing, $name, $count, $date) = @_;
-    $self->conn->txn(sub {
-        my $dbh = shift;
-        $dbh->do(
-            "INSERT INTO $thing (rel_count, name) VALUES (?, ?)",
-            undef, $count, $name,
-        ) if $dbh->do(
-            "UPDATE $thing SET rel_count = ? WHERE name = ?",
-            undef, $count, $name,
-        ) eq '0E0';
-    });
-    return $self;
-}
 
 sub update_dist {
     my ($self, $path) = @_;
@@ -159,22 +151,43 @@ sub update_extension {
 sub update_user {
     my ($self, $path) = @_;
     my $data = PGXN::API->instance->read_json_from($path);
-    $self->_update(
-        'users',
-        $data->{nickname},
+    my @params = map { encode_utf8 $_ } (
         scalar keys %{ $data->{releases} },
+        $data->{name},
+        $data->{nickname},
     );
+
+    $self->conn->txn(sub {
+        my $dbh = shift;
+        $dbh->do(
+            'INSERT INTO users (rel_count, full_name, name) VALUES (?, ?, ?)',
+            undef, @params
+        ) if $dbh->do(
+            'UPDATE users SET rel_count = ?, full_name = ? WHERE name = ?',
+            undef, @params
+        ) eq '0E0';
+    });
     $self->users_updated(1);
 }
 
 sub update_tag {
     my ($self, $path) = @_;
-    my $data = PGXN::API->instance->read_json_from($path);
-    $self->_update(
-        'tags',
-        $data->{tag},
+    my $data = PGXN::API->instance->read_json_from($path); 
+    my @params = map { encode_utf8 $_ } (
         scalar keys %{ $data->{releases} },
+        $data->{tag},
     );
+
+   $self->conn->txn(sub {
+        my $dbh = shift;
+        $dbh->do(
+            'INSERT INTO tags (rel_count, name) VALUES (?, ?)',
+            undef, @params
+        ) if $dbh->do(
+            'UPDATE tags SET rel_count = ? WHERE name = ?',
+            undef, @params
+        ) eq '0E0';
+    });
     $self->tags_updated(1);
 }
 

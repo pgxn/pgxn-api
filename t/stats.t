@@ -97,17 +97,17 @@ ok !$stats->users_updated, 'users_updated should start out false';
 my $user_path = catfile $pgxn->mirror_root, qw(user theory.json);
 ok $stats->update_user($user_path), 'Update user "theory"';
 ok $stats->users_updated, 'users_updated should now be true';
-is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM users WHERE name = 'theory'}
-)->[0], 3, 'DB should have release count for user "theory"';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT rel_count, full_name FROM users WHERE name = 'theory'}
+), [3, 'David E. Wheeler'], 'DB should have data for user "theory"';
 
 # Try updating.
 $user_path = catfile qw(t data theory-updated2.json);
 ok $stats->update_user($user_path), 'Update user "theory" again';
 ok $stats->users_updated, 'users_updated should still be true';
-is $dbh->selectrow_arrayref(
-    q{SELECT rel_count FROM users WHERE name = 'theory'}
-)->[0], 4, 'DB should have new release count for user "theory"';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT rel_count, full_name FROM users WHERE name = 'theory'}
+), [4, 'David E. Wheeler'], 'DB should have updated data for user "theory"';
 
 ##############################################################################
 # Great, now update a tag.
