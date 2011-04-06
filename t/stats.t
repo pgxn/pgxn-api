@@ -58,7 +58,7 @@ my $dist_path = catfile $pgxn->mirror_root, qw(dist pair.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair"';
 ok $stats->dists_updated, 'dists_updated should now be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, version, date, user, abstract FROM dists WHERE name = 'pair'}
+    q{SELECT releases, version, date, user, abstract FROM dists WHERE dist = 'pair'}
 ), [1, '0.1.0', '2010-10-18T15:24:21Z', 'theory', 'A key/value pair data type'],
     'DB should have data for dist "pair"';
 
@@ -67,7 +67,7 @@ $dist_path = catfile qw(t data pair-updated.json);
 ok $stats->update_dist($dist_path), 'Update dist "pair" again';
 ok $stats->dists_updated, 'dists_updated should still be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, version, date, user, abstract FROM dists WHERE name = 'pair'}
+    q{SELECT releases, version, date, user, abstract FROM dists WHERE dist = 'pair'}
 ), [3, '0.1.1', '2010-10-29T22:46:45Z', 'theory', 'A key/value pair dåtå type'],
     'DB should have new data for dist "pair"';
 

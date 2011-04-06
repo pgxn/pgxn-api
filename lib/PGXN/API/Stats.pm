@@ -36,8 +36,8 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                 $dbh->begin_work;
                 $dbh->do(q{
                     CREATE TABLE dists (
-                        name      TEXT      NOT NULL PRIMARY KEY,
-                        rel_count INT       NOT NULL,
+                        dist      TEXT      NOT NULL PRIMARY KEY,
+                        releases  INT       NOT NULL,
                         version   TEXT      NOT NULL,
                         date      TIMESTAMP NOT NULL,
                         user      TEXT      NOT NULL,
@@ -103,12 +103,12 @@ sub update_dist {
     $self->conn->txn(sub {
         my $dbh = shift;
         $dbh->do(q{
-            INSERT INTO dists (rel_count, version, date, user, abstract, name)
+            INSERT INTO dists (releases, version, date, user, abstract, dist)
             VALUES (?, ?, ?, ?, ?, ?)
         }, undef, @params) if $dbh->do(q{
             UPDATE dists
-               SET rel_count = ?, version = ?, date = ?, user = ?, abstract = ?
-             WHERE name = ?
+               SET releases = ?, version = ?, date = ?, user = ?, abstract = ?
+             WHERE dist = ?
          }, undef, @params) eq '0E0';
     });
     $self->dists_updated(1);
@@ -200,7 +200,7 @@ sub write_stats {
 }
 
 sub _write_stats {
-    my ($self, $things, $label, $cols) = @_;
+    my ($self, $things, $label, $cols, $order_by) = @_;
 
     $self->conn->run(sub {
         my $dbh = shift;
@@ -211,7 +211,7 @@ sub _write_stats {
         my $sth = $dbh->prepare(qq{
             SELECT $cols
               FROM $things
-             ORDER BY rel_count DESC
+             ORDER BY $order_by DESC
              LIMIT 128
           });
 
@@ -232,21 +232,24 @@ sub _write_stats {
 sub write_dist_stats {
     shift->_write_stats(
         'dists', 'recent',
-        'name AS dist, version, date, user, abstract',
+        'dist, version, date, user, abstract',
+        'date'
     );
 }
 
 sub write_user_stats {
     shift->_write_stats(
         'users', 'prolific',
-        'name AS nickname, rel_count AS dist_count'
+        'name AS nickname, rel_count AS dist_count',
+        'rel_count',
     );
 }
 
 sub write_tag_stats {
     shift->_write_stats(
         'tags', 'popular',
-        'name AS tag, rel_count AS dist_count'
+        'name AS tag, rel_count AS dist_count',
+        'rel_count',
     );
 }
 
@@ -254,6 +257,7 @@ sub write_extension_stats {
     shift->_write_stats(
         'extensions', 'prolific',
         'rel_count AS releases, name AS extension, dist, version, date, user, abstract',
+        'rel_count',
     );
 }
 
