@@ -98,7 +98,7 @@ my $user_path = catfile $pgxn->mirror_root, qw(user theory.json);
 ok $stats->update_user($user_path), 'Update user "theory"';
 ok $stats->users_updated, 'users_updated should now be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, full_name FROM users WHERE name = 'theory'}
+    q{SELECT dist_count, name FROM users WHERE nickname = 'theory'}
 ), [3, 'David E. Wheeler'], 'DB should have data for user "theory"';
 
 # Try updating.
@@ -106,7 +106,7 @@ $user_path = catfile qw(t data theory-updated2.json);
 ok $stats->update_user($user_path), 'Update user "theory" again';
 ok $stats->users_updated, 'users_updated should still be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, full_name FROM users WHERE name = 'theory'}
+    q{SELECT dist_count, name FROM users WHERE nickname = 'theory'}
 ), [4, 'David E. Wheeler'], 'DB should have updated data for user "theory"';
 
 ##############################################################################

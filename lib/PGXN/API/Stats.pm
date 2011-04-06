@@ -57,9 +57,9 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                 });
                 $dbh->do(q{
                     CREATE TABLE users (
-                        name      TEXT      NOT NULL PRIMARY KEY,
-                        rel_count INT       NOT NULL,
-                        full_name TEXT      NOT NULL
+                        nickname   TEXT      NOT NULL PRIMARY KEY,
+                        name       TEXT      NOT NULL,
+                        dist_count INT       NOT NULL
                     )
                 });
                 $dbh->do(q{
@@ -160,10 +160,10 @@ sub update_user {
     $self->conn->txn(sub {
         my $dbh = shift;
         $dbh->do(
-            'INSERT INTO users (rel_count, full_name, name) VALUES (?, ?, ?)',
+            'INSERT INTO users (dist_count, name, nickname) VALUES (?, ?, ?)',
             undef, @params
         ) if $dbh->do(
-            'UPDATE users SET rel_count = ?, full_name = ? WHERE name = ?',
+            'UPDATE users SET dist_count = ?, name = ? WHERE nickname = ?',
             undef, @params
         ) eq '0E0';
     });
@@ -240,8 +240,8 @@ sub write_dist_stats {
 sub write_user_stats {
     shift->_write_stats(
         'users', 'prolific',
-        'name AS nickname, rel_count AS dist_count',
-        'rel_count',
+        'nickname, dist_count',
+        'dist_count',
     );
 }
 
