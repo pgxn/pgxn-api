@@ -1,6 +1,7 @@
 Revision history for Perl extension PGXN::API
 
 0.9.1
+      - Added documentation to PGXN::API::Stats.
 
 0.9.0   2011-04-06T04:18:53
       - Requests for a dist, extension, user, or tag URI ending in "/" instead

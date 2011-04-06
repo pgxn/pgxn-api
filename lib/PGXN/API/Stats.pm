@@ -276,5 +276,162 @@ sub write_extension_stats {
 
 __PACKAGE__->meta->make_immutable;
 
-1;
 __END__
+
+=head1 Name
+
+PGXN::API::Stats - PGXN API statistics updater
+
+=head1 Synopsis
+
+  use PGXN::API::Stats;
+  my $stats = PGXN::API::Stats->new( verbose => $verbose );
+  $stats->update_tag($path_to_tag_json);
+  $stats->update_user($path_to_user_json);
+  $stats->update_dist($path_to_dist_json);
+  $stats->update_extension($path_to_extension_json);
+  $stats->write_stats;
+
+=head1 Description
+
+This module manages statistics JSON files. That is, it updates the summary
+information for distributions, extensions, users and tags. The files are
+saved in the API document root as
+
+=over
+
+=item * F</stats/dists.json>
+
+=item * F</stats/extensions.json>
+
+=item * F</stats/users.json>
+
+=item * F</stats/tags.json>
+
+=back
+
+Stats are aggregated over time, and updated only as much as necessary by a
+given sync. The data is stored in an SQLite database, which is updated by the
+various C<update_*()> methods and read from to write the stats JSON files.
+
+PGXN::API::Stats is called during a sync by L<PGXN::API::Sync>, so you
+probably don't have to worry about calling it directly. Still, if the details
+interest you, read on.
+
+=head1 Class Interface
+
+=head2 Constructor
+
+=head3 C<new>
+
+  my $stats = PGXN::API::Stats->new(%params);
+
+Creates and returns a new PGXN::API::Stats object. The supported parameters
+are:
+
+=over
+
+=item C<verbose>
+
+An incremental integer specifying the level of verbosity to use during a sync.
+By default, PGXN::API::Stats runs in quiet mode, where only errors are emitted
+to C<STDERR>.
+
+=back
+
+=head1 Instance Interface
+
+=head2 Instance Methods
+
+=head3 C<update_dist>
+
+  $stats->update_dist($path_to_dist_json);
+
+Updates 
+
+=head3 C<update_extension>
+
+  $stats->update_extension($path_to_extension_json);
+
+
+
+=head3 C<update_user>
+
+  $stats->update_user($path_to_user_json);
+
+
+
+=head3 C<update_tag>
+
+  $stats->update_tag($path_to_tag_json);
+
+
+
+=head3 C<write_stats>
+
+  $stats->write_stats;
+
+
+
+=head3 C<write_dist_stats>
+
+  $stats->write_dist_stats;
+
+
+
+=head3 C<write_extension_stats>
+
+  $stats->write_extension_stats;
+
+
+
+=head3 C<write_user_stats>
+
+  $stats->write_user_stats;
+
+
+
+=head3 C<write_tag_stats>
+
+  $stats->write_tag_stats;
+
+
+
+=head2 Instance Accessors
+
+=head3 C<verbose>
+
+  my $verbose = $stats->verbose;
+  $stats->verbose($verbose);
+
+Get or set an incremental verbosity. The higher the integer specified, the
+more verbose the sync.
+
+=head1 Author
+
+David E. Wheeler <david.wheeler@pgexperts.com>
+
+=head1 Copyright and License
+
+Copyright (c) 2011 David E. Wheeler.
+
+This module is free software; you can redistribute it and/or modify it under
+the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose, without fee, and without a written agreement is
+hereby granted, provided that the above copyright notice and this paragraph
+and the following two paragraphs appear in all copies.
+
+In no event shall David E. Wheeler be liable to any party for direct,
+indirect, special, incidental, or consequential damages, including lost
+profits, arising out of the use of this software and its documentation, even
+if David E. Wheeler has been advised of the possibility of such damage.
+
+David E. Wheeler specifically disclaims any warranties, including, but not
+limited to, the implied warranties of merchantability and fitness for a
+particular purpose. The software provided hereunder is on an "as is" basis,
+and David E. Wheeler has no obligations to provide maintenance, support,
+updates, enhancements, or modifications.
+
+=cut
