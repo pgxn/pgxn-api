@@ -46,8 +46,8 @@ has conn => (is => 'rw', isa => 'DBIx::Connector', lazy => 1, default => sub {
                 });
                 $dbh->do(q{
                     CREATE TABLE extensions (
-                        name      TEXT      NOT NULL PRIMARY KEY,
-                        rel_count INT       NOT NULL,
+                        extension TEXT      NOT NULL PRIMARY KEY,
+                        releases  INT       NOT NULL,
                         dist      TEXT      NOT NULL,
                         version   TEXT      NOT NULL,
                         date      TIMESTAMP NOT NULL,
@@ -137,12 +137,12 @@ sub update_extension {
     $self->conn->txn(sub {
         my $dbh = shift;
         $dbh->do(q{
-            INSERT INTO extensions (rel_count, dist, version, date, user, abstract, name)
+            INSERT INTO extensions (releases, dist, version, date, user, abstract, extension)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         }, undef, @params) if $dbh->do(q{
             UPDATE extensions
-               SET rel_count = ?, dist = ?, version = ?, date = ?, user = ?, abstract = ?
-             WHERE name = ?
+               SET releases = ?, dist = ?, version = ?, date = ?, user = ?, abstract = ?
+             WHERE extension = ?
          }, undef, @params) eq '0E0';
     });
     $self->extensions_updated(1);
@@ -256,8 +256,8 @@ sub write_tag_stats {
 sub write_extension_stats {
     shift->_write_stats(
         'extensions', 'prolific',
-        'rel_count AS releases, name AS extension, dist, version, date, user, abstract',
-        'rel_count',
+        'releases, extension, dist, version, date, user, abstract',
+        'releases',
     );
 }
 

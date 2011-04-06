@@ -78,7 +78,7 @@ my $extension_path = catfile $pgxn->mirror_root, qw(extension pair.json);
 ok $stats->update_extension($extension_path), 'Update extension "pair"';
 ok $stats->extensions_updated, 'extensions_updated should now be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, dist, version, date, user, abstract FROM extensions WHERE name = 'pair'}
+    q{SELECT releases, dist, version, date, user, abstract FROM extensions WHERE extension = 'pair'}
 ), [1, 'pair', '0.1.0', '2010-10-18T15:24:21Z', 'theory', 'A key/value pair data type'],
  'DB should have data for extension "pair"';
 
@@ -87,7 +87,7 @@ $extension_path = catfile qw(t data pair-ext-updated3.json);
 ok $stats->update_extension($extension_path), 'Update extension "pair" again';
 ok $stats->extensions_updated, 'extensions_updated should still be true';
 is_deeply $dbh->selectrow_arrayref(
-    q{SELECT rel_count, dist, version, date, user, abstract FROM extensions WHERE name = 'pair'}
+    q{SELECT releases, dist, version, date, user, abstract FROM extensions WHERE extension = 'pair'}
 ), [3, 'pair', '0.1.2', '2010-11-10T12:18:03Z', 'theory', 'A key/value pair dåtå type'],
  'DB should have new data for extension "pair"';
 
