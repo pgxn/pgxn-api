@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 66;
+use Test::More tests => 70;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(remove_tree);
@@ -140,6 +140,7 @@ is $dbh->selectrow_arrayref(
 my $dists_file = catfile($pgxn->doc_root, qw(stats dists.json));
 file_not_exists_ok $dists_file, 'Dists stats file should not exist';
 ok $stats->write_dist_stats, 'Write dist stats';
+ok !$stats->dists_updated, 'dists_updated should now be false';
 file_exists_ok $dists_file, 'Dists stats file should now exist';
 is_deeply $pgxn->read_json_from($dists_file), { count => 1, recent => [
     {
@@ -154,6 +155,7 @@ is_deeply $pgxn->read_json_from($dists_file), { count => 1, recent => [
 my $tags_file = catfile($pgxn->doc_root, qw(stats tags.json));
 file_not_exists_ok $tags_file, 'Tags stats file should not exist';
 ok $stats->write_tag_stats, 'Write tag stats';
+ok !$stats->tags_updated, 'tags_updated should now be false';
 file_exists_ok $tags_file, 'Tags stats file should now exist';
 is_deeply $pgxn->read_json_from($tags_file), {
    count => 2,
@@ -166,6 +168,7 @@ is_deeply $pgxn->read_json_from($tags_file), {
 my $users_file = catfile($pgxn->doc_root, qw(stats users.json));
 file_not_exists_ok $users_file, 'Users stats file should not exist';
 ok $stats->write_user_stats, 'Write user stats';
+ok !$stats->users_updated, 'users_updated should now be false';
 file_exists_ok $users_file, 'Users stats file should now exist';
 is_deeply $pgxn->read_json_from($users_file), {
    count    => 1,
@@ -177,6 +180,7 @@ is_deeply $pgxn->read_json_from($users_file), {
 my $extensions_file = catfile($pgxn->doc_root, qw(stats extensions.json));
 file_not_exists_ok $extensions_file, 'Extensions stats file should not exist';
 ok $stats->write_extension_stats, 'Write extension stats';
+ok !$stats->extensions_updated, 'extensions_updated should now be false';
 file_exists_ok $extensions_file, 'Extensions stats file should now exist';
 is_deeply $pgxn->read_json_from($extensions_file), {
    count    => 1,

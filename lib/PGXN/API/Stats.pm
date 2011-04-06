@@ -230,35 +230,47 @@ sub _write_stats {
 }
 
 sub write_dist_stats {
-    shift->_write_stats(
+    my $self = shift;
+    $self->_write_stats(
         'dists', 'recent',
         'dist, version, date, user, abstract',
         'date'
     );
+    $self->dists_updated(0);
+    return $self;
 }
 
 sub write_user_stats {
-    shift->_write_stats(
+    my $self = shift;
+    $self->_write_stats(
         'users', 'prolific',
         'nickname, dist_count',
         'dist_count',
     );
+    $self->users_updated(0);
+    return $self;
 }
 
 sub write_tag_stats {
-    shift->_write_stats(
+    my $self = shift;
+    $self->_write_stats(
         'tags', 'popular',
         'tag, dist_count',
         'dist_count',
     );
+    $self->tags_updated(0);
+    return $self;
 }
 
 sub write_extension_stats {
-    shift->_write_stats(
+    my $self = shift;
+    $self->_write_stats(
         'extensions', 'prolific',
         'releases, extension, dist, version, date, user, abstract',
         'releases',
     );
+    $self->extensions_updated(0);
+    return $self;
 }
 
 __PACKAGE__->meta->make_immutable;
