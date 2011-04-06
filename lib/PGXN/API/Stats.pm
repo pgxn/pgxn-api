@@ -212,7 +212,7 @@ sub _write_stats {
         my $sth = $dbh->prepare(qq{
             SELECT $cols
               FROM $things
-             ORDER BY $order_by DESC
+             ORDER BY $order_by
              LIMIT 128
           });
 
@@ -235,7 +235,7 @@ sub write_dist_stats {
     $self->_write_stats(
         'dists', 'recent',
         'dist, version, date, user, abstract',
-        'date'
+        'date DESC, dist'
     );
     $self->dists_updated(0);
     return $self;
@@ -246,7 +246,7 @@ sub write_user_stats {
     $self->_write_stats(
         'users', 'prolific',
         'nickname, dist_count',
-        'dist_count',
+        'dist_count DESC, nickname',
     );
     $self->users_updated(0);
     return $self;
@@ -257,7 +257,7 @@ sub write_tag_stats {
     $self->_write_stats(
         'tags', 'popular',
         'tag, dist_count',
-        'dist_count',
+        'dist_count DESC, tag',
     );
     $self->tags_updated(0);
     return $self;
@@ -268,7 +268,7 @@ sub write_extension_stats {
     $self->_write_stats(
         'extensions', 'prolific',
         'releases, extension, dist, version, date, user, abstract',
-        'releases',
+        'releases DESC, extension',
     );
     $self->extensions_updated(0);
     return $self;
