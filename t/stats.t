@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 70;
-use Test::More 'no_plan';
+use Test::More tests => 79;
+#use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir);
 use File::Path qw(remove_tree);
 use File::Copy::Recursive qw(dircopy fcopy);
@@ -127,6 +127,14 @@ is_deeply $dbh->selectrow_arrayref(
     q{SELECT dist_count, name FROM users WHERE nickname = 'theory'}
 ), [4, 'David E. Wheeler'], 'DB should have updated data for user "theory"';
 
+# Add another one.
+$user_path = catfile $pgxn->mirror_root, qw(user fred.json);
+ok $stats->update_user($user_path), 'Update user "fred"';
+ok $stats->users_updated, 'users_updated should now be true';
+is_deeply $dbh->selectrow_arrayref(
+    q{SELECT dist_count, name FROM users WHERE nickname = 'fred'}
+), [0, 'Fred Flintstone'], 'DB should have data for user "fred"';
+
 ##############################################################################
 # Great, now update a tag.
 ok !$stats->tags_updated, 'tags_updated should start out false';
@@ -196,9 +204,10 @@ ok $stats->write_user_stats, 'Write user stats';
 ok !$stats->users_updated, 'users_updated should now be false';
 file_exists_ok $users_file, 'Users stats file should now exist';
 is_deeply $pgxn->read_json_from($users_file), {
-   count    => 1,
+   count    => 2,
    prolific => [
-       { nickname => 'theory', dist_count => 4 }
+       { nickname => 'theory', dist_count => 4 },
+       { nickname => 'fred',   dist_count => 0 },
    ],
 }, 'Its contents should be correct';
 
