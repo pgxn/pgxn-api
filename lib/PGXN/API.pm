@@ -1,4 +1,4 @@
-package PGXN::API v0.9.1;
+package PGXN::API v0.10.0;
 
 use 5.12.0;
 use utf8;
@@ -137,7 +137,7 @@ my $trig = sub {
 
          # Pre-generate the metadata directories.
          File::Path::make_path(catdir $dir, $_)
-             for qw(user tag dist extension stats);
+             for qw(user tag dist extension);
      } elsif (!-d $dir) {
          die qq{Location for document root "$dir" is not a directory\n};
      }

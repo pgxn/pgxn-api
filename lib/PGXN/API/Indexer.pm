@@ -1,4 +1,4 @@
-package PGXN::API::Indexer v0.9.1;
+package PGXN::API::Indexer v0.10.0;
 
 use 5.12.0;
 use utf8;
@@ -160,7 +160,6 @@ sub update_mirror_meta {
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
     $tmpl->{search} = '/search';
-    $tmpl->{stats}  = '/stats/{name}.json';
     ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 
