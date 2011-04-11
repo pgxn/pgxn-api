@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 50;
+use Test::More tests => 56;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
@@ -160,6 +160,39 @@ is_deeply \@found, [
    "tag/variadic function.json",
 ], 'It should recognize the tag files.';
 
+# Test the mirrors template regex.
+ok $regex = $sync->regex_for_uri_template('mirrors'),
+    'Get mirrors regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+is_deeply \@found, ['meta/mirrors.json'], 'Should find mirrors.json';
+
+# Test the stats template regex.
+ok $regex = $sync->regex_for_uri_template('stats'),
+    'Get stats regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+is_deeply \@found, [qw(
+    stats/dist.json
+    stats/extension.json
+    stats/user.json
+    stats/tag.json
+    stats/summary.json
+)], 'Should find stats JSON files';
+
+# Test the spec template regex.
+ok $regex = $sync->regex_for_uri_template('spec'),
+    'Get spec regex';
+@found = ();
+for (@rsync_out) {
+    push @found => $1 if $_ =~ $regex;
+}
+is_deeply \@found, ['meta/spec.txt'], 'Should find spec.txt';
+
 ##############################################################################
 # Reset the rsync output and have it do its thing.
 my $mock = Test::MockModule->new($CLASS);
@@ -174,12 +207,17 @@ $api_mock->mock(uri_templates => sub {
 my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
 my @dists;
 $idx_mock->mock(add_distribution => sub { push @dists => $_[1] });
+my @paths;
+my $called;
+$idx_mock->mock(update_root_json => sub { $called = 1 });
+$idx_mock->mock(copy_from_mirror => sub { push @paths => $_[1] });
 $idx_mock->mock(update_mirror_meta => sub {
     $api_mock->unmock_all;
     pass 'Should update mirror meta';
 });
 
 ok $sync->update_index, 'Update the index';
+ok $called, 'The root index.json should have been updated';
 is_deeply \@found, [qw(
     dist/pair/0.1.0/META.json
     dist/pair/0.1.1/META.json
@@ -188,6 +226,15 @@ is_deeply \@found, [qw(
     dist/tinyint/0.1.0/META.json
 )], 'It should have processed the meta files';
 is_deeply \@dists, \@found, 'And it should have passed them to the indexer';
+is_deeply \@paths, [qw(
+    meta/mirrors.json
+    meta/spec.txt
+    stats/dist.json
+    stats/extension.json
+    stats/user.json
+    stats/tag.json
+    stats/summary.json
+)], 'And it should have found and copied mirrors, spec, and stats';
 
 ##############################################################################
 # digest_for()

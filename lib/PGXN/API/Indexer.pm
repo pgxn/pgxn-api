@@ -149,10 +149,10 @@ sub indexer_for {
     );
 }
 
-sub update_mirror_meta {
+sub update_root_json {
     my $self = shift;
     my $api  = PGXN::API->instance;
-    say "Updating mirror metadata" if $self->verbose;
+    say "Updating mirror root JSON" if $self->verbose;
 
     # Augment and write index.json.
     my $src = catfile $api->mirror_root, 'index.json';
@@ -163,12 +163,17 @@ sub update_mirror_meta {
     ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 
-    # Copy meta.
-    $src = catdir $api->mirror_root, 'meta';
-    $dst = catdir $api->doc_root, 'meta';
-    dircopy $src, $dst or die "Cannot copy directory $src to $dst: $!\n";
-
     return $self;
+}
+
+sub copy_from_mirror {
+    my $self = shift;
+    my @path = split qr{/} => shift;
+    my $api  = PGXN::API->instance;
+    my $src  = catfile $api->mirror_root, @path;
+    my $dst  = catfile $api->doc_root, @path;
+    say "Copying $src to $dst" if $self->verbose > 1;
+    fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
 }
 
 sub add_distribution {
@@ -193,7 +198,6 @@ sub copy_files {
         my $dst = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
         say "    $meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
-        make_path dirname $dst;
         fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
     }
     return $self;
@@ -980,10 +984,10 @@ verbosity to use while indexing. Defaults to 0, which is as quiet as possible.
 
 =head2 Instance Methods
 
-=head3 C<update_mirror_meta>
+=head3 C<update_root_json>
 
-Updates the mirror metadata, copying the mirror templates from the mirror's
-F</index.json> to the API's F</index.json>. Specifically, it adds three
+Updates the F<index.json> file at the root of the document root, copying the
+mirror's F</index.json> to the API's F</index.json> and adding three
 additional templates:
 
 =over
@@ -1006,6 +1010,14 @@ template, with the trailing C<META.json> replaced with `{+doc}.html}`.
 may include slashes.
 
 =back
+
+=head3 C<copy_from_mirror>
+
+  $indexer->copy_from_mirror($path);
+
+Copies a file from the mirror to the document root. The path argument must be
+specified using Unix semantics (that is, using slashes for directory
+separators). Used by L<PGXN::API::Sync> to sync metadata files and stats.
 
 =head3 C<add_distribution>
 

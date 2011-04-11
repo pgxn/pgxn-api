@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 202;
+use Test::More tests => 203;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -31,7 +31,8 @@ can_ok $CLASS => qw(
     index_dir
     schemas
     indexer_for
-    update_mirror_meta
+    update_root_json
+    copy_from_mirror
     add_distribution
     copy_files
     merge_distmeta
@@ -67,13 +68,11 @@ my $mock = Test::MockModule->new($CLASS);
 $mock->mock(_commit => sub { shift });
 
 ##############################################################################
-# Test update_mirror_meta().
+# Test update_root_json().
 my $indexer = new_ok $CLASS;
 file_not_exists_ok catfile($doc_root, qw(index.json)), 'index.json should not exist';
-file_not_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should not exist';
-ok $indexer->update_mirror_meta, 'Update from the mirror';
+ok $indexer->update_root_json, 'Update from the mirror';
 file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
-file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
 
 # Make sure it has all the templates we need.
 my $tmpl = $api->read_json_from(catfile qw(t root index.json));
@@ -85,13 +84,21 @@ is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
 
 # Make sure that PGXN::API is aware of them.
 is_deeply [sort keys %{ $api->uri_templates } ],
-    [qw(dist doc download extension meta mirrors readme search source stats tag user)],
+    [qw(dist doc download extension meta mirrors readme search source spec stats tag user)],
     'PGXN::API should see the additional templates';
 
 # Do it again, just for good measure.
-ok $indexer->update_mirror_meta, 'Update from the mirror';
+ok $indexer->update_root_json, 'Update from the mirror';
 file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist';
-file_exists_ok catfile($doc_root, qw(meta/mirrors.json)), 'mirrors.json should now exist';
+
+##############################################################################
+# Test copy_from_mirror().
+my $spec = catfile $api->doc_root, qw(meta spec.txt);
+file_not_exists_ok $spec, 'Doc root spec.txt should not exist';
+ok $indexer->copy_from_mirror('meta/spec.txt'), 'Copy spec.txt';
+file_exists_ok $spec, 'Doc root spec.txt should now exist';
+files_eq $spec, catfile($api->mirror_root, qw(meta spec.txt)),
+    'And it should be a copy from the mirror';
 
 ##############################################################################
 # Let's index pair-0.1.0.

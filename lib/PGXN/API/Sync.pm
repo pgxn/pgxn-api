@@ -26,6 +26,12 @@ has verbose      => (is => 'rw', isa => 'Int', default => 0);
 has log_file     => (is => 'rw', isa => 'Str', required => 1, default => sub {
     catfile tmpdir, "pgxn-api-sync-$$.txt"
 });
+has mirror_uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+    my $self = shift;
+    my $api  = PGXN::API->instance;
+    my $tmpl = $api->read_json_from(catfile $api->mirror_root, 'index.json');
+    return { map { $_ => URI::Template->new($tmpl->{$_}) } keys %{ $tmpl } };
+});
 
 sub run {
     my $self = shift;
@@ -58,10 +64,10 @@ sub update_index {
     my $self    = shift;
     my $indexer = PGXN::API::Indexer->new(verbose => $self->verbose);
 
-    # Update the mirror metadata.
-    $indexer->update_mirror_meta;
-
     my $meta_re = $self->regex_for_uri_template('meta');
+    my $mirr_re = $self->regex_for_uri_template('mirrors');
+    my $spec_re = $self->regex_for_uri_template('spec');
+    my $stat_re = $self->regex_for_uri_template('stats');
     my $log     = $self->log_file;
 
     say 'Parsing the rsync log file' if $self->verbose > 1;
@@ -71,6 +77,10 @@ sub update_index {
             if (my $params = $self->validate_distribution($1)) {
                 $indexer->add_distribution($params);
             }
+        } elsif ($line =~ $spec_re || $line =~ $mirr_re || $line =~ $stat_re) {
+            $indexer->copy_from_mirror($1);
+        } elsif ($line =~ /\s>f[+]+\sindex[.]json$/) {
+            $indexer->update_root_json;
         }
     }
     close $fh or die "Cannot close $log: $!\n";
@@ -82,8 +92,8 @@ sub regex_for_uri_template {
     my ($self, $name) = @_;
 
     # Get the URI for the template.
-    my $uri = PGXN::API->instance->uri_templates->{$name}->process(
-        map { $_ => "{$_}" } qw(dist version user extension tag)
+    my $uri = $self->mirror_uri_templates->{$name}->process(
+        map { $_ => "{$_}" } qw(dist version user extension tag stats)
     );
 
     my %regex_for = (
@@ -92,6 +102,7 @@ sub regex_for_uri_template {
         '{user}'      => qr{[a-z]([-a-z0-9]{0,61}[a-z0-9])?}i,
         '{extension}' => qr{[^/]+?},
         '{tag}'       => qr{[^/]+?},
+        '{stats}'     => qr{[^/]+?},
     );
 
     # Assemble the regex corresponding to the template.
@@ -124,7 +135,7 @@ sub validate_distribution {
 
 sub download_for {
     my ($self, $meta) = @_;
-    my $zip_uri = PGXN::API->instance->uri_templates->{download}->process(
+    my $zip_uri = $self->mirror_uri_templates->{download}->process(
         dist    => $meta->{name},
         version => $meta->{version},
     );
@@ -332,6 +343,16 @@ more verbose the sync.
 
 Get or set the path to use for the C<rsync> log file. This file will then be
 parsed by C<update_index> for new distributions to index.
+
+=head3 C<mirror_uri_templates>
+
+  my $templates = $pgxn->mirror_uri_templates;
+
+Returns a hash reference of the URI templates loaded from the F<index.json>
+file in the mirror root. The keys are the names of the templates, and the
+values are L<URI::Template> objects.
+
+=cut
 
 =head1 Author
 
