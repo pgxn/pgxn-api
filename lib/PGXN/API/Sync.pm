@@ -97,7 +97,7 @@ sub regex_for_uri_template {
 
     # Get the URI for the template.
     my $uri = $self->mirror_uri_templates->{$name}->process(
-        map { $_ => "{$_}" } qw(dist version user extension tag stats)
+        map { $_ => "{$_}" } qw(dist version user extension tag stats format)
     );
 
     my %regex_for = (
@@ -107,6 +107,7 @@ sub regex_for_uri_template {
         '{extension}' => qr{[^/]+?},
         '{tag}'       => qr{[^/]+?},
         '{stats}'     => qr{(?:dist|tag|user|extension|summary)},
+        '{format}'    => qr{(?:txt|html|atom|xml)},
     );
 
     # Assemble the regex corresponding to the template.
