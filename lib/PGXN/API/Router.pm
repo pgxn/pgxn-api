@@ -72,7 +72,7 @@ sub app {
                 400,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 38],
                 ['Bad request: Invalid or missing "q" query param.']
-            ] if !defined $q || $q eq '' || $q eq '*' || $q eq '?';
+            ] if $q ~~ [undef, '', '*', '?'];
 
             # Make sure "o" and "l" params are valid.
             for my $param (qw(o l)) {
