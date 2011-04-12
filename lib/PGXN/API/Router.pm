@@ -67,11 +67,12 @@ sub app {
             ] if $req->path_info !~ m{^/((?:d(?:oc|ist)|extension|user|tag)s)$};
             my $in = $1;
 
-            my $q = $req->param('q') or return [
+            my $q = $req->param('q');
+            return [
                 400,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 38],
-                ['Bad request: "q" query param required.']
-            ];
+                ['Bad request: Invalid or missing "q" query param.']
+            ] if !defined $q || $q eq '' || $q eq '*' || $q eq '?';
 
             # Make sure "o" and "l" params are valid.
             for my $param (qw(o l)) {

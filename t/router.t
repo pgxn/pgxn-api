@@ -3,7 +3,7 @@
 use 5.12.0;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
-use Test::More tests => 144;
+use Test::More tests => 159;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -215,8 +215,20 @@ test_psgi $app => sub {
     is $res->code, 400, "$uri should 400";
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
         'Should have API version in the header';
-    is $res->content, 'Bad request: "q" query param required.',
+    is $res->content, 'Bad request: Invalid or missing "q" query param.',
         'Should get proper error message';
+
+    # And that we get a 400 for an invalid q param.
+    for my $q ('', '*', '?') {
+        my $uri = "/search/docs?q=$q";
+        ok my $res = $cb->(GET $uri), "Fetch $uri";
+        ok $res->is_error, "$uri should respond with an error";
+        is $res->code, 400, "$uri should 400";
+        is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+            'Should have API version in the header';
+        is $res->content, 'Bad request: Invalid or missing "q" query param.',
+            'Should get proper error message';
+    }
 
     # And that we get a 400 for invalid params.
     for my $spec (
