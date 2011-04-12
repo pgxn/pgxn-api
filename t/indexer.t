@@ -78,7 +78,7 @@ file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist'
 my $tmpl = $api->read_json_from(catfile qw(t root index.json));
 $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
 $tmpl->{doc} = "/dist/{dist}/{version}/{+doc}.html";
-$tmpl->{search} = '/search';
+$tmpl->{search} = '/search/{in}/';
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 

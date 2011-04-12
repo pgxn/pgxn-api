@@ -159,7 +159,7 @@ sub update_root_json {
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-    $tmpl->{search} = '/search';
+    $tmpl->{search} = '/search/{in}/';
     ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 
@@ -1000,7 +1000,9 @@ URI for browsing the source of a distribution. Its value is
 
 =item C<search>
 
-The URI for search, simply F</search>.
+The URI for search/ Its value is
+
+  /search/{in}/
 
 =item C<doc>
 
