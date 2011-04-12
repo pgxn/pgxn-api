@@ -102,7 +102,7 @@ sub regex_for_uri_template {
         '{user}'      => qr{[a-z]([-a-z0-9]{0,61}[a-z0-9])?}i,
         '{extension}' => qr{[^/]+?},
         '{tag}'       => qr{[^/]+?},
-        '{stats}'     => qr{[^/]+?},
+        '{stats}'     => qr{(?:dist|tag|user|extension|summary)},
     );
 
     # Assemble the regex corresponding to the template.
