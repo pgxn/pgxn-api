@@ -77,8 +77,12 @@ sub update_index {
             if (my $params = $self->validate_distribution($1)) {
                 $indexer->add_distribution($params);
             }
-        } elsif ($line =~ $spec_re || $line =~ $mirr_re || $line =~ $stat_re) {
+        } elsif ($line =~ $stat_re || $line =~ $mirr_re) {
             $indexer->copy_from_mirror($1);
+        } elsif ($line =~ $spec_re) {
+            my $path = $1;
+            $indexer->copy_from_mirror($path);
+            $indexer->parse_from_mirror($path, 'Multimarkdown');
         } elsif ($line =~ /\s>f[+]+\sindex[.]json$/) {
             $indexer->update_root_json;
         }

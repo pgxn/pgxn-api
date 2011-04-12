@@ -47,7 +47,7 @@ $class->new(
         'Plack::App::Directory'        => 0,
         'Plack::App::File'             => 0,
         'Plack::Builder'               => 0,
-        'Text::Markup'                 => '0.11',
+        'Text::Markup'                 => '0.12',
         'URI::Template'                => '0.15',
         'XML::LibXML'                  => '1.70',
     },

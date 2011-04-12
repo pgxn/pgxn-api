@@ -176,6 +176,31 @@ sub copy_from_mirror {
     fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
 }
 
+sub parse_from_mirror {
+    my ($self, $path, $format) = @_;
+    my @path = split qr{/} => $path;
+    my $api  = PGXN::API->instance;
+    my $src  = catfile $api->mirror_root, @path;
+    my $dst  = catfile $api->doc_root, @path;
+    my $mark = Text::Markup->new(default_encoding => 'UTF-8');
+    $dst =~ s/[.][^.]+$/.html/;
+
+    say "Parsing $src to $dst" if $self->verbose > 1;
+    make_path dirname $dst;
+
+    my $doc = $self->_parse_html_string($mark->parse(
+        file   => $src,
+        format => $format,
+    ));
+
+    open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
+    $doc = _clean_html_body($doc->findnodes('/html/body'));
+    print $fh $doc->toString, "\n";
+    close $fh or die "Cannot close $dst: $!\n";
+
+    return $self;
+}
+
 sub add_distribution {
     my ($self, $params) = @_;
 
@@ -412,7 +437,6 @@ sub parse_docs {
     my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
-    my $libxml = $self->libxml;
     my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
 
     # Find all doc files and write them out.
@@ -429,13 +453,8 @@ sub parse_docs {
             next if first { $fn eq $_ } @{ $skip->{file} };
             next if first { $fn =~ /^\Q$_/ } @{ $skip->{directory} };
 
-            # XXX Read no_index and skip as appropriate.
             my $src = catfile $dir, $fn;
-            my $doc = $libxml->parse_html_string($markup->parse(file => $src), {
-                suppress_warnings => 1,
-                suppress_errors   => 1,
-                recover           => 2,
-            });
+            my $doc = $self->_parse_html_string($markup->parse(file => $src));
 
             (my $noext = $fn) =~ s{[.][^.]+$}{};
             # XXX Nasty hack until we get + operator in URI Template v4.
@@ -462,7 +481,7 @@ sub parse_docs {
             open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
             $doc = _clean_html_body($doc->findnodes('/html/body'));
             print $fh $doc->toString, "\n";
-            close $fh or die "Cannot close $fn: $!\n";
+            close $fh or die "Cannot close $dst: $!\n";
 
             $docs{$noext} = {
                 title => $title,
@@ -486,6 +505,15 @@ sub parse_docs {
         }
     }
     return \%docs;
+}
+
+sub _parse_html_string {
+    shift->libxml->parse_html_string(shift, {
+        suppress_warnings => 1,
+        suppress_errors   => 1,
+        recover           => 2,
+    });
+
 }
 
 sub mirror_file_for {
@@ -1020,6 +1048,15 @@ may include slashes.
 Copies a file from the mirror to the document root. The path argument must be
 specified using Unix semantics (that is, using slashes for directory
 separators). Used by L<PGXN::API::Sync> to sync metadata files and stats.
+
+=head3 C<parse_from_mirror>
+
+  $indexer->parse_from_mirror($path, $format);
+
+Uses Text::Markup to parse a file at C<$path> on the mirror, sanitizes it and
+generates a table of contents, and saves it to the document root with its
+suffix changed to F<.html>. Pass an optional C<format> argument to force
+Text::Markup to parse the document in that format.
 
 =head3 C<add_distribution>
 

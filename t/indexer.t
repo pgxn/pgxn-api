@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 203;
+use Test::More tests => 209;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -33,6 +33,7 @@ can_ok $CLASS => qw(
     indexer_for
     update_root_json
     copy_from_mirror
+    parse_from_mirror
     add_distribution
     copy_files
     merge_distmeta
@@ -84,7 +85,8 @@ is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
 
 # Make sure that PGXN::API is aware of them.
 is_deeply [sort keys %{ $api->uri_templates } ],
-    [qw(dist doc download extension meta mirrors readme search source spec stats tag user)],
+    [qw(dist doc download extension meta mirrors readme search source
+        spec stats tag user)],
     'PGXN::API should see the additional templates';
 
 # Do it again, just for good measure.
@@ -99,6 +101,20 @@ ok $indexer->copy_from_mirror('meta/spec.txt'), 'Copy spec.txt';
 file_exists_ok $spec, 'Doc root spec.txt should now exist';
 files_eq $spec, catfile($api->mirror_root, qw(meta spec.txt)),
     'And it should be a copy from the mirror';
+
+##############################################################################
+# Test parse_from_mirror().
+my $htmlspec = catfile $api->doc_root, qw(meta spec.html);
+file_not_exists_ok $htmlspec, 'Doc root spec.html should not exist';
+ok $indexer->parse_from_mirror('meta/spec.txt'), 'Parse spec.txt';
+file_exists_ok $htmlspec, 'Doc root spec.html should now exist';
+file_contents_like $htmlspec, qr{<pre>Name}, 'And it should look like HTML';
+
+# Try it with a format.
+ok $indexer->parse_from_mirror('meta/spec.txt', 'Multimarkdown'),
+    'Parse spec.txt as MultiMarkdown';
+file_contents_like $htmlspec, qr{<h1 id="Name">Name</h1>},
+    'And it should look like Multimarkdown-generated HTML';
 
 ##############################################################################
 # Let's index pair-0.1.0.
