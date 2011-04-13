@@ -46,11 +46,11 @@ sub app {
         };
 
         # Sever most stuff as plain files.
-        my $dirs = Plack::App::File->new(root => $root)->to_app;
+        my $files = Plack::App::File->new(root => $root)->to_app;
         mount '/' => sub {
             my $env = shift;
             $env->{PATH_INFO} = '/index.html' if $env->{PATH_INFO} eq '/';
-            $dirs->($env);
+            $files->($env);
         };
 
         # Handle searches.
@@ -85,15 +85,16 @@ sub app {
             }
 
             # Give 'em the results.
+            my $json = encode_json $searcher->search(
+                in     => $in,
+                query  => decode_utf8($q),
+                offset => scalar $req->param('o'),
+                limit  => scalar $req->param('l'),
+            );
             return [
                 200,
-                ['Content-Type' => 'text/json'],
-                [encode_json $searcher->search(
-                    in     => $in,
-                    query  => decode_utf8($q),
-                    offset => scalar $req->param('o'),
-                    limit  => scalar $req->param('l'),
-                )],
+                ['Content-Type' => 'text/json', 'Content-Length' => length $json ],
+                [$json],
             ]
         };
 
