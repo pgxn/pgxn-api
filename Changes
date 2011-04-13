@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.10.1
+0.11.0  2011-04-13T02:25:37
       - Fixed the search API to throw a 400 for invalid queries: Missing
         query, or a query with a value of "*" or "?".
       - Changed the search URI template from "/search" to "/search/{in}/", as
