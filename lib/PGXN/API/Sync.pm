@@ -88,6 +88,7 @@ sub update_index {
         }
     }
     close $fh or die "Cannot close $log: $!\n";
+    $indexer->finalize;
     say 'Sync complete' if $self->verbose;
     return $self;
 }

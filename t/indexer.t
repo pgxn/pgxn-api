@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 209;
+use Test::More tests => 220;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -40,6 +40,8 @@ can_ok $CLASS => qw(
     update_user
     update_tags
     update_extensions
+    finalize
+    update_user_lists
     parse_docs
     mirror_file_for
     doc_root_file_for
@@ -80,13 +82,14 @@ my $tmpl = $api->read_json_from(catfile qw(t root index.json));
 $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
 $tmpl->{doc} = "/dist/{dist}/{version}/{+doc}.html";
 $tmpl->{search} = '/search/{in}/';
+$tmpl->{userlist} = '/users/{char}.json';
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 
 # Make sure that PGXN::API is aware of them.
 is_deeply [sort keys %{ $api->uri_templates } ],
     [qw(dist doc download extension meta mirrors readme search source
-        spec stats tag user)],
+        spec stats tag user userlist)],
     'PGXN::API should see the additional templates';
 
 # Do it again, just for good measure.
@@ -872,3 +875,47 @@ like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
     'It should have the same excerpt';
 is $res->{hits}[0]{dist}, 'pair', 'It should still be in dist "pair"';
 is $res->{hits}[0]{version}, '0.1.1', 'It should now be in 0.1.1';
+
+##############################################################################
+# Test update_user_lists(). Add another user name.
+my $unames = $indexer->_user_names;
+$unames->{Tom} = 'Tom Lane';
+
+my $f = catfile($doc_root, 'users', 'f.json');
+my $t = catfile($doc_root, 'users', 't.json');
+file_not_exists_ok $f, 'f.json should not exist';
+file_not_exists_ok $t, 't.json should not exist';
+ok $indexer->update_user_lists, 'Update user lists';
+file_exists_ok $f, 'f.json should now exist';
+file_exists_ok $t, 't.json should now exist';
+my $tdata = $api->read_json_from($t);
+is_deeply $tdata, [
+    { user => 'theory', name => 'David E. Wheeler' },
+    { user => 'Tom',    name => 'Tom Lane' },
+], 't.json should have both users';
+my $fdata = $api->read_json_from($f);
+is_deeply $fdata, [
+    { user => 'fred', name => 'Fred Flintstone' },
+], 'f.json should have fred';
+
+# Update tom and David and add a new T name.
+delete $unames->{Tom};
+$unames->{tom} = 'Tom G. Lane';
+$unames->{tony} = 'Tony Vanilla';
+
+ok $indexer->update_user_lists, 'Update user lists again';
+$tdata = $api->read_json_from($t);
+is_deeply $tdata, [
+    { user => 'theory', name => 'David E. Wheeler' },
+    { user => 'tom',    name => 'Tom G. Lane' },
+    { user => 'tony',   name => 'Tony Vanilla' },
+], 't.json should have the updated user info';
+
+
+##############################################################################
+# Test finalize().
+@called = ();
+$mock->mock(update_user_lists => sub { push @called, 'update_user_lists' });
+ok $indexer->finalize, 'Call finalize()';
+is_deeply \@called, [qw(update_user_lists)],
+    'update_user_lists() should have been called';

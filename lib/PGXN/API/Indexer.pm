@@ -160,6 +160,7 @@ sub update_root_json {
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
     $tmpl->{search} = '/search/{in}/';
+    $tmpl->{userlist}  = '/users/{char}.json';
     ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
     $api->write_json_to($dst, $tmpl);
 
@@ -526,6 +527,43 @@ sub doc_root_file_for {
     my $self = shift;
     return catfile +PGXN::API->instance->doc_root,
         $self->_uri_for(@_)->path_segments;
+}
+
+sub finalize {
+    my $self = shift;
+    $self->update_user_lists;
+    return $self;
+}
+
+sub update_user_lists {
+    my $self  = shift;
+    my $api   = PGXN::API->instance;
+    my $names = $self->_user_names;
+    my %users_for;
+
+    while (my ($nick, $name) = each %{ $names }) {
+        my $char = lc substr $nick, 0, 1;
+        push @{ $users_for{$char} ||= [] } => { user => $nick, name => $name };
+    }
+
+
+    while (my ($char, $users) = each %users_for ) {
+        my $fn = $self->doc_root_file_for('userlist', undef, char => $char);
+        my $list = -e $fn ? $api->read_json_from($fn) : do {
+            make_path dirname $fn;
+            [];
+        };
+
+        # Load the users into a hash to eliminate dupes.
+        my %updated = map { lc $_->{user} => $_ } @{ $list }, @{ $users };
+
+        # Write them out in order by nickname.
+        $api->write_json_to($fn, [
+            map  { $updated{ $_ } }
+            sort { $a cmp $b } keys %updated
+        ]);
+    }
+    return $self;
 }
 
 sub _idx_distmeta {
@@ -1228,6 +1266,20 @@ the distribution metadata. A user metadata file thus ends up with a complete
 list of all distribution releases made by the user. The user is then added to
 the "user" full text index, where the name, nickname, email address, URI, and
 other metadata are indexed.
+
+=head3 C<finalize>
+
+  $indexer->finalize;
+
+Method to call when a sync completes. At the moment, all it does is call
+C<update_user_lists()>.
+
+=head3 C<update_user_lists>
+
+  $indexer->update_user_lists;
+
+Updates the user list files for any users seen in the distribution metadata
+processed by C<merge_distmeta()>.
 
 =head3 C<doc_root_file_for>
 

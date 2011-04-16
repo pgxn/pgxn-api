@@ -208,9 +208,10 @@ my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
 my @dists;
 $idx_mock->mock(add_distribution => sub { push @dists => $_[1] });
 my @paths;
-my $called;
+my @meths;
 my @parsed;
-$idx_mock->mock(update_root_json => sub { $called = 1 });
+$idx_mock->mock(update_root_json => sub { push @meths => 'update_root_json' });
+$idx_mock->mock(finalize => sub { push @meths => 'finalize' });
 $idx_mock->mock(copy_from_mirror => sub { push @paths => $_[1] });
 $idx_mock->mock(parse_from_mirror => sub { shift; push @parsed => \@_ });
 $idx_mock->mock(update_mirror_meta => sub {
@@ -219,7 +220,8 @@ $idx_mock->mock(update_mirror_meta => sub {
 });
 
 ok $sync->update_index, 'Update the index';
-ok $called, 'The root index.json should have been updated';
+is_deeply \@meths, [qw(update_root_json finalize)],
+    'The root index.json should have been updated and the update finalized';
 is_deeply \@found, [qw(
     dist/pair/0.1.0/META.json
     dist/pair/0.1.1/META.json
