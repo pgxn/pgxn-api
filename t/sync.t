@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 57;
+use Test::More tests => 58;
 #use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
@@ -207,13 +207,12 @@ $api_mock->mock(uri_templates => sub {
 my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
 my @dists;
 $idx_mock->mock(add_distribution => sub { push @dists => $_[1] });
-my @paths;
-my @meths;
-my @parsed;
+my (@paths, @meths, @parsed, @users);
 $idx_mock->mock(update_root_json => sub { push @meths => 'update_root_json' });
 $idx_mock->mock(finalize => sub { push @meths => 'finalize' });
 $idx_mock->mock(copy_from_mirror => sub { push @paths => $_[1] });
 $idx_mock->mock(parse_from_mirror => sub { shift; push @parsed => \@_ });
+$idx_mock->mock(merge_user => sub { push @users => $_[1] });
 $idx_mock->mock(update_mirror_meta => sub {
     $api_mock->unmock_all;
     pass 'Should update mirror meta';
@@ -241,6 +240,11 @@ is_deeply \@paths, [qw(
 )], 'And it should have found and copied mirrors, spec, and stats';
 is_deeply \@parsed, [['meta/spec.txt', 'Multimarkdown']],
     'And it should have parsed spec.txt';
+is_deeply \@users, [qw(
+    daamien
+    theory
+    umitanuki
+)], 'And it should have merged all user.json files';
 
 ##############################################################################
 # digest_for()

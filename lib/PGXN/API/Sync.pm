@@ -68,6 +68,7 @@ sub update_index {
     my $mirr_re = $self->regex_for_uri_template('mirrors');
     my $spec_re = $self->regex_for_uri_template('spec');
     my $stat_re = $self->regex_for_uri_template('stats');
+    my $user_re = $self->regex_for_uri_template('user');
     my $log     = $self->log_file;
 
     say 'Parsing the rsync log file' if $self->verbose > 1;
@@ -85,6 +86,8 @@ sub update_index {
             $indexer->parse_from_mirror($path, 'Multimarkdown');
         } elsif ($line =~ /\s>f[+]+\sindex[.]json$/) {
             $indexer->update_root_json;
+        } elsif ($line =~ $user_re) {
+            $indexer->merge_user($2);
         }
     }
     close $fh or die "Cannot close $log: $!\n";
@@ -104,7 +107,7 @@ sub regex_for_uri_template {
     my %regex_for = (
         '{dist}'      => qr{[^/]+?},
         '{version}'   => qr{(?:0|[1-9][0-9]*)(?:[.][0-9]+){2,}(?:[a-zA-Z][-0-9A-Za-z]*)?},
-        '{user}'      => qr{[a-z]([-a-z0-9]{0,61}[a-z0-9])?}i,
+        '{user}'      => qr{([a-z]([-a-z0-9]{0,61}[a-z0-9])?)}i,
         '{extension}' => qr{[^/]+?},
         '{tag}'       => qr{[^/]+?},
         '{stats}'     => qr{(?:dist|tag|user|extension|summary)},

@@ -304,31 +304,32 @@ sub merge_distmeta {
     return $self;
 }
 
+sub merge_user {
+    my ($self, $nick) = @_;
+    return $self if $self->_user_names->{$nick};
+
+    say "  Merging user $nick" if $self->verbose;
+    my $api      = PGXN::API->instance;
+    my $mir_file = $self->mirror_file_for('user', undef, user => $nick);
+    my $mir_data = $api->read_json_from($mir_file);
+    my $doc_file = $self->doc_root_file_for('user', undef, user => $nick);
+    my $doc_data = -e $doc_file ? $api->read_json_from($doc_file) : {};
+
+    # Merge in the releases and rewrite.
+    $mir_data->{releases} = $doc_data->{releases} || {};
+    $api->write_json_to($doc_file, $mir_data);
+
+    # Update the full name lookup & the search index and return.
+    $self->_user_names->{$nick} = $mir_data->{name};
+    $self->_index_user($mir_data);
+    return $self;
+}
+
 sub update_user {
     my ($self, $p) = @_;
     say "  Updating user $p->{meta}{user}" if $self->verbose;
     my $user = $self->_update_releases(user => $p->{meta});
-
-    if ($p->{meta}->{release_status} eq 'stable') {
-        my $data = {
-            key      => $user->{nickname},
-            user     => $user->{nickname},
-            name     => $user->{name},
-            email    => $user->{email},
-            uri      => $user->{uri},
-        };
-
-        # Gather up any other details.
-        $data->{details} = join(
-            "\n",
-            grep { $_ }
-             map { $user->{$_} }
-            sort grep { !$data->{$_} && !ref $user->{$_} && $_ ne 'nickname' }
-            keys %{ $user }
-        );
-        $self->_index(users => $data);
-    }
-
+    $self->_index_user($user) if $p->{meta}->{release_status} eq 'stable';
     return $self;
 }
 
@@ -532,6 +533,7 @@ sub doc_root_file_for {
 sub finalize {
     my $self = shift;
     $self->update_user_lists;
+    $self->_commit;
     return $self;
 }
 
@@ -541,6 +543,7 @@ sub update_user_lists {
     my $names = $self->_user_names;
     my %users_for;
 
+    say "Updating user lists" if $self->verbose;
     while (my ($nick, $name) = each %{ $names }) {
         my $char = lc substr $nick, 0, 1;
         push @{ $users_for{$char} ||= [] } => { user => $nick, name => $name };
@@ -548,6 +551,7 @@ sub update_user_lists {
 
 
     while (my ($char, $users) = each %users_for ) {
+        say "  Updating $char.json" if $self->verbose > 1;
         my $fn = $self->doc_root_file_for('userlist', undef, char => $char);
         my $list = -e $fn ? $api->read_json_from($fn) : do {
             make_path dirname $fn;
@@ -626,6 +630,27 @@ sub _update_releases {
     # Write out the data to the doc root.
     $api->write_json_to($doc_file => $doc_meta);
     return $doc_meta;
+}
+
+sub _index_user {
+    my ($self, $user) = @_;
+    my $data = {
+        key      => $user->{nickname},
+        user     => $user->{nickname},
+        name     => $user->{name},
+        email    => $user->{email},
+        uri      => $user->{uri},
+    };
+
+    # Gather up any other details.
+    $data->{details} = join(
+        "\n",
+        grep { $_ }
+        map { $user->{$_} }
+        sort grep { !$data->{$_} && !ref $user->{$_} && $_ ne 'nickname' }
+        keys %{ $user }
+    );
+    $self->_index(users => $data);
 }
 
 sub _index {
@@ -1267,12 +1292,22 @@ list of all distribution releases made by the user. The user is then added to
 the "user" full text index, where the name, nickname, email address, URI, and
 other metadata are indexed.
 
+=head3 C<merge_user>
+
+  $indexer->merge_user($nickname);
+
+Pass in the nickname of a user file and JSON file for that user on the mirror
+will be merged with the document index copy. If no document index copy exists,
+one will be created with an empty hash under the C<releases> key. Called by
+L<PGXN::API::Sync> for each user file seen during the sync.
+
 =head3 C<finalize>
 
   $indexer->finalize;
 
 Method to call when a sync completes. At the moment, all it does is call
-C<update_user_lists()>.
+C<update_user_lists()> and commit any remaining index data to the full text
+index.
 
 =head3 C<update_user_lists>
 

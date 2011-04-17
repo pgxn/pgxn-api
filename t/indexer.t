@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 220;
+use Test::More tests => 232;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -38,6 +38,7 @@ can_ok $CLASS => qw(
     copy_files
     merge_distmeta
     update_user
+    merge_user
     update_tags
     update_extensions
     finalize
@@ -49,6 +50,7 @@ can_ok $CLASS => qw(
     _get_user_name
     _strip_html
     _update_releases
+    _index_user
     _index
     _rollback
     _commit
@@ -911,11 +913,88 @@ is_deeply $tdata, [
     { user => 'tony',   name => 'Tony Vanilla' },
 ], 't.json should have the updated user info';
 
+##############################################################################
+# Now test user merging.
+my $fred = catfile $doc_root, qw(user fred.json);
+file_not_exists_ok $fred, 'fred.json should not exist';
+
+# Should ignore user in user_names.
+ok $indexer->merge_user('fred'), 'Merge fred.json';
+file_not_exists_ok $fred, 'fred.json still should not exist';
+
+# Remove and update again.
+delete $indexer->_user_names->{fred};
+ok $indexer->merge_user('fred'), 'Merge fred.json';
+file_exists_ok $fred, 'fred.json should now exist';
+is $indexer->_user_names->{fred}, 'Fred Flintstone',
+    'And Fred should be back in the user name lookup';
+is_deeply $api->read_json_from($fred), {
+    email    => 'fred@flintstone.com',
+    name     => 'Fred Flintstone',
+    nickname => 'fred',
+    releases => {},
+    twitter  => 'fred',
+    uri      => "http://fred.flintstone.com/"
+}, 'And it should have all the necessary data';
+
+is_deeply shift @{ $indexer->to_index->{users} }, {
+    details  => 'fred',
+    name     => 'Fred Flintstone',
+    uri      => 'http://fred.flintstone.com/',
+    email    => 'fred@flintstone.com',
+    key      => 'fred',
+    user     => 'fred',
+}, 'Should have index data for Fred';
+
+# Update theory on the mirror.
+my $theory = catfile $api->mirror_root, qw(user theory.json);
+my $data   = $api->read_json_from($theory);
+$data->{name} = 'David Wheeler';
+$data->{uri} = 'http://www.justatheory.com/';
+$api->write_json_to($theory, $data);
+
+# Now merge theory.
+delete $indexer->_user_names->{theory};
+ok $indexer->merge_user('theory'), 'Merge theory.json';
+is $indexer->_user_names->{theory}, 'David Wheeler',
+    'And Theory should be back in the user name lookup';
+is_deeply $api->read_json_from(catfile $doc_root, qw(user theory.json)), {
+    email    => 'david@justatheory.com',
+    name     => 'David Wheeler',
+    nickname => 'theory',
+    releases => {
+        pair   => {
+            abstract => "A key/value pair d\xE5t\xE5 type",
+            stable   => [
+                { date => "2010-11-03T06:23:28Z", version => "0.1.2" },
+                { date => "2010-10-19T03:59:54Z", version => "0.1.0" },
+            ],
+            testing  => [{ date => "2010-10-29T22:44:42Z", version => "0.1.1" }],
+        },
+        pgTAP  => {
+            stable => [{ date => "2011-02-02T03:25:17Z", version => "0.25.0" }],
+        },
+        semver => {
+            stable => [{ date => "2011-02-05T19:31:38Z", version => "0.2.0" }],
+        },
+    },
+    uri      => "http://www.justatheory.com/"
+}, 'And it should have the updated data';
+
+is_deeply shift @{ $indexer->to_index->{users} }, {
+    details  => '',
+    email    => 'david@justatheory.com',
+    key      => 'theory',
+    name     => 'David Wheeler',
+    uri      => 'http://www.justatheory.com/',
+    user     => 'theory',
+}, 'Should have updated index data for Theory';
 
 ##############################################################################
 # Test finalize().
 @called = ();
 $mock->mock(update_user_lists => sub { push @called, 'update_user_lists' });
+$mock->mock(_commit => sub { push @called, '_commit' });
 ok $indexer->finalize, 'Call finalize()';
-is_deeply \@called, [qw(update_user_lists)],
-    'update_user_lists() should have been called';
+is_deeply \@called, [qw(update_user_lists _commit)],
+    'update_user_lists() and commit() should have been called';

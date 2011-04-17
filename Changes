@@ -5,6 +5,12 @@ Revision history for Perl extension PGXN::API
         `Content-Length` header.
       - Added the `userlist` URI template and the code to generate the user
         lists to Indexer. It's set off at the end of a sync.
+      - Now update user JSON files whenever they're updated on the mirror.
+        Previously, a user JSON file was only updated when the user released a
+        distribtion. But now user JSON files can be updated independently, and
+        for users with no distributions at all. So we notice updated user JSON
+        files and properly merge them into the doc root and update them in the
+        full text index.
 
 0.11.0  2011-04-13T02:25:37
       - Fixed the search API to throw a 400 for invalid queries: Missing
