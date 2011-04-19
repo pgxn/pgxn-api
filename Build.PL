@@ -37,6 +37,7 @@ $class->new(
         'JSON::XS'                     => '2.3',
         'KinoSearch'                   => '0.311',
         'List::Util'                   => '1.23',
+        'List::MoreUtils'              => '0.30',
         'Moose'                        => '1.15',
         'Moose::Util::TypeConstraints' => '1.15',
         'MooseX::Singleton'            => '0.25',

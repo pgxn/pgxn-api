@@ -11,6 +11,7 @@ use File::Basename;
 use Text::Markup;
 use XML::LibXML;
 use List::Util qw(first);
+use List::MoreUtils qw(uniq);
 use KinoSearch::Plan::Schema;
 use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Analysis::Tokenizer;
@@ -245,7 +246,9 @@ sub merge_distmeta {
     $meta->{docs}          = $self->parse_docs($p);
 
     # Add doc paths to provided extensions where possible.
+    my $dir = $self->doc_root_file_for(source => $meta);
     while (my ($ext, $data) = each %{ $meta->{provides} }) {
+        delete $data->{doc} if $data->{doc} && !-e catfile $dir, $data->{doc};
         $data->{doc} = first {
             my ($basename) = m{([^/]+)$};
             $basename eq $ext;
@@ -430,81 +433,91 @@ sub update_extensions {
     return $self;
 }
 
+sub find_docs {
+    my ($self, $p) = @_;
+    my $meta   = $p->{meta};
+    my $dir    = $self->doc_root_file_for(source => $meta);
+    my $prefix = quotemeta "$meta->{name}-$meta->{version}";
+    my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
+    my $markup = Text::Markup->new;
+    my @files  = grep { $_ && -e catfile $dir, $_ } map { $_->{doc} }
+        values %{ $meta->{provides} };
+
+    for my $member ($p->{zip}->members) {
+        next if $member->isDirectory;
+
+        # Skip files that should not be indexed.
+        (my $fn = $member->fileName) =~ s{^$prefix/}{};
+        next if first { $fn eq $_ } @{ $skip->{file} };
+        next if first { $fn =~ /^\Q$_/ } @{ $skip->{directory} };
+        push @files => $fn if $markup->guess_format($fn)
+            || $fn =~ /^README(?:[.][^.]+)?$/i;
+    }
+    return uniq @files;
+}
+
 sub parse_docs {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    my $zip  = $p->{zip};
     say "  Parsing $meta->{name}-$meta->{version} docs" if $self->verbose;
 
     my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
-    my $prefix = quotemeta "$meta->{name}-$meta->{version}";
-    my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
 
     # Find all doc files and write them out.
-    my %docs;
-    for my $regex (
-        qr{README(?:[.][^.]+)?$}i,
-        qr{docs?/},
-    ) {
-        for my $member ($zip->membersMatching(qr{^$prefix/$regex})) {
-            next if $member->isDirectory;
+    my (%docs, %seen);
+    for my $fn ($self->find_docs($p)) {
+        next if $seen{$fn}++;
+        my $src = catfile $dir, $fn;
+        next unless -e $src;
+        my $doc = $self->_parse_html_string($markup->parse(file => $src));
 
-            # Skip files that should not be indexed.
-            (my $fn = $member->fileName) =~ s{^$prefix/}{};
-            next if first { $fn eq $_ } @{ $skip->{file} };
-            next if first { $fn =~ /^\Q$_/ } @{ $skip->{directory} };
+        (my $noext = $fn) =~ s{[.][^.]+$}{};
+        # XXX Nasty hack until we get + operator in URI Template v4.
+        local $URI::Escape::escapes{'/'} = '/';
+        my $dst  = $self->doc_root_file_for(
+            doc    => $meta,
+            doc    => $noext,
+            '+doc' => $noext, # XXX Part of above-mentioned hack.
+        );
+        make_path dirname $dst;
 
-            my $src = catfile $dir, $fn;
-            my $doc = $self->_parse_html_string($markup->parse(file => $src));
+        # Determine the title before we mangle the HTML.
+        (my $file = $noext) =~ s{^doc/}{};
+        my $title = $doc->findvalue('/html/head/title')
+                 || $doc->findvalue('//h1[1]')
+                 || $file;
 
-            (my $noext = $fn) =~ s{[.][^.]+$}{};
-            # XXX Nasty hack until we get + operator in URI Template v4.
-            local $URI::Escape::escapes{'/'} = '/';
-            my $dst  = $self->doc_root_file_for(
-                doc    => $meta,
-                doc    => $noext,
-                '+doc' => $noext, # XXX Part of above-mentioned hack.
-            );
-            make_path dirname $dst;
+        # Grab abstract if this looks like extension documentation.
+        my $abstract = $meta->{provides}{$file}
+            ? $meta->{provides}{$file}{abstract}
+            : undef;
 
-            # Determine the title before we mangle the HTML.
-            (my $file = $noext) =~ s{^doc/}{};
-            my $title = $doc->findvalue('/html/head/title')
-                     || $doc->findvalue('//h1[1]')
-                     || $file;
+        # Clean up the HTML and write it out.
+        open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
+        $doc = _clean_html_body($doc->findnodes('/html/body'));
+        print $fh $doc->toString, "\n";
+        close $fh or die "Cannot close $dst: $!\n";
 
-            # Grab abstract if this looks like extension documentation.
-            my $abstract = $meta->{provides}{$file}
-                ? $meta->{provides}{$file}{abstract}
-                : undef;
+        $docs{$noext} = {
+            title => $title,
+            ($abstract) ? (abstract => $abstract) : ()
+        };
 
-            # Clean up the HTML and write it out.
-            open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
-            $doc = _clean_html_body($doc->findnodes('/html/body'));
-            print $fh $doc->toString, "\n";
-            close $fh or die "Cannot close $dst: $!\n";
-
-            $docs{$noext} = {
-                title => $title,
-                ($abstract) ? (abstract => $abstract) : ()
-            };
-
-            # Add it to the search index.
-            $self->_index(docs => {
-                key       => "$meta->{name}/$noext",
-                doc      => $noext,
-                title     => $title,
-                abstract  => $abstract,
-                body      => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),
-                dist      => $meta->{name},
-                version   => $meta->{version},
-                date      => $meta->{date},
-                user_name => $self->_get_user_name($meta),
-                user      => $meta->{user},
-            }) if $meta->{release_status} eq 'stable'
-               && $member->fileName !~ qr{^$prefix/(?i:README(?:[.][^.]+)?)$};
-        }
+        # Add it to the search index.
+        $self->_index(docs => {
+            key       => "$meta->{name}/$noext",
+            doc      => $noext,
+            title     => $title,
+            abstract  => $abstract,
+            body      => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),
+            dist      => $meta->{name},
+            version   => $meta->{version},
+            date      => $meta->{date},
+            user_name => $self->_get_user_name($meta),
+            user      => $meta->{user},
+        }) if $meta->{release_status} eq 'stable'
+            && $fn !~ qr{^(?i:README(?:[.][^.]+)?)$};
     }
     return \%docs;
 }
@@ -1210,6 +1223,32 @@ C<parse_docs()>, which of course also parses any docs it finds.
 And finally, this method updates all other "dist" files for previous versions
 of the distribution with the latest C<releases> information, so that they all
 have a complete list of all releases of the distribution.
+
+=head3 C<find_docs>
+
+  my @docs = $indexer->find_docs($params);
+
+Finds all the likely documentation files in the zip archive. A file is
+considered to contain documentation if one of the following is true:
+
+=over
+
+=item *
+
+It is identified under the C<doc> key in the C<provides> hash of the metadata
+and exists in the zip archive.
+
+=item *
+
+It has an extension recognized by L<Text::Markup> and is not excluded by the
+C<no_index> key in the metadata.
+
+=back
+
+The list of files returned are relative to an unzipped archive root -- that
+is, they do not include the top-level directory prefix.
+
+Used internally by C<parse_docs()> to determine what files to parse.
 
 =head3 C<parse_docs>
 

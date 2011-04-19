@@ -298,7 +298,7 @@ ok my $doc_data = $api->read_json_from($user_file),
 $mir_data->{releases}{pair}{abstract} = 'A key/value pair data type';
 
 is_deeply $doc_data, $mir_data,
-    'The doc root data should have the the metadata for this release';
+    'The doc root data should have the metadata for this release';
 
 # Great, now update it.
 fcopy catfile(qw(t data theory-updated.json)),
@@ -319,7 +319,7 @@ $mir_data->{releases}{pair}{abstract} = 'A key/value pair dåtå type';
 ok $doc_data = $api->read_json_from($user_file),
     'Read the doc root user data file again';
 is_deeply $doc_data, $mir_data,
-    'The doc root data should have the the metadata for 0.1.1';
+    'The doc root data should have the metadata for 0.1.1';
 
 # Now do another stable release.
 fcopy catfile(qw(t data theory-updated2.json)),
@@ -328,6 +328,9 @@ my $meta_012 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair 0.1.2 META.json)
 );
 $params->{meta} = $meta_012;
+my $zip_012 = Archive::Zip->new;
+$zip_012->read(rel2abs catfile qw(t root dist pair 0.1.2 pair-0.1.2.pgz));
+$params->{zip} = $zip_012;
 ok $indexer->merge_distmeta($params), 'Merge the 0.1.2 distmeta';
 ok $indexer->update_user($params),
     'Update the user metadata for pair 0.1.2';
@@ -336,7 +339,13 @@ unshift @{ $mir_data->{releases}{pair}{stable} },
 ok $doc_data = $api->read_json_from($user_file),
     'Read the doc root user data file once more';
 is_deeply $doc_data, $mir_data,
-    'The doc root data should have the the metadata for 0.1.2';
+    'The doc root data should have the metadata for 0.1.2';
+
+my $readme_012 = $zip_012->memberNamed('pair-0.1.2/README.md')->contents;
+utf8::decode $readme_012;
+$readme_012 =~ s/^\s+//;
+$readme_012 =~ s/\s+$//;
+$readme_012 =~ s/[\t\n\r]+|\s{2,}/ /gms;
 
 is_deeply shift @{ $indexer->to_index->{dists} }, {
     abstract    => 'A key/value pair dåtå type',
@@ -345,7 +354,7 @@ is_deeply shift @{ $indexer->to_index->{dists} }, {
     dist        => 'pair',
     key         => 'pair',
     user        => 'theory',
-    readme      => '',
+    readme      => $readme_012,
     tags        => "ordered pair\003pair\003key value",
     user_name   => 'David E. Wheeler',
     version     => "0.1.2",
