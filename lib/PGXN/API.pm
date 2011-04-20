@@ -1,4 +1,4 @@
-package PGXN::API v0.12.0;
+package PGXN::API v0.12.1;
 
 use 5.12.0;
 use utf8;
