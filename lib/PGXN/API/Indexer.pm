@@ -481,14 +481,14 @@ sub parse_docs {
         make_path dirname $dst;
 
         # Determine the title before we mangle the HTML.
-        (my $file = $noext) =~ s{^doc/}{}; # XXX Remove.
+        my $basename = basename $noext;
         my $title = $doc->findvalue('/html/head/title')
                  || $doc->findvalue('//h1[1]')
-                 || $file;
+                 || $basename;
 
         # Grab abstract if this looks like extension documentation.
-        my $abstract = $meta->{provides}{$file}
-            ? $meta->{provides}{$file}{abstract}
+        my $abstract = $meta->{provides}{$basename}
+            ? $meta->{provides}{$basename}{abstract}
             : undef;
 
         # Clean up the HTML and write it out.
