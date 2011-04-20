@@ -18,12 +18,12 @@
 2011/03/01 15:55:18 [49406] >f+++++++ user/umitanuki.json
 2011/03/01 15:55:18 [49406] cd+++++++ tag/
 2011/03/01 15:55:18 [49406] >f+++++++ tag/data types.json
-2011/03/01 15:55:18 [49406] >f+++++++ tag/france.json
-2011/03/01 15:55:18 [49406] >f+++++++ tag/key value pair.json
-2011/03/01 15:55:18 [49406] >f+++++++ tag/key value.json
-2011/03/01 15:55:18 [49406] >f+++++++ tag/ordered pair.json
-2011/03/01 15:55:18 [49406] >f+++++++ tag/pair.json
-2011/03/01 15:55:18 [49406] >f+++++++ tag/variadic function.json
+2011/03/01 15:55:18 [49406] >fcst.... tag/france.json
+2011/03/01 15:55:18 [49406] >f.st.... tag/key value pair.json
+2011/03/01 15:55:18 [49406] >f..t.... tag/key value.json
+2011/03/01 15:55:18 [49406] >f.s..... tag/ordered pair.json
+2011/03/01 15:55:18 [49406] >fc...... tag/pair.json
+2011/03/01 15:55:18 [49406] >fcs..... tag/variadic function.json
 2011/03/01 15:55:18 [49406] cd+++++++ dist/
 2011/03/01 15:55:19 [49406] cd+++++++ dist/pair/
 2011/03/01 15:55:19 [49406] cd+++++++ dist/pair/0.1.0/

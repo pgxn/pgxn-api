@@ -121,9 +121,18 @@ sub regex_for_uri_template {
         split /(\{.+?\})/
     } catfile grep { defined && length } $uri->path_segments;
 
-    # Return the regex to match new files in rsync output lines.
-    return qr{\s>f[+]+\s($regex)$};
+    # Return the regex to match new or updated in rsync output lines.
+    return qr{\s>f(?:[+]+|(?:c|.s|..t)[^ ]+)\s($regex)$};
+
+    # The rsync %i output format:
+    # YXcstpogz    # Snow Leopard
+    # YXcstpoguax  # Debian
+    # c: checkum has changed, file will be updated
+    # s: file size has changed, file will be updated
+    # t: modtime has changed, file will be updated
+    # +++++++: New item
 }
+
 
 sub validate_distribution {
     my ($self, $fn) = shift->_rel_to_mirror(@_);

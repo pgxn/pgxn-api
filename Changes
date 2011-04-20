@@ -1,5 +1,9 @@
 Revision history for Perl extension PGXN::API
 
+0.12.1
+      - Fixed rsync log parsing to properly detect when a file has been
+        changed. Previously, the code was only noticing new files.
+
 0.12.0  2011-04-20T05:35:52
       - Requests should now all be returned with an appropriate
         `Content-Length` header.
