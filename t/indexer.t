@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 232;
-use Test::More 'no_plan';
+use Test::More tests => 239;
+#use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
@@ -81,16 +81,16 @@ file_exists_ok catfile($doc_root, qw(index.json)), 'index.json should now exist'
 
 # Make sure it has all the templates we need.
 my $tmpl = $api->read_json_from(catfile qw(t root index.json));
-$tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-$tmpl->{doc} = "/dist/{dist}/{version}/{+doc}.html";
-$tmpl->{search} = '/search/{in}/';
+$tmpl->{source}   = "/src/{dist}/{dist}-{version}/";
+$tmpl->{htmldoc}  = "/dist/{dist}/{version}/{+docpath}.html";
+$tmpl->{search}   = '/search/{in}/';
 $tmpl->{userlist} = '/users/{char}.json';
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 
 # Make sure that PGXN::API is aware of them.
 is_deeply [sort keys %{ $api->uri_templates } ],
-    [qw(dist doc download extension meta mirrors readme search source
+    [qw(dist download extension htmldoc meta mirrors readme search source
         spec stats tag user userlist)],
     'PGXN::API should see the additional templates';
 
@@ -211,7 +211,7 @@ is_deeply $meta->{releases},
 is_deeply $meta->{special_files}, [qw(README.md META.json Makefile)],
     'And it should have special files';
 is_deeply $meta->{docs}, $docs, 'Should have docs from parse_docs';
-is $meta->{provides}{pair}{doc}, 'docs/pair',
+is $meta->{provides}{pair}{docpath}, 'docs/pair',
     'Should have extension doc path in provides';
 
 # So have a look at the contents.
@@ -522,7 +522,7 @@ is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract  => 'A key/value pair data type',
     date      => '2010-10-18T15:24:21Z',
     dist      => 'pair',
-    doc       => 'docs/pair',
+    docpath   => 'docs/pair',
     extension => 'pair',
     key       => 'pair',
     user      => 'theory',
@@ -536,9 +536,9 @@ $exp = {
     latest    => 'stable',
     stable    => {
         abstract => 'A key/value pair data type',
-        doc      => 'docs/pair',
+        docpath  => 'docs/pair',
         dist     => 'pair',
-        version => '0.1.0',
+        version  => '0.1.0',
         sha1     => '1234567890abcdef1234567890abcdef12345678',
     },
     versions  => {
@@ -569,15 +569,15 @@ is_deeply $indexer->to_index, {
 $exp->{latest} = 'testing';
 $exp->{testing} = {
     abstract => 'A key/value pair dåtå type',
-    doc      => 'docs/pair',
+    docpath  => 'docs/pair',
     dist     => 'pair',
     version  => '0.1.1',
     sha1     => 'c552c961400253e852250c5d2f3def183c81adb3',
 };
 $exp->{versions}{'0.1.1'} = [{
-    dist         => 'pair',
-    date => '2010-10-29T22:46:45Z',
-    version      => '0.1.1',
+    dist    => 'pair',
+    date    => '2010-10-29T22:46:45Z',
+    version => '0.1.1',
 }];
 
 ok $doc_data = $api->read_json_from($ext_file),
@@ -599,7 +599,7 @@ is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-10-29T22:46:45Z',
     dist        => 'otherdist',
-    doc       => 'docs/pair',
+    docpath     => 'docs/pair',
     extension   => 'pair',
     key         => 'pair',
     user        => 'theory',
@@ -616,7 +616,7 @@ unshift @{ $exp->{versions}{'0.1.1'} } => {
 };
 $exp->{stable} = {
     abstract => 'A key/value pair dåtå type',
-    doc      => 'docs/pair',
+    docpath  => 'docs/pair',
     dist     => 'pair',
     sha1     => 'cebefd23151b4b797239646f7ae045b03d028fcf',
     version  => '0.1.2',
@@ -635,7 +635,7 @@ is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract  => 'A key/value pair dåtå type',
     date      => '2010-11-10T12:18:03Z',
     dist      => 'pair',
-    doc       => '',
+    docpath   => '',
     extension => 'pair',
     key       => 'pair',
     user      => 'theory',
@@ -643,7 +643,7 @@ is_deeply shift @{ $indexer->to_index->{extensions} }, {
     version   => '0.1.2',
 }, 'Should have extension index data again';
 
-delete $exp->{stable}{doc};
+delete $exp->{stable}{docpath};
 $exp->{latest} = 'stable';
 $exp->{stable}{version} = '0.1.2';
 $exp->{stable}{abstract} = 'A key/value pair dåtå type';
@@ -698,7 +698,7 @@ is_deeply shift @{ $indexer->to_index->{docs} }, {
     dist      => 'pair',
     key       => 'pair/doc/pair',
     user      => 'theory',
-    doc       => 'doc/pair',
+    docpath   => 'doc/pair',
     title     => 'pair 0.1.0',
     user_name => 'David E. Wheeler',
     version   => '0.1.0',
@@ -1010,7 +1010,7 @@ is_deeply \@called, [qw(update_user_lists _commit)],
 
 ##############################################################################
 # Test find_docs().
-$params->{meta}{provides}{pair}{doc} = 'sql/pair.sql';
+$params->{meta}{provides}{pair}{docfile} = 'sql/pair.sql';
 is_deeply [ $indexer->find_docs($params)], [qw(
     sql/pair.sql
     doc/pair.md
@@ -1044,13 +1044,13 @@ is_deeply [ $indexer->find_docs($params)], [qw(
 )], 'find_docs() should respect no_index directory for found docs';
 
 delete $params->{meta}{no_index};
-$params->{meta}{provides}{pair}{doc} = 'foo/bar.txt';
+$params->{meta}{provides}{pair}{docfile} = 'foo/bar.txt';
 is_deeply [ $indexer->find_docs($params)], [qw(
     doc/pair.md
     README.md
 )], 'find_docs() should ignore non-existent specified file';
 
-$params->{meta}{provides}{pair}{doc} = 'doc/pair.md';
+$params->{meta}{provides}{pair}{docfile} = 'doc/pair.md';
 is_deeply [ $indexer->find_docs($params)], [qw(
     doc/pair.md
     README.md

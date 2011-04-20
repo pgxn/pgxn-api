@@ -91,7 +91,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ body        => $ftih    ],
             [ dist        => $fti     ],
             [ version     => $stored  ],
-            [ doc         => $stored  ],
+            [ docpath     => $stored  ],
             [ date        => $stored  ],
             [ user        => $stored  ],
             [ user_name   => $stored  ],
@@ -112,7 +112,7 @@ has schemas => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
             [ key         => $indexed ],
             [ extension   => $fti     ],
             [ abstract    => $ftih    ],
-            [ doc         => $stored  ],
+            [ docpath     => $stored  ],
             [ dist        => $stored  ],
             [ version     => $stored  ],
             [ date        => $stored  ],
@@ -159,10 +159,10 @@ sub update_root_json {
     my $src = catfile $api->mirror_root, 'index.json';
     my $dst = catfile $api->doc_root, 'index.json';
     my $tmpl = $api->read_json_from($src);
-    $tmpl->{source} = "/src/{dist}/{dist}-{version}/";
-    $tmpl->{search} = '/search/{in}/';
+    $tmpl->{source}    = "/src/{dist}/{dist}-{version}/";
+    $tmpl->{search}    = '/search/{in}/';
     $tmpl->{userlist}  = '/users/{char}.json';
-    ($tmpl->{doc}   = $tmpl->{meta}) =~ s{/META[.]json$}{/{+doc}.html};
+    ($tmpl->{htmldoc}  = $tmpl->{meta}) =~ s{/META[.]json$}{/{+docpath}.html};
     $api->write_json_to($dst, $tmpl);
 
     return $self;
@@ -246,10 +246,8 @@ sub merge_distmeta {
     $meta->{docs}          = $self->parse_docs($p);
 
     # Add doc paths to provided extensions where possible.
-    my $dir = $self->doc_root_file_for(source => $meta);
     while (my ($ext, $data) = each %{ $meta->{provides} }) {
-        delete $data->{doc} if $data->{doc} && !-e catfile $dir, $data->{doc};
-        $data->{doc} = first {
+        $data->{docpath} = first {
             my ($basename) = m{([^/]+)$};
             $basename eq $ext;
         } keys %{ $meta->{docs} };
@@ -380,7 +378,7 @@ sub update_extensions {
         # Add the abstract and doc path to the mirror data.
         my $status = $meta->{release_status};
         $mir_meta->{$status}{abstract} = $data->{abstract};
-        $mir_meta->{$status}{doc} = $data->{doc} if $data->{doc};
+        $mir_meta->{$status}{docpath} = $data->{docpath} if $data->{docpath};
 
         # Copy the other release status data from the doc data.
         $mir_meta->{$_} = $doc_meta->{$_} for grep {
@@ -421,7 +419,7 @@ sub update_extensions {
             key         => $mir_meta->{extension},
             extension   => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
-            doc         => $data->{doc} || '',
+            docpath     => $data->{docpath} || '',
             dist        => $meta->{name},
             version     => $mir_meta->{stable}{version},
             date        => $meta->{date},
@@ -440,7 +438,7 @@ sub find_docs {
     my $prefix = quotemeta "$meta->{name}-$meta->{version}";
     my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
     my $markup = Text::Markup->new;
-    my @files  = grep { $_ && -e catfile $dir, $_ } map { $_->{doc} }
+    my @files  = grep { $_ && -e catfile $dir, $_ } map { $_->{docfile} }
         values %{ $meta->{provides} };
 
     for my $member ($p->{zip}->members) {
@@ -476,14 +474,14 @@ sub parse_docs {
         # XXX Nasty hack until we get + operator in URI Template v4.
         local $URI::Escape::escapes{'/'} = '/';
         my $dst  = $self->doc_root_file_for(
-            doc    => $meta,
-            doc    => $noext,
-            '+doc' => $noext, # XXX Part of above-mentioned hack.
+            htmldoc    => $meta,
+            docpath    => $noext,
+            '+docpath' => $noext, # XXX Part of above-mentioned hack.
         );
         make_path dirname $dst;
 
         # Determine the title before we mangle the HTML.
-        (my $file = $noext) =~ s{^doc/}{};
+        (my $file = $noext) =~ s{^doc/}{}; # XXX Remove.
         my $title = $doc->findvalue('/html/head/title')
                  || $doc->findvalue('//h1[1]')
                  || $file;
@@ -507,7 +505,7 @@ sub parse_docs {
         # Add it to the search index.
         $self->_index(docs => {
             key       => "$meta->{name}/$noext",
-            doc      => $noext,
+            docpath   => $noext,
             title     => $title,
             abstract  => $abstract,
             body      => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),

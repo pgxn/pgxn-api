@@ -11,6 +11,13 @@ Revision history for Perl extension PGXN::API
         for users with no distributions at all. So we notice updated user JSON
         files and properly merge them into the doc root and update them in the
         full text index.
+      - Renamed the `doc` URI template to `htmldoc`, in case we ever decide to
+        offer other doc formats via the API.
+      - Renamed the path to a doc from `doc` to `docpath` in the extension
+        JSON and the `provides` hashes. This better distinguishes it from the
+        `docfile` key in the `provides` section of the meta spec. The
+        `htmldoc` URI template gets its variable renamed to `docpath`, as
+        well.
 
 0.11.0  2011-04-13T02:25:37
       - Fixed the search API to throw a 400 for invalid queries: Missing
