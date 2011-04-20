@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 232;
-#use Test::More 'no_plan';
+#use Test::More tests => 232;
+use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
@@ -1007,3 +1007,51 @@ $mock->mock(_commit => sub { push @called, '_commit' });
 ok $indexer->finalize, 'Call finalize()';
 is_deeply \@called, [qw(update_user_lists _commit)],
     'update_user_lists() and commit() should have been called';
+
+##############################################################################
+# Test find_docs().
+$params->{meta}{provides}{pair}{doc} = 'sql/pair.sql';
+is_deeply [ $indexer->find_docs($params)], [qw(
+    sql/pair.sql
+    doc/pair.md
+    README.md
+)], 'find_docs() should find specified and random doc files';
+
+$params->{meta}{no_index} = { file => ['sql/pair.sql'] };
+is_deeply [ $indexer->find_docs($params)], [qw(
+    sql/pair.sql
+    doc/pair.md
+    README.md
+)], 'find_docs() no_index should be ignored for specified doc file';
+
+$params->{meta}{no_index} = { file => ['doc/pair.md'] };
+is_deeply [ $indexer->find_docs($params)], [qw(
+    sql/pair.sql
+    README.md
+)], 'find_docs() should respect no_index for found docs';
+
+$params->{meta}{no_index} = { directory => ['sql'] };
+is_deeply [ $indexer->find_docs($params)], [qw(
+    sql/pair.sql
+    doc/pair.md
+    README.md
+)], 'find_docs() shouldignore no_index directory for specified doc';
+
+$params->{meta}{no_index} = { directory => ['doc'] };
+is_deeply [ $indexer->find_docs($params)], [qw(
+    sql/pair.sql
+    README.md
+)], 'find_docs() should respect no_index directory for found docs';
+
+delete $params->{meta}{no_index};
+$params->{meta}{provides}{pair}{doc} = 'foo/bar.txt';
+is_deeply [ $indexer->find_docs($params)], [qw(
+    doc/pair.md
+    README.md
+)], 'find_docs() should ignore non-existent specified file';
+
+$params->{meta}{provides}{pair}{doc} = 'doc/pair.md';
+is_deeply [ $indexer->find_docs($params)], [qw(
+    doc/pair.md
+    README.md
+)], 'find_docs() should not return dupes';
