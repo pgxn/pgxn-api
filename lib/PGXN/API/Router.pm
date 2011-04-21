@@ -98,10 +98,12 @@ sub app {
             ]
         };
 
-        # Disable HTML in /src.
+        # For source browsing, some things should be text/plain.
         my $mimes = { %{ $Plack::MIME::MIME_TYPES } };
         for my $ext (keys %{ $mimes }) {
-            $mimes->{$ext} = 'text/plain' if $mimes->{$ext} =~ /html/;
+            $mimes->{$ext} = 'text/plain'
+                if $mimes->{$ext} =~ /html|x-c|xml|calendar|vcard/
+                || $ext ~~ [qw(.bat .css .eml .js .json .mime .swf)];
         }
         my $src_dir = Plack::App::Directory->new(
             root => catdir $root, 'src'

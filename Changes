@@ -1,5 +1,10 @@
 Revision history for Perl extension PGXN::API
 
+0.12.2
+      - Changed the media type of many more files served from `src` to
+        text/plain. This is both for security reasons and so that files that
+        are plain text open in the browser rather than prompt to download.
+
 0.12.1  2011-04-20T23:41:26
       - Fixed rsync log parsing to properly detect when a file has been
         changed. Previously, the code was only noticing new files.

@@ -122,7 +122,7 @@ test_psgi $app => sub {
     ok $res->is_success, 'It should be a success';
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
         'Should have API version in the header';
-    is $res->content_type, 'application/json', 'Should be application/json';
+    is $res->content_type, 'text/plain', 'Should be text/plain';
 };
 
 # Try a src/readme file
