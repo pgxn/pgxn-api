@@ -717,7 +717,10 @@ sub _source_files {
         qr{\Q$p->{meta}{name}\E[.]control},
     ) {
         my ($member) = $zip->membersMatching(qr{^$prefix/$regex$});
-        next unless $member;
+        unless ($member) {
+            ($member) = $zip->membersMatching(qr{^$prefix/$regex[.]in$});
+            next unless $member;
+        }
         (my $fn = $member->fileName) =~ s{^$prefix/}{};
         push @files => $fn;
     }

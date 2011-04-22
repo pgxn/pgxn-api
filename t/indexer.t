@@ -229,6 +229,7 @@ my $meta_011 = $api->read_json_from(
 );
 my $zip_011 = Archive::Zip->new;
 $zip_011->read(rel2abs catfile qw(t root dist pair 0.1.1 pair-0.1.1.pgz));
+$zip_011->addString('# control file', 'pair-0.1.1/pair.control.in');
 
 my $dist_011_file = catfile $api->doc_root, qw(dist pair 0.1.1 META.json);
 file_not_exists_ok $dist_011_file, 'pair/0.1.1/META.json should not yet exist';
@@ -250,7 +251,7 @@ is_deeply $meta_011->{releases}, { stable => [
     {version => '0.1.2', date => '2010-12-13T23:12:41Z'},
 ] }, 'We should have the release data';
 is_deeply $meta_011->{special_files},
-    [qw(Changes README.md META.json Makefile)],
+    [qw(Changes README.md META.json Makefile pair.control.in)],
     'And it should have special files';
 
 ok $dist_meta = $api->read_json_from($dist_011_file),
