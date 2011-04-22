@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.12.2
+0.12.2  2011-04-22T18:51:42
       - Changed the media type of many more files served from `src` to
         text/plain. This is both for security reasons and so that files that
         are plain text open in the browser rather than prompt to download.
