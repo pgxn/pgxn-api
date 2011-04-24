@@ -321,7 +321,7 @@ sub merge_user {
     $api->write_json_to($doc_file, $mir_data);
 
     # Update the full name lookup & the search index and return.
-    $self->_user_names->{$nick} = $mir_data->{name};
+    $self->_user_names->{lc $nick} = $mir_data->{name};
     $self->_index_user($mir_data);
     return $self;
 }
@@ -343,9 +343,9 @@ sub update_tags {
 
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
-        my $data = $self->_update_releases(tag => $meta, tag => $tag);
+        my $data = $self->_update_releases(tag => $meta, tag => lc $tag);
         $self->_index(tags => {
-            key => $tag,
+            key => lc $tag,
             tag => $tag,
         }) if $p->{meta}->{release_status} eq 'stable';
     }
@@ -597,7 +597,7 @@ sub _idx_distmeta {
 
 sub _get_user_name {
     my ($self, $meta) = @_;
-    return $self->_user_names->{ $meta->{user} } ||= do {
+    return $self->_user_names->{ lc $meta->{user} } ||= do {
         my $user = PGXN::API->instance->read_json_from(
             $self->mirror_file_for(user => $meta)
         );
@@ -646,7 +646,7 @@ sub _update_releases {
 sub _index_user {
     my ($self, $user) = @_;
     my $data = {
-        key      => $user->{nickname},
+        key      => lc $user->{nickname},
         user     => $user->{nickname},
         name     => $user->{name},
         email    => $user->{email},
@@ -697,7 +697,7 @@ sub _uri_for {
     PGXN::API->instance->uri_templates->{$name}->process(
         dist    => $meta->{name}    || '',
         version => $meta->{version} || '',
-        user    => $meta->{user}    || '',
+        user    => lc($meta->{user} || ''),
         @params,
     );
 }

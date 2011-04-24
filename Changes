@@ -4,6 +4,8 @@ Revision history for Perl extension PGXN::API
       - When searching for "special files", the indexer now looks for files
         ending in ".in" if it doesn't find them without the ".in". Suggested
         by Daniele Varrazzo.
+      - Always user lowercase tags and nicknames in in URI templates. They're
+        still displayed with case preserved inside files and the index.
 
 0.12.2  2011-04-22T18:51:42
       - Changed the media type of many more files served from `src` to

@@ -193,9 +193,9 @@ is_deeply shift @{ $indexer->to_index->{dists} }, {
     description => "This library contains a single PostgreSQL extension, a key/value pair data type called `pair`, along with a convenience function for constructing key/value pairs.",
     dist        => 'pair',
     key         => 'pair',
-    user        => 'theory',
+    user        => 'Theory',
     readme      => $readme,
-    tags        => "ordered pair\003pair",
+    tags        => "ordered pair\003Pair",
     user_name   => 'David E. Wheeler',
     version     => '0.1.0',
 }, 'Should have pair 0.1.0 queued for indexing';
@@ -391,7 +391,7 @@ is_deeply shift @{ $indexer->to_index->{tags} }, {
 
 is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'pair',
-    tag => 'pair',
+    tag => 'Pair',
 }, 'Should have "pair" index data';
 
 my $pgtap = { stable => [{ version => "0.25.0", date => '2011-01-22T08:34:51Z'}] };
@@ -526,7 +526,7 @@ is_deeply shift @{ $indexer->to_index->{extensions} }, {
     docpath   => 'docs/pair',
     extension => 'pair',
     key       => 'pair',
-    user      => 'theory',
+    user      => 'Theory',
     user_name => 'David E. Wheeler',
     version   => '0.1.0',
 }, 'Should have extension index data';
@@ -698,7 +698,7 @@ is_deeply shift @{ $indexer->to_index->{docs} }, {
     date      => '2010-10-18T15:24:21Z',
     dist      => 'pair',
     key       => 'pair/doc/pair',
-    user      => 'theory',
+    user      => 'Theory',
     docpath   => 'doc/pair',
     title     => 'pair 0.1.0',
     user_name => 'David E. Wheeler',
