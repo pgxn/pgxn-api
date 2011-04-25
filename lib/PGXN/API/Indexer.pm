@@ -217,14 +217,14 @@ sub add_distribution {
 sub copy_files {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Copying $meta->{name}-$meta->{version} files" if $self->verbose;
+    say "  Copying \L$meta->{name}-$meta->{version} files" if $self->verbose;
 
     # Need to copy the README, zip file, and dist meta file.
     for my $file (qw(download readme)) {
         my $src = $self->mirror_file_for($file => $meta);
         my $dst = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
-        say "    $meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
+        say "    \L$meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
         fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
     }
     return $self;
@@ -233,7 +233,7 @@ sub copy_files {
 sub merge_distmeta {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Merging $meta->{name}-$meta->{version} META.json" if $self->verbose;
+    say "  Merging \L$meta->{name}-$meta->{version} META.json" if $self->verbose;
 
     # Merge the list of versions into the meta file.
     my $api = PGXN::API->instance;
@@ -276,7 +276,7 @@ sub merge_distmeta {
 
     # Index it if it's a new stable release.
     $self->_index(dists => {
-        key         => $meta->{name},
+        key         => lc $meta->{name},
         dist        => $meta->{name},
         abstract    => $meta->{abstract},
         description => $meta->{description} || '',
@@ -337,7 +337,7 @@ sub update_user {
 sub update_tags {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Updating $meta->{name}-$meta->{version} tags" if $self->verbose;
+    say "  Updating \L$meta->{name}-$meta->{version} tags" if $self->verbose;
 
     my $tags = $meta->{tags} or return $self;
 
@@ -356,7 +356,7 @@ sub update_extensions {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
     my $api = PGXN::API->instance;
-    say "  Updating $meta->{name}-$meta->{version} extensions"
+    say "  Updating \L$meta->{name}-$meta->{version} extensions"
         if $self->verbose;
 
     while (my ($ext, $data) = each %{ $meta->{provides} }) {
@@ -416,7 +416,7 @@ sub update_extensions {
         # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
         $self->_index(extensions => {
-            key         => $mir_meta->{extension},
+            key         => lc $mir_meta->{extension},
             extension   => $mir_meta->{extension},
             abstract    => $mir_meta->{stable}{abstract},
             docpath     => $data->{docpath} || '',
@@ -457,7 +457,7 @@ sub find_docs {
 sub parse_docs {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Parsing $meta->{name}-$meta->{version} docs" if $self->verbose;
+    say "  Parsing \L$meta->{name}-$meta->{version} docs" if $self->verbose;
 
     my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
@@ -504,7 +504,7 @@ sub parse_docs {
 
         # Add it to the search index.
         $self->_index(docs => {
-            key       => "$meta->{name}/$noext",
+            key       => lc "$meta->{name}/$noext",
             docpath   => $noext,
             title     => $title,
             abstract  => $abstract,

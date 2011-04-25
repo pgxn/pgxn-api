@@ -3,6 +3,10 @@ Revision history for Perl extension PGXN::API
 0.12.5
       - The directory name in which browsable distribution source files are
         unzipped is now always lowercase.
+      - Fixed the primary key in the for distributsions, docs and extension in
+        the search index to always be lowercased.
+      - Distribution names and versions are now always lowercase in verbose
+        outout.
 
 0.12.4  2011-04-25T16:59:36
       - The prefix in zip files is now assumed to be lowercase, as
