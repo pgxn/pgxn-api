@@ -3,7 +3,7 @@
 use 5.12.0;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
-use Test::More tests => 176;
+use Test::More tests => 196;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -58,6 +58,22 @@ test_psgi $app => sub {
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
         'Should have API version in the header';
     is $res->content_type, 'application/json', 'Should be application/json';
+};
+
+# Try a JSONP request.
+test_psgi $app => sub {
+    my $cb = shift;
+    my $uri = '/dist/pair/0.1.1/META.json?jsonp=foo';
+    ok my $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_success, 'It should be a success';
+    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+        'Should have API version in the header';
+    TODO: {
+        local $TODO = 'JSONP not yet compatible with Plack::App::File';
+            is $res->content_type, 'application/javascript',
+                'Should be application/javascript';
+        like $res->content, qr{\Afoo\(}, 'It should look like a JSONP response';
+    }
 };
 
 # Try a readme file.
@@ -187,11 +203,22 @@ test_psgi $app => sub {
             ok $res->is_success, "$uri should return success";
             is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
                 'Should have API version in the header';
+            is $res->content_type, 'application/json', 'Should be application/json';
             is $res->content, '{"foo":1}', 'Content should be JSON of results';
             is_deeply \@params, [in => $in, @exp],
                 "$uri should properly dispatch to the searcher";
         }
     }
+
+    # Try a JSONP request.
+    my $uri = "/search/docs?q=foo&jsonp=bar";
+    ok my $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_success, "$uri should return success";
+    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+        'Should have API version in the header';
+    is $res->content_type, 'text/javascript',
+        'Should be application/javascript';
+    is $res->content, 'bar({"foo":1})', 'Content should be JSONP of results';
 
     # Now make sure we get the proper 404s.
     for my $uri (qw(
@@ -209,8 +236,8 @@ test_psgi $app => sub {
     }
 
     # And that we get a 400 when there's no q param.
-    my $uri = '/search/docs';
-    ok my $res = $cb->(GET $uri), "Fetch $uri";
+    $uri = '/search/docs';
+    ok $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_error, "$uri should respond with an error";
     is $res->code, 400, "$uri should 400";
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,

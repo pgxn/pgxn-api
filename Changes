@@ -7,6 +7,9 @@ Revision history for Perl extension PGXN::API
         template includes one).
       - Add new "special files" to detect: INSTALL, LICENSE, COPYING, and
         AUTHORS.
+      - Changed search results content type from `text/json` to
+        `application/json`.
+      - Enabled JSONP for search requests.
 
 0.12.5  2011-04-25T18:07:27
       - The directory name in which browsable distribution source files are

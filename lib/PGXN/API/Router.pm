@@ -33,6 +33,7 @@ sub app {
         enable 'ErrorDocument', 500, '/error', subrequest => 1;
         enable 'HTTPExceptions';
         enable 'StackTrace', no_print_errors => 1;
+        enable 'JSONP', callback_key => 'jsonp';
         enable sub {
             my $app = shift;
             sub {
@@ -93,7 +94,7 @@ sub app {
             );
             return [
                 200,
-                ['Content-Type' => 'text/json', 'Content-Length' => length $json ],
+                ['Content-Type' => 'application/json', 'Content-Length' => length $json ],
                 [$json],
             ]
         };

@@ -47,6 +47,7 @@ $class->new(
         'Plack'                        => '0.9956',
         'Plack::App::Directory'        => 0,
         'Plack::App::File'             => 0,
+        'Plack::Middleware::JSONP'     => 0,
         'Plack::Builder'               => 0,
         'Text::Markup'                 => '0.12',
         'URI::Template'                => '0.15',
