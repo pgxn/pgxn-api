@@ -1,5 +1,9 @@
 Revision history for Perl extension PGXN::API
 
+0.12.4
+      - The prefix in zip files is now assumed to be lowercase, as
+        PGXN::Manager v0.12.4 enforces.
+
 0.12.3  2011-04-25T16:35:28
       - When searching for "special files", the indexer now looks for files
         ending in ".in" if it doesn't find them without the ".in". Suggested

@@ -435,7 +435,7 @@ sub find_docs {
     my ($self, $p) = @_;
     my $meta   = $p->{meta};
     my $dir    = $self->doc_root_file_for(source => $meta);
-    my $prefix = quotemeta "$meta->{name}-$meta->{version}";
+    my $prefix = quotemeta lc "$meta->{name}-$meta->{version}";
     my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
     my $markup = Text::Markup->new;
     my @files  = grep { $_ && -e catfile $dir, $_ } map { $_->{docfile} }
@@ -705,7 +705,7 @@ sub _uri_for {
 sub _source_files {
     my ($self, $p) = @_;
     my $zip = $p->{zip};
-    my $prefix  = quotemeta "$p->{meta}{name}-$p->{meta}{version}";
+    my $prefix  = quotemeta lc "$p->{meta}{name}-$p->{meta}{version}";
     my @files;
     for my $regex (
         qr{Change(?:s|Log)(?:[.][^.]+)?}i,
@@ -730,7 +730,7 @@ sub _source_files {
 sub _readme {
     my ($self, $p) = @_;
      my $zip = $p->{zip};
-    my $prefix  = quotemeta "$p->{meta}{name}-$p->{meta}{version}";
+    my $prefix  = quotemeta lc "$p->{meta}{name}-$p->{meta}{version}";
     my ($member) = $zip->membersMatching(
         qr{^$prefix/(?i:README(?:[.][^.]+)?)$}
     );
