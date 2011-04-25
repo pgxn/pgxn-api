@@ -64,7 +64,7 @@ sub app {
                 404,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 9],
                 ['not found']
-            ] if $req->path_info !~ m{^/((?:d(?:oc|ist)|extension|user|tag)s)$};
+            ] if $req->path_info !~ m{^/((?:d(?:oc|ist)|extension|user|tag)s)/?$};
             my $in = $1;
 
             my $q = $req->param('q');

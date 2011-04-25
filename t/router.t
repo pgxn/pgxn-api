@@ -3,7 +3,7 @@
 use 5.12.0;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
-use Test::More tests => 159;
+use Test::More tests => 176;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -181,21 +181,21 @@ test_psgi $app => sub {
     my $q = 'q=whü&o=2&l=10';
     my @exp = ( query  => 'whü', offset => 2, limit  => 10 );
     for my $in (qw(docs dists extensions users tags)) {
-        my $uri = "/search/$in?$q";
-        ok my $res = $cb->(GET $uri), "Fetch $uri";
-        ok $res->is_success, "$uri should return success";
-        is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
-            'Should have API version in the header';
-        is $res->content, '{"foo":1}', 'Content should be JSON of results';
-        is_deeply \@params, [in => $in, @exp],
-            "$uri should properly dispatch to the searcher";
+        for my $slash ('', '/') {
+            my $uri = "/search/$in$slash?$q";
+            ok my $res = $cb->(GET $uri), "Fetch $uri";
+            ok $res->is_success, "$uri should return success";
+            is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+                'Should have API version in the header';
+            is $res->content, '{"foo":1}', 'Content should be JSON of results';
+            is_deeply \@params, [in => $in, @exp],
+                "$uri should properly dispatch to the searcher";
+        }
     }
 
     # Now make sure we get the proper 404s.
     for my $uri (qw(
         /search
-        /search/doc
-        /search/tag
         /search/foo
         /search/foo/
         /search/tag/foo
