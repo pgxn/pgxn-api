@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.12.3
+0.12.3  2011-04-25T16:35:28
       - When searching for "special files", the indexer now looks for files
         ending in ".in" if it doesn't find them without the ".in". Suggested
         by Daniele Varrazzo.
