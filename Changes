@@ -1,5 +1,9 @@
 Revision history for Perl extension PGXN::API
 
+0.12.6
+      - Eliminated "Use of uninitialized variable in soubroutine" warning when
+        indexing extensions with no abstract.
+
 0.12.5  2011-04-25T18:07:27
       - The directory name in which browsable distribution source files are
         unzipped is now always lowercase.

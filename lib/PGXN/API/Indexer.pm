@@ -418,7 +418,7 @@ sub update_extensions {
         $self->_index(extensions => {
             key         => lc $mir_meta->{extension},
             extension   => $mir_meta->{extension},
-            abstract    => $mir_meta->{stable}{abstract},
+            abstract    => $mir_meta->{stable}{abstract} || '',
             docpath     => $data->{docpath} || '',
             dist        => $meta->{name},
             version     => $mir_meta->{stable}{version},
@@ -507,7 +507,7 @@ sub parse_docs {
             key       => lc "$meta->{name}/$noext",
             docpath   => $noext,
             title     => $title,
-            abstract  => $abstract,
+            abstract  => $abstract || '',
             body      => _strip_html( $doc->findnodes('.//div[@id="pgxnbod"]')->shift),
             dist      => $meta->{name},
             version   => $meta->{version},
