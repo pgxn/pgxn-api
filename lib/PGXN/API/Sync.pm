@@ -106,7 +106,7 @@ sub regex_for_uri_template {
 
     my %regex_for = (
         '{dist}'      => qr{[^/]+?},
-        '{version}'   => qr{(?:0|[1-9][0-9]*)(?:[.][0-9]+){2,}(?:[a-zA-Z][-0-9A-Za-z]*)?},
+        '{version}'   => qr{(?:0|[1-9][0-9]*)(?:[.][0-9]+){2,}(?:[a-z][-0-9a-z]*)?},
         '{user}'      => qr{([a-z]([-a-z0-9]{0,61}[a-z0-9])?)}i,
         '{extension}' => qr{[^/]+?},
         '{tag}'       => qr{[^/]+?},
@@ -154,8 +154,8 @@ sub validate_distribution {
 sub download_for {
     my ($self, $meta) = @_;
     my $zip_uri = $self->mirror_uri_templates->{download}->process(
-        dist    => $meta->{name},
-        version => $meta->{version},
+        dist    => lc $meta->{name},
+        version => lc $meta->{version},
     );
 
     my (undef, @segments) = $zip_uri->path_segments;
