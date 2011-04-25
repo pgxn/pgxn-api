@@ -183,8 +183,9 @@ sub unzip {
 
     my $dir = PGXN::API->instance->source_dir;
     chdir $dir or die "Cannot cd to $dir: $!\n";
-    make_path $meta->{name} unless -e $meta->{name} && -d _;
-    chdir $meta->{name};
+    my $dist_name = lc $meta->{name};
+    make_path $dist_name unless -e $dist_name && -d _;
+    chdir $dist_name;
     my $ret = $zip->extractTree;
     chdir $CWD;
 
