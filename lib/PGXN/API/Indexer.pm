@@ -709,8 +709,7 @@ sub _source_files {
     my @files;
     for my $regex (
         qr{Change(?:s|Log)(?:[.][^.]+)?}i,
-        qr{README(?:[.][^.]+)?}i,
-        qr{LICENSE(?:[.][^.]+)?}i,
+        qr{(?:README|LICENSE|INSTALL|COPYING|AUTHORS)(?:[.][^.]+)?}i,
         qr{META[.]json},
         qr{Makefile},
         qr{MANIFEST},
