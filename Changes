@@ -6,6 +6,8 @@ Revision history for Perl extension PGXN::API
       - Moved the default `index.html` file so that it will be installed and
         findable when PGXN::API is installed from CPAN.
       - Added a link to the API docs to the default `index.html` file.
+      - Renamed the `{char}` variable in the `userlist` URI template to
+        `{letter}`, since it better describes the value (an ASCII letter a-z).
 
 0.12.6  2011-04-27T18:52:18
       - Eliminated "Use of uninitialized variable in soubroutine" warning when

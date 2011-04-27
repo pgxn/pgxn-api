@@ -84,7 +84,7 @@ my $tmpl = $api->read_json_from(catfile qw(t root index.json));
 $tmpl->{source}   = "/src/{dist}/{dist}-{version}/";
 $tmpl->{htmldoc}  = "/dist/{dist}/{version}/{+docpath}.html";
 $tmpl->{search}   = '/search/{in}/';
-$tmpl->{userlist} = '/users/{char}.json';
+$tmpl->{userlist} = '/users/{letter}.json';
 is_deeply $api->read_json_from(catfile($doc_root, qw(index.json))), $tmpl,
     'index.json should have additional templates';
 

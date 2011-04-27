@@ -161,7 +161,7 @@ sub update_root_json {
     my $tmpl = $api->read_json_from($src);
     $tmpl->{source}    = "/src/{dist}/{dist}-{version}/";
     $tmpl->{search}    = '/search/{in}/';
-    $tmpl->{userlist}  = '/users/{char}.json';
+    $tmpl->{userlist}  = '/users/{letter}.json';
     ($tmpl->{htmldoc}  = $tmpl->{meta}) =~ s{/META[.]json$}{/{+docpath}.html};
     $api->write_json_to($dst, $tmpl);
 
@@ -556,14 +556,14 @@ sub update_user_lists {
 
     say "Updating user lists" if $self->verbose;
     while (my ($nick, $name) = each %{ $names }) {
-        my $char = lc substr $nick, 0, 1;
-        push @{ $users_for{$char} ||= [] } => { user => $nick, name => $name };
+        my $letter = lc substr $nick, 0, 1;
+        push @{ $users_for{$letter} ||= [] } => { user => $nick, name => $name };
     }
 
 
-    while (my ($char, $users) = each %users_for ) {
-        say "  Updating $char.json" if $self->verbose > 1;
-        my $fn = $self->doc_root_file_for('userlist', undef, char => $char);
+    while (my ($letter, $users) = each %users_for ) {
+        say "  Updating $letter.json" if $self->verbose > 1;
+        my $fn = $self->doc_root_file_for('userlist', undef, letter => $letter);
         my $list = -e $fn ? $api->read_json_from($fn) : do {
             make_path dirname $fn;
             [];
