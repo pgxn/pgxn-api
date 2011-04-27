@@ -128,8 +128,8 @@ my $meta = $api->read_json_from(
 );
 
 file_not_exists_ok(
-    catfile($api->doc_root, qw(dist pair 0.1.0), 'pair-0.1.0.pgz'),
-    'pair-0.1.0.pgz should not yet exist'
+    catfile($api->doc_root, qw(dist pair 0.1.0), 'pair-0.1.0.zip'),
+    'pair-0.1.0.zip should not yet exist'
 );
 
 file_not_exists_ok(
@@ -141,8 +141,8 @@ my $params  = { meta => $meta };
 ok $indexer->copy_files($params), 'Copy files';
 
 file_exists_ok(
-    catfile($api->doc_root, qw(dist pair 0.1.0), "pair-0.1.0.pgz"),
-    "pair-0.1.0.pgz should now exist"
+    catfile($api->doc_root, qw(dist pair 0.1.0), "pair-0.1.0.zip"),
+    "pair-0.1.0.zip should now exist"
 );
 file_not_exists_ok(
     catfile($api->doc_root, qw(dist pair 0.1.0), "README.txt"),
@@ -151,8 +151,8 @@ file_not_exists_ok(
 
 # Make sure we get an error when we try to copy a file that does't exist.
 $meta->{name} = 'nonexistent';
-my $src = catfile $api->mirror_root, qw(dist nonexistent 0.1.0 nonexistent-0.1.0.pgz);
-my $dst = catfile $api->doc_root,    qw(dist nonexistent 0.1.0 nonexistent-0.1.0.pgz);
+my $src = catfile $api->mirror_root, qw(dist nonexistent 0.1.0 nonexistent-0.1.0.zip);
+my $dst = catfile $api->doc_root,    qw(dist nonexistent 0.1.0 nonexistent-0.1.0.zip);
 throws_ok { $indexer->copy_files($params ) }
     qr{Cannot copy \Q$src\E to \Q$dst\E: No such file or directory},
     'Should get exception with file names for bad copy';
@@ -170,7 +170,7 @@ $mock->mock(parse_docs => $docs);
 
 # Set up zip archive.
 my $zip       = Archive::Zip->new;
-$zip->read(rel2abs catfile qw(t root dist pair 0.1.0 pair-0.1.0.pgz));
+$zip->read(rel2abs catfile qw(t root dist pair 0.1.0 pair-0.1.0.zip));
 $params->{zip} = $zip;
 
 file_not_exists_ok $dist_file, 'pair-0.1.0.json should not yet exist';
@@ -228,7 +228,7 @@ my $meta_011 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair 0.1.1 META.json)
 );
 my $zip_011 = Archive::Zip->new;
-$zip_011->read(rel2abs catfile qw(t root dist pair 0.1.1 pair-0.1.1.pgz));
+$zip_011->read(rel2abs catfile qw(t root dist pair 0.1.1 pair-0.1.1.zip));
 $zip_011->addString('# control file', 'pair-0.1.1/pair.control.in');
 
 my $dist_011_file = catfile $api->doc_root, qw(dist pair 0.1.1 META.json);
@@ -330,7 +330,7 @@ my $meta_012 = $api->read_json_from(
 );
 $params->{meta} = $meta_012;
 my $zip_012 = Archive::Zip->new;
-$zip_012->read(rel2abs catfile qw(t root dist pair 0.1.2 pair-0.1.2.pgz));
+$zip_012->read(rel2abs catfile qw(t root dist pair 0.1.2 pair-0.1.2.zip));
 $params->{zip} = $zip_012;
 ok $indexer->merge_distmeta($params), 'Merge the 0.1.2 distmeta';
 ok $indexer->update_user($params),
@@ -661,7 +661,7 @@ is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
 ##############################################################################
 # Test parse_docs().
 my $sync = PGXN::API::Sync->new(source => 'rsync://localhost/pgxn');
-my $pgz = catfile qw(dist pair 0.1.0 pair-0.1.0.pgz);
+my $pgz = catfile qw(dist pair 0.1.0 pair-0.1.0.zip);
 
 $params->{meta}   = $meta;
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
@@ -830,7 +830,7 @@ is $res->{hits}[0]{version}, '0.1.0', 'It should be in 0.1.0';
 $meta_011 = $api->read_json_from(
     catfile $api->mirror_root, qw(dist pair 0.1.1 META.json)
 );
-$pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.pgz);
+$pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.zip);
 $params->{meta}   = $meta_011;
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 ok $indexer->add_distribution($params), 'Index pair 0.1.1';

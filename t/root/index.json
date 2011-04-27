@@ -1,5 +1,5 @@
 {
-   "download":  "/dist/{dist}/{version}/{dist}-{version}.pgz",
+   "download":  "/dist/{dist}/{version}/{dist}-{version}.zip",
    "readme":    "/dist/{dist}/{version}/README.txt",
    "meta":      "/dist/{dist}/{version}/META.json",
    "dist":      "/dist/{dist}.json",

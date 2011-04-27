@@ -91,7 +91,7 @@ test_psgi $app => sub {
 # Try a distribution file.
 test_psgi $app => sub {
     my $cb = shift;
-    my $uri = '/dist/pair/0.1.1/pair-0.1.1.pgz';
+    my $uri = '/dist/pair/0.1.1/pair-0.1.1.zip';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,

@@ -10,6 +10,7 @@ Revision history for Perl extension PGXN::API
       - Changed search results content type from `text/json` to
         `application/json`.
       - Enabled JSONP for search requests.
+      - Changed tests to use `.zip` ending for downloads instead of `.pgz`.
 
 0.12.5  2011-04-25T18:07:27
       - The directory name in which browsable distribution source files are

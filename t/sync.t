@@ -91,11 +91,11 @@ for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
 is_deeply \@found, [qw(
-    dist/pair/0.1.0/pair-0.1.0.pgz
-    dist/pair/0.1.1/pair-0.1.1.pgz
-    dist/pg_french_datatypes/0.1.0/pg_french_datatypes-0.1.0.pgz
-    dist/pg_french_datatypes/0.1.1/pg_french_datatypes-0.1.1.pgz
-    dist/tinyint/0.1.0/tinyint-0.1.0.pgz
+    dist/pair/0.1.0/pair-0.1.0.zip
+    dist/pair/0.1.1/pair-0.1.1.zip
+    dist/pg_french_datatypes/0.1.0/pg_french_datatypes-0.1.0.zip
+    dist/pg_french_datatypes/0.1.1/pg_french_datatypes-0.1.1.zip
+    dist/tinyint/0.1.0/tinyint-0.1.0.zip
 )], 'It should recognize the distribution files.';
 
 # Test the meta template regex.
@@ -248,7 +248,7 @@ is_deeply \@users, [qw(
 
 ##############################################################################
 # digest_for()
-my $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.pgz);
+my $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.zip);
 is $sync->digest_for($pgz), '585214bf8a733524f2ba0d83c229128d0152f537',
     'Should get expected digest from digest_for()';
 
