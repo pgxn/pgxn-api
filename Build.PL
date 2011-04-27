@@ -9,7 +9,7 @@ my $class = Module::Build->subclass(
     },
 );
 
-$class->new(
+my $build = $class->new(
     module_name        => 'PGXN::API',
     license            => 'postgresql',
     script_files       => 'bin',
@@ -64,4 +64,7 @@ $class->new(
             repository => 'http://github.com/theory/pgxn-api/tree/',
         },
     },
-)->create_build_script;
+);
+
+$build->add_build_element('html');
+$build->create_build_script;

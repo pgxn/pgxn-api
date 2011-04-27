@@ -66,8 +66,8 @@ file_exists_ok(
 file_exists_ok catfile($doc_root, 'index.html'), 'index.html should exist';
 files_eq_or_diff(
     catfile($doc_root, 'index.html'),
-    catfile('var', 'index.html'),
-    'And it should be the var copy'
+    catfile(qw(lib PGXN API index.html)),
+    'And it should be the lib copy'
 );
 
 # Test source_dir().

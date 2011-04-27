@@ -3,6 +3,8 @@ Revision history for Perl extension PGXN::API
 0.12.7
       - Fixed a bug where an updated root `index.json` updated on the mirror
         was not likewise getting updated in the API root.
+      - Moved the default `index.html` file so that it will be installed and
+        findable when PGXN::API is installed from CPAN.
 
 0.12.6  2011-04-27T18:52:18
       - Eliminated "Use of uninitialized variable in soubroutine" warning when

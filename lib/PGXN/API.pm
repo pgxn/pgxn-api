@@ -128,10 +128,8 @@ my $trig = sub {
          # Copy over the index.html.
          require File::Copy::Recursive;
 
-         my $file = quotemeta catfile qw(lib PGXN API.pm);
-         my $blib = quotemeta catfile 'blib', '';
-         (my $var = __FILE__) =~ s{(?:$blib)?$file$}{var};
-         my $idx  = catfile $var, 'index.html';
+         (my $api_dir = __FILE__) =~ s{[.]pm$}{};
+         my $idx  = catfile $api_dir, 'index.html';
          File::Copy::Recursive::fcopy($idx, $dir)
              or die "Cannot copy $idx to $dir: $!\n";
 

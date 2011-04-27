@@ -100,7 +100,7 @@ test_psgi $app => sub {
 };
 
 # Try an HTML file.
-my $html = catfile qw(var index.html);
+my $html = catfile qw(lib PGXN API index.html);
 test_psgi $app => sub {
     my $cb = shift;
     fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
