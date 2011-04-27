@@ -74,20 +74,26 @@ sub update_index {
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
-        if ($line =~ $meta_re) {
-            if (my $params = $self->validate_distribution($1)) {
-                $indexer->add_distribution($params);
+        given ($line) {
+            when ($meta_re) {
+                if (my $params = $self->validate_distribution($1)) {
+                    $indexer->add_distribution($params);
+                }
             }
-        } elsif ($line =~ $stat_re || $line =~ $mirr_re) {
-            $indexer->copy_from_mirror($1);
-        } elsif ($line =~ $spec_re) {
-            my $path = $1;
-            $indexer->copy_from_mirror($path);
-            $indexer->parse_from_mirror($path, 'Multimarkdown');
-        } elsif ($line =~ /\s>f[+]+\sindex[.]json$/) {
-            $indexer->update_root_json;
-        } elsif ($line =~ $user_re) {
-            $indexer->merge_user($2);
+            when ([$stat_re, $mirr_re]) {
+                $indexer->copy_from_mirror($1);
+            }
+            when ($spec_re) {
+                my $path = $1;
+                $indexer->copy_from_mirror($path);
+                $indexer->parse_from_mirror($path, 'Multimarkdown');
+            }
+            when (/\s>f[+]+\sindex[.]json$/) {
+                $indexer->update_root_json;
+            }
+            when ($user_re) {
+                $indexer->merge_user($2);
+            }
         }
     }
     close $fh or die "Cannot close $log: $!\n";
