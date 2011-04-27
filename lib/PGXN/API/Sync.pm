@@ -88,7 +88,8 @@ sub update_index {
                 $indexer->copy_from_mirror($path);
                 $indexer->parse_from_mirror($path, 'Multimarkdown');
             }
-            when (/\s>f[+]+\sindex[.]json$/) {
+            when (/\s>f(?:[+]+|(?:c|.s|..t)[^ ]+)\sindex[.]json$/) {
+                # Always update the index JSON if it's mentioned.
                 $indexer->update_root_json;
             }
             when ($user_re) {
