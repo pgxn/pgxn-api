@@ -5,6 +5,7 @@ Revision history for Perl extension PGXN::API
         was not likewise getting updated in the API root.
       - Moved the default `index.html` file so that it will be installed and
         findable when PGXN::API is installed from CPAN.
+      - Added a link to the API docs to the default `index.html` file.
 
 0.12.6  2011-04-27T18:52:18
       - Eliminated "Use of uninitialized variable in soubroutine" warning when
