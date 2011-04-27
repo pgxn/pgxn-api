@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.12.7
+
 0.12.6  2011-04-27T18:52:18
       - Eliminated "Use of uninitialized variable in soubroutine" warning when
         indexing extensions with no abstract.
