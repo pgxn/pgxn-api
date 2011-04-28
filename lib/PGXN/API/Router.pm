@@ -68,7 +68,8 @@ sub app {
             ] if $req->path_info !~ m{^/((?:d(?:oc|ist)|extension|user|tag)s)/?$};
             my $in = $1;
 
-            my $q = $req->param('q');
+            my $params = $req->query_parameters;
+            my $q = $params->{q};
             return [
                 400,
                 ['Content-Type' => 'text/plain', 'Content-Length' => 38],
@@ -77,7 +78,7 @@ sub app {
 
             # Make sure "o" and "l" params are valid.
             for my $param (qw(o l)) {
-                my $val = $req->param($param);
+                my $val = $params->{$param};
                 return [
                     400,
                     ['Content-Type' => 'text/plain', 'Content-Length' => 37],
@@ -89,8 +90,8 @@ sub app {
             my $json = encode_json $searcher->search(
                 in     => $in,
                 query  => decode_utf8($q),
-                offset => scalar $req->param('o'),
-                limit  => scalar $req->param('l'),
+                offset => scalar $params->{o},
+                limit  => scalar $params->{l},
             );
             return [
                 200,
