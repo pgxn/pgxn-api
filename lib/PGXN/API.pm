@@ -33,7 +33,7 @@ create networks for distributing any kind of release distributions and for
 providing a lightweight static file JSON REST API.
 
 PGXN::API provides a superset of the static file REST API, embellishing the
-metadata in some files and provding additional APIs, including full-text
+metadata in some files and providing additional APIs, including full-text
 search and browsable access to all packages on the mirror. Hit the L<PGXN API
 server|http://api.pgxn.org/> for the canonical deployment of this module.
 Better yet, read the L<comprehensive API
