@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.12.8
+0.12.8  2011-04-29T21:21:13
       - Some documentation tweaks.
       - First release to CPAN.
 
