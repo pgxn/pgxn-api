@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.12.8
+      - Some documentation tweaks.
+      - First release to CPAN.
 
 0.12.7  2011-04-28T22:28:31
       - Fixed a bug where an updated root `index.json` updated on the mirror

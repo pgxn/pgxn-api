@@ -26,12 +26,19 @@ In a system start script:
 
 =head1 Description
 
-PGXN::API creates a REST API for PGXN networks. Of course, any PGXN mirror
-provides a simple REST interface all on its own. PGXN::API is a superset of
-that interface, adding additional metadata to all of the usual PGXN mirror
-JSON files, as well as a search interface and browsable access to all packages
-on the mirror. Hit the L<PGXN API server|http://api.pgxn.org/> for the
-canonical deployment of this module.
+L<PGXN|http://pgxn.org> is a L<CPAN|http://cpan.org>-inspired network for
+distributing extensions for the L<PostgreSQL RDBMS|http://www.postgresql.org>.
+All of the infrastructure tools, however, have been designed to be used to
+create networks for distributing any kind of release distributions and for
+providing a lightweight static file JSON REST API.
+
+PGXN::API provides a superset of the static file REST API, embellishing the
+metadata in some files and provding additional APIs, including full-text
+search and browsable access to all packages on the mirror. Hit the L<PGXN API
+server|http://api.pgxn.org/> for the canonical deployment of this module.
+Better yet, read the L<comprehensive API
+documentation|http://github.com/pgxn/pgxn-api/wiki> or use L<WWW::PGXN> if you
+just want to use the API.
 
 There are two simple steps to setting up your own API server using this
 module:
@@ -42,13 +49,14 @@ module:
 
 This script syncs to a PGXN mirror via rsync and processes newly-synced data
 to provide the additional data and APIs. Any PGXN mirror will do. If you need
-to create your own network of mirrors first, see L<PGXN::Manager>. Consult the
+to create your own network of mirrors first, see
+L<PGXN::Manager|http://github.com/pgxn/pgxn-manager/>. Consult the
 L<pgxn_api_sync> documentation for details on its (minimal) options.
 
 =item * F<pgxn_api.psgi>
 
 A L<Plack> server for the API. In addition to the usual L<plackup> options, it
-has a few of this own, specified as simple strings with no leading dashes:
+has a few of its own, specified as simple strings with no leading dashes:
 
 =over
 
@@ -59,7 +67,7 @@ manage via L<pgxn_api_sync> in a cron job. Optional. If not specified, it will
 default to a directory named F<www> in the parent directory above the F<PGXN>
 directory in which this module is installed. If you're running the API from a
 Git checkout, that should be fine. Otherwise you should probably specify a
-document root you're you'll never be able to find it.
+document root or you're you'll never be able to find it.
 
 =item C<errors_to>
 
@@ -241,11 +249,16 @@ L<bug-PGXN-API@rt.cpan.org|mailto:bug-PGXN-API@rt.cpan.org>.
 
 =over
 
-=item L<PGXN::Manager>
+=item L<PGXN::Manager|http://github.com/pgxn/pgxn-manager/>
 
 The heart of any PGXN network, PGXN::Manager manages distribution uploads and
 mirror maintenance. You'll want to look at it if you plan to build your own
 network.
+
+=item L<API Documentation|http://github.com/pgxn/pgxn-api/wiki>
+
+Comprehensive documentation of the APIs provided by both mirror servers and
+API servers powered by PGXN::API.
 
 =item L<WWW::PGXN>
 
