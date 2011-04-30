@@ -23,7 +23,7 @@ API
 PostgreSQL
 CPAN
 GitHub
-JSOn
+JSON
 metadata
 subdirectory
 superset
