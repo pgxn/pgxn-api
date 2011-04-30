@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.12.10
+0.13.0
       - The "name" and "user_name" fields are now full-text indexed in the
         "docs", "dists", and "extensions" indexes. This will allow a search
         such as `user:theory` to return results.

@@ -1,4 +1,4 @@
-PGXN/API version 0.12.10
+PGXN/API version 0.13.0
 ======================
 
 This application provides a REST API for flexible searching of PGXN
