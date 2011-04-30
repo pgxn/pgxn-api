@@ -667,7 +667,7 @@ $params->{meta}   = $meta;
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 
 my $doc_dir = catdir $doc_root, qw(dist pair 0.1.0);
-$readme = catfile $doc_dir, 'readme.html';
+$readme = catfile $doc_dir, 'README.html';
 my $doc = catfile $doc_dir, 'doc', 'pair.html';
 file_exists_ok $doc_dir, 'Directory dist/pair/0.1.0 should exist';
 file_not_exists_ok $readme, 'dist/pair/0.1.0/README.txt should not exist';
@@ -708,12 +708,12 @@ is_deeply shift @{ $indexer->to_index->{docs} }, {
 is_deeply $indexer->to_index->{docs}, [], 'Should be no other documents to index';
 
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
-file_exists_ok $readme, 'dist/pair/pair/0.1.0/readme.html should now exist';
+file_exists_ok $readme, 'dist/pair/pair/0.1.0/README.html should now exist';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
 file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>},
-    'readme.html should have HTML';
-file_contents_unlike $readme, qr{<html}i, 'readme.html should have no html element';
-file_contents_unlike $readme, qr{<body}i, 'readme.html should have no body element';
+    'README.html should have HTML';
+file_contents_unlike $readme, qr{<html}i, 'README.html should have no html element';
+file_contents_unlike $readme, qr{<body}i, 'README.html should have no body element';
 file_contents_like $doc, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0},
     'Doc should have preformatted HTML';
 file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
