@@ -6,6 +6,7 @@ Revision history for Perl extension PGXN::API
         `/usr/bin/perl -w` instead and let it be any Perl, not just 5.12.
         Should prevent failures on systems that don't allow arguments to `env`
         and where the system Perl is different than the installating Perl.
+      - Added Data::Dump to list of requirements. Was inadvertently omitted.
 
 0.12.8  2011-04-29T21:21:13
       - Some documentation tweaks.

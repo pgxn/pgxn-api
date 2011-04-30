@@ -27,6 +27,7 @@ my $build = $class->new(
     requires => {
         'Archive::Zip'                 => '1.30',
         'Cwd'                          => '3.33',
+        'Data::Dump'                   => '1.17',
         'Digest::SHA1'                 => '2.13',
         'Email::MIME::Creator'         => '1.905',
         'Email::Sender::Simple'        => '0.102370',
