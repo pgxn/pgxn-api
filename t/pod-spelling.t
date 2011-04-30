@@ -18,3 +18,12 @@ API's
 APIs
 PGXN
 RDBMS
+CPAN
+API
+PostgreSQL
+CPAN
+GitHub
+JSOn
+metadata
+subdirectory
+superset
