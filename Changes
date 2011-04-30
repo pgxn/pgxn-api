@@ -2,6 +2,10 @@ Revision history for Perl extension PGXN::API
 
 0.12.9
       - Fixed a test failure in `t/indexer.t` on case-sensitive file systems.
+      - Removed use of `env perl` in the `t/bin/testrscync` script. Just use
+        `/usr/bin/perl -w` instead and let it be any Perl, not just 5.12.
+        Should prevent failures on systems that don't allow arguments to `env`
+        and where the system Perl is different than the installating Perl.
 
 0.12.8  2011-04-29T21:21:13
       - Some documentation tweaks.
