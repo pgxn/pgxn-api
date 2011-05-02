@@ -20,9 +20,9 @@ In a cron job:
 
 In a system start script:
 
-  plackup pgxn_api.psgi doc_root    /var/www/api \
-                        errors_from oops@example.com \
-                        errors_to   alerts@example.com
+  pgxn_apid --doc-root    /var/www/api \
+            --errors-from oops@example.com \
+            --errors-to   alerts@example.com
 
 =head1 Description
 

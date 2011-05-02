@@ -56,7 +56,7 @@ pgxn_api_sync - Sync the PGXN API server to a PGXN mirror
 
   pgxn_api_sync --root /path/to/api/doc/root \
                 --rsync /path/to/rsync \
-                http://master.pgxn.org/pgxn/
+                rsync://master.pgxn.org/pgxn/
 
 =head1 Description
 

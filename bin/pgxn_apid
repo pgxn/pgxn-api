@@ -1,0 +1,258 @@
+#!/usr/local/bin/perl -w
+
+use 5.12.0;
+use utf8;
+use lib 'lib';
+use PGXN::API::Router;
+use Plack::Runner;
+use Getopt::Long;
+
+Getopt::Long::Configure( qw(bundling pass_through) );
+
+my %opts;
+
+GetOptions(
+    'errors-to=s'   => \$opts{errors_to},
+    'errors-from=s' => \$opts{errors_from},
+    'doc-root=s'    => \$opts{doc_root},
+    'help|h'        => \my $help,
+    'man|m'         => \my $man,
+    'version|v'     => \my $version,
+) or _pod2usage();
+
+_pod2usage(
+    ( $man ? ( '-sections' => '.+' ) : ()),
+    '-exitval' => 0,
+) if $help or $man;
+
+if ($version) {
+    require File::Basename;
+    say File::Basename::basename($0), ' ', PGXN::API->VERSION;
+    exit;
+}
+
+# Check required options.
+if (my @missing = map {
+    ( my $opt = $_ ) =~ s/_/-/g;
+    "--$opt";
+} grep { !$opts{$_} } qw(errors_to errors_from)) {
+    my $pl = @missing > 1 ? 's' : '';
+    my $last = pop @missing;
+    my $disp = @missing ? join(', ', @missing) . (@missing > 1 ? ',' : '')
+        . " and $last" : $last;
+    _pod2usage( '-message' => "Missing required $disp option$pl" );
+}
+
+my $runner = Plack::Runner->new;
+$runner->parse_options(@ARGV);
+$runner->run(PGXN::API::Router->app(%opts));
+
+sub _pod2usage {
+    require Pod::Usage;
+    Pod::Usage::pod2usage(
+        '-verbose'  => 99,
+        '-sections' => '(?i:(Usage|Options))',
+        '-exitval'  => 1,
+        @_
+    );
+}
+
+=head1 Name
+
+pgxn_apid - The PGXN API server
+
+=head1 Usage
+
+  pgxn_apid --doc-root    /var/www/api \
+            --errors-from oops@example.com \
+            --errors-to   alerts@example.com
+
+=head1 Description
+
+This is the PGXN API PSGI server. It automatically figures out the environment
+it is run in, and runs your application in that environment. C<FastCGI>,
+C<CGI>, C<AnyEvent> and others can all be detected. See L<Plack::Loader> for
+the authoritative list.
+
+=head1 Options
+
+     --errors-to   EMAIL   Email to which error messages should be sent.
+     --errors-from EMAIL   Email to use on the From line of error messages.
+     --doc-root    PATH    Location of the API document root.
+  -o --host                Bind TCP daemon to the specified interface.
+  -p --port                Listen on the specified TCP port.
+  -s --server              Plack server to use.
+  -S --socket              UNIX domain socket path to listen on.
+  -l --listen              Address to listen on.
+  -D --daemonize           Make the process go to the background.
+  -I               PATH    Specify a Perl include library path.
+  -E --env         ENV     Run with the specified environment.
+  -r --reload              Reload when a development file changes.
+  -R --Reload      PATH    Reload when a file in the specified path changes.
+  -L --loader      LOADER  Run with specified loading class.
+     --access-log  PATH    Write access log to the specified file.
+  -h --help                Print a usage statement and exit.
+  -m --man                 Print the complete documentation and exit.
+  -v --version             Print the version number and exit.
+
+=head1 Option Details
+
+=over
+
+=item C<--errors-to>
+
+Specify an email address to which to send error information. Whenever the
+server encounters a 500 error, it will send detailed information, including a
+stack trace, to this address.
+
+=item C<--errors-from>
+
+The email address from which error messages should appear to be sent.
+
+=item C<--doc-root>
+
+The path to use for the API document root. Should be the same path as that
+managed by L<pgxn_api_sync>.
+
+=item C<-o>, C<--host>
+
+The interface a TCP based server daemon binds to. Defaults to C<undef>, which
+lets most server back ends bind the any (C<*>) interface. This option does
+nothing if the server does not support TCP socket.
+
+=item C<-p>, C<--port>
+
+The port number a TCP based server daemon listens on. Defaults to 5000. This
+option does nothing if the server does not support TCP socket.
+
+=item C<-s>, C<--server>
+
+Select a specific implementation to run on using the C<PLACK_SERVER>
+environment variable or use the C<-s> or C<--server> flag which will be
+preferred over the environment variable.
+
+=item C<-S>, C<--socket>
+
+UNIX domain socket path to listen on. Defaults to C<undef>. This option does
+nothing if the server doesn't support UNIX sockets.
+
+=item C<-l>, C<--listen>
+
+Addresses on which to listen. It could be C<HOST:PORT>, C<:PORT> or C<PATH>
+(without colons). It could be multiple but it depends on the server
+implementations whether multiple interfaces are supported.
+
+=item C<-D>, C<--daemonize>
+
+Makes the process go background. It's up to the back end server/handler
+implementation whether this option is respected or not.
+
+=item C<-I>
+
+Specify perl library include path, like C<perl>'s -I option.
+
+=item C<-E>, C<--env>
+
+Specify the environment option (default is C<development>). You can set this
+value by setting C<PLACK_ENV> environment variable as well, and specifying the
+value with the command line options writes back to C<PLACK_ENV> as well, so
+the API server can tell which environment setting the application is running
+on.
+
+  # These two are the same
+  pgxn_apid -E deployment
+  env PLACK_ENV=deployment pgxn_apid
+
+The value can be anything but commonly used ones are C<development>,
+C<deployment> and C<test>.
+
+If it's set to C<development>, following middleware components are enabled by
+default: C<AccessLog>, C<StackTrace> and C<Lint>.
+
+=item C<-r>, C<--reload>
+
+Watch for updates in your development directory and restart the server
+whenever a file is updated. This option by default watches the C<lib>
+directory. Use C<-R> if you want to watch other directories.
+
+=item C<-R>, C<--Reload>
+
+C<-R> option allows you to specify the path to watch file updates separated by
+comma (C<,>).
+
+  pgxn_apid -R /path/to/project/lib,/path/to/project/templates
+
+=item C<-L>, C<--loader>
+
+Specify the server loading subclass that implements how to run the server.
+Available options are I<Plack::Loader> (default), C<Restarter> (automatically
+set when C<-r> or C<-R> is used), I<Delayed> and I<Shotgun>.
+
+See L<Plack::Loader::Delayed> and L<Plack::Loader::Shotgun> when to
+use those loader types.
+
+=item C<--access-log>
+
+Specify the path to a file where the access log should be written. By default,
+in the development environment access logs will go to C<STDERR>.
+
+=item C<-h> C<--help>
+
+Outputs usage information and exits.
+
+=item C<-m> C<--man>
+
+Outputs this full documentation and exits.
+
+=item C<-v> C<--version>
+
+Outputs the version and exits.
+
+=back
+
+Other options that starts with C<--> are passed through to the back end
+server. See the appropriate L<Plack::Handler> back end documentation to see
+which options are available.
+
+=head1 See Also
+
+=over
+
+=item * L<Plack::Runner>
+
+=item * L<Plack::Loader>
+
+=item * L<plackup>
+
+=item * L<PGXN::API>
+
+=back
+
+=head1 Author
+
+David E. Wheeler <david.wheeler@pgexperts.com>
+
+=head1 Copyright and License
+
+Copyright (c) 2011 David E. Wheeler.
+
+This module is free software; you can redistribute it and/or modify it under
+the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose, without fee, and without a written agreement is
+hereby granted, provided that the above copyright notice and this paragraph
+and the following two paragraphs appear in all copies.
+
+In no event shall David E. Wheeler be liable to any party for direct,
+indirect, special, incidental, or consequential damages, including lost
+profits, arising out of the use of this software and its documentation, even
+if David E. Wheeler has been advised of the possibility of such damage.
+
+David E. Wheeler specifically disclaims any warranties, including, but not
+limited to, the implied warranties of merchantability and fitness for a
+particular purpose. The software provided hereunder is on an "as is" basis,
+and David E. Wheeler has no obligations to provide maintenance, support,
+updates, enhancements, or modifications.
+
+=cut
