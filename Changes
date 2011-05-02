@@ -1,6 +1,7 @@
 Revision history for Perl extension PGXN::API
 
 0.13.1
+      - Now require Plack 0.9977 to enable JSONP for all JSON file requests.
 
 0.13.0  2011-04-30T20:40:21
       - The "name" and "user_name" fields are now full-text indexed in the

@@ -68,12 +68,8 @@ test_psgi $app => sub {
     ok $res->is_success, 'It should be a success';
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
         'Should have API version in the header';
-    TODO: {
-        local $TODO = 'JSONP not yet compatible with Plack::App::File';
-            is $res->content_type, 'application/javascript',
-                'Should be application/javascript';
-        like $res->content, qr{\Afoo\(}, 'It should look like a JSONP response';
-    }
+    is $res->content_type, 'text/javascript', 'Should be text/javascript';
+    like $res->content, qr{\Afoo\(}, 'It should look like a JSONP response';
 };
 
 # Try a readme file.
