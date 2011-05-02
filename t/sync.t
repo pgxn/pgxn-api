@@ -36,10 +36,14 @@ END { remove_tree $pgxn->doc_root }
 
 ##############################################################################
 # Test rsync.
-ok my $sync = $CLASS->new(source => 'rsync://localhost/pgxn'),
-    "Construct $CLASS object";
-is $sync->rsync_path, 'rsync', 'Default rsync_path should be "rsync"';
-$sync->rsync_path(catfile qw(t bin), 'testrsync' . (PGXN::API::Sync::WIN32 ? '.bat' : ''));
+my $attr = $CLASS->meta->get_attribute('rsync_path');
+is $attr->default, 'rsync', 'Default rsync_path should be "rsync"';
+
+my $rsync = catfile qw(t bin), 'testrsync' . (PGXN::API::Sync::WIN32 ? '.bat' : '');
+ok my $sync = $CLASS->new(
+    source     => 'rsync://localhost/pgxn',
+    rsync_path => $rsync,
+), "Construct $CLASS object";
 
 my $rsync_out   = catfile qw(t data rsync.out);
 my $mirror_root = $pgxn->mirror_root;

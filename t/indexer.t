@@ -660,7 +660,10 @@ is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
 
 ##############################################################################
 # Test parse_docs().
-my $sync = PGXN::API::Sync->new(source => 'rsync://localhost/pgxn');
+my $sync = PGXN::API::Sync->new(
+    source => 'rsync://localhost/pgxn',
+    rsync_path => catfile qw(t bin), 'testrsync' . (PGXN::API::Sync::WIN32 ? '.bat' : '')
+);
 my $pgz = catfile qw(dist pair 0.1.0 pair-0.1.0.zip);
 
 $params->{meta}   = $meta;
