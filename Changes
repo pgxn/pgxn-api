@@ -3,9 +3,9 @@ Revision history for Perl extension PGXN::API
 0.14.0
       - Now require Plack 0.9977 to enable JSONP for all JSON file requests.
       - Fixed test failures on systems where `rsync` is not in the path.
-      - Replaced `pgxn_api.psgi` with `pgxn_apid`. The latter uses proper
-        command-line processing and includes all of the functionality of
-        `plackup`.
+      - Replaced `pgxn_api.psgi` with `pgxn_api_server`. The latter uses
+        proper command-line processing and includes all of the functionality
+        of `plackup`.
 
 0.13.0  2011-04-30T20:40:21
       - The "name" and "user_name" fields are now full-text indexed in the

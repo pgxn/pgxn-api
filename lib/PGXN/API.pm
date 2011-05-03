@@ -20,9 +20,9 @@ In a cron job:
 
 In a system start script:
 
-  pgxn_apid --doc-root    /var/www/api \
-            --errors-from oops@example.com \
-            --errors-to   alerts@example.com
+  pgxn_api_server --doc-root    /var/www/api \
+                  --errors-from oops@example.com \
+                  --errors-to   alerts@example.com
 
 =head1 Description
 
@@ -45,7 +45,7 @@ module:
 
 =over
 
-=item * F<pgxn_api_sync>
+=item * L<pgxn_api_sync>
 
 This script syncs to a PGXN mirror via rsync and processes newly-synced data
 to provide the additional data and APIs. Any PGXN mirror will do. If you need
@@ -53,14 +53,14 @@ to create your own network of mirrors first, see
 L<PGXN::Manager|http://github.com/pgxn/pgxn-manager/>. Consult the
 L<pgxn_api_sync> documentation for details on its (minimal) options.
 
-=item * F<pgxn_api.psgi>
+=item * L<pgxn_api_server>
 
 A L<Plack> server for the API. In addition to the usual L<plackup> options, it
-has a few of its own, specified as simple strings with no leading dashes:
+has a few of its own:
 
 =over
 
-=item C<doc_root>
+=item C<--doc-root>
 
 The path to use for the API document root. This is the same directory as you
 manage via L<pgxn_api_sync> in a cron job. Optional. If not specified, it will
@@ -69,13 +69,13 @@ directory in which this module is installed. If you're running the API from a
 Git checkout, that should be fine. Otherwise you should probably specify a
 document root or you're you'll never be able to find it.
 
-=item C<errors_to>
+=item C<--errors-to>
 
 An email address to which error emails should be sent. In the event of an
 internal server error, the server will send an email to this address with
 diagnostic information.
 
-=item C<errors_from>
+=item C<--errors-from>
 
 An email address from which alert emails should be sent.
 

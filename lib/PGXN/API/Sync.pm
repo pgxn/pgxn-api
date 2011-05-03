@@ -230,7 +230,7 @@ PGXN::API::Sync - Sync from a PGXN mirror and update the index
 
 =head1 Description
 
-This module provides the implementation for C<pgxn_api_sync>, the command-line
+This module provides the implementation for L<pgxn_api_sync>, the command-line
 utility for syncing to a PGXN mirror and creating the API. It syncs to the
 specified PGXN rsync source URL, which should be a PGXN mirror server, and
 then verifies and unpacks newly-uploaded distributions and hands them off to
@@ -278,7 +278,7 @@ to C<STDERR>.
 
 Runs the sync, C<rsync>ing from the source mirror server, verifying and
 unpacking distributions, and handing them off to the indexer for indexing.
-This is the main method called by C<pgxn_api_sync> to just do the job.
+This is the main method called by L<pgxn_api_sync> to just do the job.
 
 =head3 C<run_rsync>
 

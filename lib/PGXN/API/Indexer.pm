@@ -1063,14 +1063,14 @@ extra data points useful for the API.
 
 Adds all documentation as well as, distribution, extension, user, and tag
 metadata, to full text indexes. These may be queried via the API server
-(provided by F<bin/pgxn_api.psgi> or locally with L<PGXN::API::Searcher>.
+(provided by L<pgxn_api_server> or locally with L<PGXN::API::Searcher>.
 
 =back
 
 The result is a robust API with much more information than is provided by the
 spare metadata JSON files on a normal PGXN mirror. The interface offered via
-the F<pgxn_api.psgi> server is then a superset of that offered by a normal
-mirror. It's a PGXN mirror + more!
+L<pgxn_api_server> is then a superset of that offered by a normal mirror. It's
+a PGXN mirror + more!
 
 =head1 Class Interface
 
