@@ -1,6 +1,6 @@
-package PGXN::API::Router v0.14.1;
+package PGXN::API::Router;
 
-use 5.12.0;
+use 5.10.0;
 use utf8;
 use PGXN::API;
 use Plack::Builder;
@@ -12,6 +12,7 @@ use Plack::Request;
 use Encode;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
+our $VERSION = v0.14.1;
 
 sub app {
     my ($class, %params) = @_;

@@ -1,12 +1,13 @@
-package PGXN::API v0.14.1;
+package PGXN::API;
 
-use 5.12.0;
+use 5.10.0;
 use utf8;
 use MooseX::Singleton;
 use File::Spec::Functions qw(catfile catdir);
 use URI::Template;
 use JSON;
 use namespace::autoclean;
+our $VERSION = v0.14.1;
 
 =head1 Name
 

@@ -12,7 +12,7 @@ goto endofperl
 @rem ';
 #!/usr/bin/env perl -w
 
-use 5.12.0;
+use 5.10.0;
 
 say for @ARGV;
 

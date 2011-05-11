@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-use 5.12.0;
+use 5.10.0;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
 use Test::More tests => 196;
@@ -277,6 +277,8 @@ test_psgi $app => sub {
     is_deeply \@params,
         [in => 'docs', query => 'hi', offset => undef, limit => undef ],
         "$uri should properly dispatch to the searcher";
+
+    $search_mock->unmock('search');
 };
 
 # Test /error basics.

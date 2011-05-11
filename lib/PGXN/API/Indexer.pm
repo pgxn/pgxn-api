@@ -1,6 +1,6 @@
-package PGXN::API::Indexer v0.14.1;
+package PGXN::API::Indexer;
 
-use 5.12.0;
+use 5.10.0;
 use utf8;
 use Moose;
 use PGXN::API;
@@ -17,6 +17,7 @@ use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Index::Indexer;
 use namespace::autoclean;
+our $VERSION = v0.14.1;
 
 has verbose  => (is => 'rw', isa => 'Int', default => 0);
 has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{

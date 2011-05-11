@@ -1,6 +1,6 @@
-package PGXN::API::Sync v0.14.1;
+package PGXN::API::Sync;
 
-use 5.12.0;
+use 5.10.0;
 use utf8;
 use Moose;
 use PGXN::API;
@@ -14,6 +14,7 @@ use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
 use Moose::Util::TypeConstraints;
 use namespace::autoclean;
+our $VERSION = v0.14.1;
 
 subtype Executable => as 'Str', where {
     my $exe = $_;
