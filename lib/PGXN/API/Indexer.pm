@@ -17,7 +17,7 @@ use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Index::Indexer;
 use namespace::autoclean;
-our $VERSION = v0.15.0;
+our $VERSION = v0.15.1;
 
 has verbose  => (is => 'rw', isa => 'Int', default => 0);
 has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
