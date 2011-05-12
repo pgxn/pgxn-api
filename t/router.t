@@ -63,7 +63,7 @@ test_psgi $app => sub {
 # Try a JSONP request.
 test_psgi $app => sub {
     my $cb = shift;
-    my $uri = '/dist/pair/0.1.1/META.json?jsonp=foo';
+    my $uri = '/dist/pair/0.1.1/META.json?callback=foo';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
@@ -207,7 +207,7 @@ test_psgi $app => sub {
     }
 
     # Try a JSONP request.
-    my $uri = "/search/docs?q=foo&jsonp=bar";
+    my $uri = "/search/docs?q=foo&callback=bar";
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, "$uri should return success";
     is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
