@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.14.2
+0.15.0
       - Changed the JSONP callback parameter from "jsonp" to "callback".
 
 0.14.1  2011-05-12T18:11:02
