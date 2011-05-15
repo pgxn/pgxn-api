@@ -649,9 +649,9 @@ sub _index_user {
     my $data = {
         key      => lc $user->{nickname},
         user     => $user->{nickname},
-        name     => $user->{name},
+        name     => $user->{name} || '',
         email    => $user->{email},
-        uri      => $user->{uri},
+        uri      => $user->{uri} || '',
     };
 
     # Gather up any other details.

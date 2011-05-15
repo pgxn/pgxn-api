@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.15.1
+      - Eliminated "Use of uninitialized value in subroutine entry" warning
+        when indexing a user with no associated URI.
 
 0.15.0  2011-05-12T18:40:43
       - Changed the JSONP callback parameter from "jsonp" to "callback".
