@@ -1,0 +1,18 @@
+{
+   "extension": "pair",
+   "latest": "stable",
+   "stable": { "dist": "pair", "version": "0.1.3", "sha1": "cebefd23151b4b797239646f7ae045b03d028fcf" },
+   "testing": { "dist": "pair", "version": "0.1.1", "sha1": "c552c961400253e852250c5d2f3def183c81adb3" },
+   "versions": {
+      "0.1.3": [
+         { "dist": "pair", "version": "0.1.2" }
+      ],
+      "0.1.1": [
+         { "dist": "otherdist", "version": "0.3.0" },
+         { "dist": "pair", "version": "0.1.1" }
+      ],
+      "0.1.0": [
+         { "dist": "pair", "version": "0.1.0" }
+      ]
+   }
+}

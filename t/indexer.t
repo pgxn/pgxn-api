@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 239;
+use Test::More tests => 243;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -545,9 +545,9 @@ $exp = {
     versions  => {
         '0.1.0' => [
             {
-                dist         => 'pair',
-                date => '2010-10-18T15:24:21Z',
-                version      => '0.1.0',
+                dist    => 'pair',
+                date    => '2010-10-18T15:24:21Z',
+                version => '0.1.0',
             },
         ],
     },
@@ -656,7 +656,31 @@ $exp->{versions}{'0.1.2'} =  [{
 }];
 ok $doc_data = $api->read_json_from($ext_file),
     'Read the doc root extension data file one more time';
+is_deeply $doc_data, $exp, 'Should now have the 0.1.2 metadata';
+
+# Now a reindex where a version disappears.
+fcopy catfile(qw(t data pair-ext-updated4.json)),
+    catfile($api->mirror_root, qw(extension pair.json));
+$meta_012->{provides}{pair}{version} = '0.1.3';
+    $params->{meta} = $meta_012;
+ok $indexer->update_extensions($params), 'Replace 0.1.2 with 0.1.3';
+ok $doc_data = $api->read_json_from($ext_file),
+    'Read the doc root extension data file one more time';
+$exp->{stable}{version} = '0.1.3';
+$exp->{versions}{'0.1.3'} = delete $exp->{versions}{'0.1.2'};
 is_deeply $doc_data, $exp, 'Should now have the 0.1.3 metadata';
+
+is_deeply shift @{ $indexer->to_index->{extensions} }, {
+    abstract  => 'A key/value pair dåtå type',
+    date      => '2010-11-10T12:18:03Z',
+    dist      => 'pair',
+    docpath   => '',
+    extension => 'pair',
+    key       => 'pair',
+    user      => 'theory',
+    user_name => 'David E. Wheeler',
+    version   => '0.1.3',
+}, 'Should have extension index data again';
 
 ##############################################################################
 # Test parse_docs().

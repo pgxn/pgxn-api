@@ -388,7 +388,8 @@ sub update_extensions {
 
         # Copy the version info from the doc to the mirror and add the date.
         my $version   = $data->{version};
-        my $mir_dists = $mir_meta->{versions}{$version};
+        my $mir_vers  = $mir_meta->{versions};
+        my $mir_dists = $mir_vers->{$version};
         my $doc_dists = $doc_meta->{versions}{$version} ||= [];
 
         # Copy the doc root versions.
@@ -412,6 +413,12 @@ sub update_extensions {
                 # Got it. Add the release date.
                 $dist->{date} = $meta->{date};
             }
+        }
+
+        # Remove any deleted versions.
+        my $ddvers = $doc_meta->{versions};
+        for my $v (keys %{ $ddvers }) {
+            delete $ddvers->{$v} unless $mir_vers->{$v};
         }
 
         # Write it back out and index it.

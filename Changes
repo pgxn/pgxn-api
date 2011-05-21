@@ -3,6 +3,9 @@ Revision history for Perl extension PGXN::API
 0.15.1
       - Eliminated "Use of uninitialized value in subroutine entry" warning
         when indexing a user with no associated URI.
+      - If an version of an extension is deleted from the mirror extension
+        JSON file, it will now also be deleted from the API doc root's
+        extension JSON file (Issue #8).
 
 0.15.0  2011-05-12T18:40:43
       - Changed the JSONP callback parameter from "jsonp" to "callback".
