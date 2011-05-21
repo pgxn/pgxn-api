@@ -469,6 +469,7 @@ sub parse_docs {
         next if $seen{$fn}++;
         my $src = catfile $dir, $fn;
         next unless -e $src;
+        say "    Parsing markup in $src" if $self->verbose > 1;
         my $doc = $self->_parse_html_string($markup->parse(file => $src));
 
         (my $noext = $fn) =~ s{[.][^.]+$}{};
