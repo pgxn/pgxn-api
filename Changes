@@ -6,6 +6,8 @@ Revision history for Perl extension PGXN::API
       - If an version of an extension is deleted from the mirror extension
         JSON file, it will now also be deleted from the API doc root's
         extension JSON file (Issue #8).
+      - Requiring Text::Markup 0.13, as it has an important fix for parsing
+        Pod.
 
 0.15.0  2011-05-12T18:40:43
       - Changed the JSONP callback parameter from "jsonp" to "callback".
