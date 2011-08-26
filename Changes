@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.16.0
+0.16.0  2011-08-26T17:29:00Z
       - Eliminated "Use of uninitialized value in subroutine entry" warning
         when indexing a user with no associated URI.
       - If an version of an extension is deleted from the mirror extension
