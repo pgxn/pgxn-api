@@ -14,7 +14,7 @@ use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
 use Moose::Util::TypeConstraints;
 use namespace::autoclean;
-our $VERSION = v0.15.1;
+our $VERSION = v0.16.0;
 
 subtype Executable => as 'Str', where {
     my $exe = $_;

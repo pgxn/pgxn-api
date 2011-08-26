@@ -17,7 +17,7 @@ use Lucy::Analysis::PolyAnalyzer;
 use Lucy::Analysis::RegexTokenizer;
 use Lucy::Index::Indexer;
 use namespace::autoclean;
-our $VERSION = v0.15.1;
+our $VERSION = v0.16.0;
 
 has verbose  => (is => 'rw', isa => 'Int', default => 0);
 has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
