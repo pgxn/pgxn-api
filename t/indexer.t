@@ -806,7 +806,7 @@ is_deeply $indexer->to_index, {
 ok $indexer->_index(dists => $doc), 'Index a doc again';
 file_not_exists_ok catdir($doc_root, '_index'), 'Should not have index dir yet';
 
-isa_ok $indexer->indexer_for($_), 'KinoSearch::Index::Indexer', "$_ indexer"
+isa_ok $indexer->indexer_for($_), 'Lucy::Index::Indexer', "$_ indexer"
     for qw(docs dists extensions users tags);
 ok $indexer->_commit, 'Commit that doc';
 file_exists_ok catdir($doc_root, '_index'), 'Should now have index dir';
