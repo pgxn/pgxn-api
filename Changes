@@ -1,5 +1,9 @@
 Revision history for Perl extension PGXN::API
 
+0.16.1.
+      - Added `version_string` class method to PGXN::API. It should always be
+        used for displaying the version.
+
 0.16.0  2011-08-26T17:29:00Z
       - Eliminated "Use of uninitialized value in subroutine entry" warning
         when indexing a user with no associated URI.

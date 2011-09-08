@@ -98,6 +98,20 @@ hacking on it, read on. Otherwise, just enjoy your own API server!
 Returns the singleton instance of PGXN::Manager. This is the recommended way
 to get the PGXN::API object.
 
+=head2 Class Method
+
+=head3 C<version_string>
+
+  say 'PGXN::API ', PGXN::API->version_string;
+
+Returns a string representation of the PGXN::API version.
+
+=cut
+
+sub version_string {
+    sprintf 'v%vd', $VERSION;
+}
+
 =head2 Attributes
 
 =head3 C<uri_templates>

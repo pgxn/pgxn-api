@@ -42,7 +42,7 @@ sub app {
                 Plack::Util::response_cb($res, sub {
                     my $res = shift;
                     push @{ $res->[1] },
-                        'X-PGXN-API-Version' => __PACKAGE__->VERSION;
+                        'X-PGXN-API-Version' => PGXN::API->version_string;
                 });
             };
         };

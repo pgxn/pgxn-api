@@ -44,7 +44,7 @@ test_psgi $app => sub {
     my $cb = shift;
     ok my $res = $cb->(GET '/index.json'), 'Fetch /index.json';
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'application/json', 'Should be application/json';
 };
@@ -55,7 +55,7 @@ test_psgi $app => sub {
     my $uri = '/dist/pair/0.1.1/META.json';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'application/json', 'Should be application/json';
 };
@@ -66,7 +66,7 @@ test_psgi $app => sub {
     my $uri = '/dist/pair/0.1.1/META.json?callback=foo';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/javascript', 'Should be text/javascript';
     like $res->content, qr{\Afoo\(}, 'It should look like a JSONP response';
@@ -78,7 +78,7 @@ test_psgi $app => sub {
     my $uri = '/dist/pair/0.1.1/README.txt';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/plain', 'Should be text/plain';
     is $res->content_charset, 'UTF-8', 'Should be UTF-8';
@@ -90,7 +90,7 @@ test_psgi $app => sub {
     my $uri = '/dist/pair/0.1.1/pair-0.1.1.zip';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'application/zip', 'Should be application/zip';
 };
@@ -103,7 +103,7 @@ test_psgi $app => sub {
     my $uri = '/index.html';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/html', 'Should be text/html';
 };
@@ -115,7 +115,7 @@ test_psgi $app => sub {
     fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
     ok my $res = $cb->(GET '/'), "Fetch /";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/html', 'Should be text/html';
 };
@@ -132,7 +132,7 @@ test_psgi $app => sub {
     my $uri = 'src/pair/0.1.0/META.json';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/plain', 'Should be text/plain';
 };
@@ -143,7 +143,7 @@ test_psgi $app => sub {
     my $uri = 'src/pair/0.1.1/README.txt';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/plain', 'Should be text/plain';
 };
@@ -154,7 +154,7 @@ test_psgi $app => sub {
     my $uri = 'src/pair/index.html';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/plain', 'Should be text/plain';
 };
@@ -165,7 +165,7 @@ test_psgi $app => sub {
     my $uri = 'src/pair/';
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, 'It should be a success';
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/html', 'Should be text/html';
     like $res->content, qr/Parent Directory/,
@@ -179,7 +179,7 @@ test_psgi $app => sub {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 404, "$uri should 404";
-        is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+        is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
             'Should have API version in the header';
     }
 };
@@ -197,7 +197,7 @@ test_psgi $app => sub {
             my $uri = "/search/$in$slash?$q";
             ok my $res = $cb->(GET $uri), "Fetch $uri";
             ok $res->is_success, "$uri should return success";
-            is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+            is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
                 'Should have API version in the header';
             is $res->content_type, 'application/json', 'Should be application/json';
             is $res->content, '{"foo":1}', 'Content should be JSON of results';
@@ -210,7 +210,7 @@ test_psgi $app => sub {
     my $uri = "/search/docs?q=foo&callback=bar";
     ok my $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, "$uri should return success";
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/javascript',
         'Should be application/javascript';
@@ -227,7 +227,7 @@ test_psgi $app => sub {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 404, "$uri should 404";
-        is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+        is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
             'Should have API version in the header';
     }
 
@@ -236,7 +236,7 @@ test_psgi $app => sub {
     ok $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_error, "$uri should respond with an error";
     is $res->code, 400, "$uri should 400";
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content, 'Bad request: Invalid or missing "q" query param.',
         'Should get proper error message';
@@ -247,7 +247,7 @@ test_psgi $app => sub {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 400, "$uri should 400";
-        is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+        is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
             'Should have API version in the header';
         is $res->content, 'Bad request: Invalid or missing "q" query param.',
             'Should get proper error message';
@@ -262,7 +262,7 @@ test_psgi $app => sub {
         ok my $res = $cb->(GET $uri), "Fetch $uri";
         ok $res->is_error, "$uri should respond with an error";
         is $res->code, 400, "$uri should 400";
-        is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+        is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
             'Should have API version in the header';
         is $res->content, $spec->[1], 'Should get proper error message';
     }
@@ -271,7 +271,7 @@ test_psgi $app => sub {
     $uri .= '?q=hi';
     ok $res = $cb->(GET $uri), "Fetch $uri";
     ok $res->is_success, "$uri should return success";
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content, '{"foo":1}', 'Content should be JSON of results';
     is_deeply \@params,
@@ -296,7 +296,7 @@ test_psgi $err_app => sub {
     my $cb = shift;
     ok my $res = $cb->(GET '/error'), "GET /error";
     ok $res->is_success, q{Should be success (because it's only served as a subrequest)};
-    is $res->header('X-PGXN-API-Version'), PGXN::API->VERSION,
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content, 'internal server error', 'body should be error message';
 
