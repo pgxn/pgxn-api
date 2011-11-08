@@ -12,6 +12,7 @@
 \bpm_to_blib$
 \bblibdirs$
 ^MANIFEST\.SKIP$
+^MYMETA
 
 # Avoid Module::Build generated and utility files.
 \bBuild$
@@ -27,6 +28,7 @@
 
 # Avoid build files.
 ^PGXN-API
+^Capfile
 ^www
 
 # Avoid spelling test.

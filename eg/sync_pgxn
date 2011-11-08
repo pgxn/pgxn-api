@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd /var/www/api.pgxn.org
+perl bin/pgxn_api_sync /var/www/master.pgxn.org/
