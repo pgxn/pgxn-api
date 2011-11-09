@@ -71,17 +71,17 @@ check_running() {
 }
 
 check_compile() {
-    if [ -n "$USER" ] ; then
-        if su $USER -c "cd $APPDIR ; perl -Ilib -M$APPNAME -c $PLACKUP" ; then
+    # if [ -n "$USER" ] ; then
+    #     if su $USER -c "cd $APPDIR ; perl -Ilib -M$APPNAME -c $PLACKUP" ; then
+    #         return 0
+    #     fi
+    #     return 1
+    # else
+        if ( cd $APPDIR ; perl -Ilib -M$APPNAME -c $PLACKUP ) ; then
             return 0
         fi
         return 1
-    else
-        if ( cd $APPDIR ; perl -Ilib -M$APPNAME -c $PSGI ) ; then
-            return 0
-        fi
-        return 1
-    fi
+    # fi
 }
 
 _start() {
