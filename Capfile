@@ -27,7 +27,7 @@ set :user,        "pgxn"
 set :pgxn_user,   "pgxn_api"
 set :host,        "depesz.com"
 
-# We just have one shared directory.
+# Define the shared directories we need.
 set :shared_children, %w(log pids www)
 
 role :app, host
