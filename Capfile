@@ -4,6 +4,10 @@
 # cap deploy:setup
 # cap deploy:cold -s branch=$tag
 # cap deploy -s branch=$tag
+#
+# -s options:
+# * user      - Deployment user; default: "pgxn"
+# * pgxn_user - User to run the app; default: "pgxn_api"
 
 load 'deploy'
 
@@ -17,12 +21,16 @@ set :deploy_via,  :remote_cache
 set :use_sudo,    false
 set :branch,      "master"
 set :deploy_to,   "~/pgxn-api"
-set :run_from,    "/var/www/#{application}.#{domain}"
+set :run_from,    "/var/virtuals/pgxn/#{application}.#{domain}"
+set :mirror_root, "/var/virtuals/pgxn/master.#{domain}"
+set :user,        "pgxn"
+set :pgxn_user,   "pgxn_api"
+set :host,        "depesz.com"
 
 # We just have one shared directory.
-set :shared_children, %(www)
+set :shared_children, %w(log pids www)
 
-role :app, 'xanthan.postgresql.org'
+role :app, host
 
 namespace :deploy do
   desc 'Confirm attempts to deploy master'
@@ -42,7 +50,9 @@ namespace :deploy do
       perl Build.PL || exit $?;
       ./Build installdeps || exit $?;
       ./Build || exit $?;
-      ln -s #{shared_path}/www #{latest_release}/www;
+      ln -fs #{shared_path}/www || exit $?;
+      ln -fs #{shared_path}/log || exit $?;
+      ln -fs #{shared_path}/pids || exit $?;
     CMD
   end
 
@@ -54,7 +64,7 @@ namespace :deploy do
   end
 
   task :symlink_production do
-    run "sudo ln -fs #{ latest_release } #{ run_from }"
+    run "ln -fs #{ latest_release } #{ run_from }"
   end
 
   task :migrate do
@@ -62,24 +72,32 @@ namespace :deploy do
   end
 
   task :start do
-    run 'sudo /etc/init.d/pgxn-api start'
+#    run 'sudo /etc/init.d/pgxn-api start'
+    run "cd #{ run_from } && blib/script/pgxn_api_server -s Starman -E prod --workers 5 --preload-app --max-requests 100 --listen 127.0.0.1:7497 --daemonize --pid pids/pgxn_api.pid --error-log log/pgxn_api.log --errors-to pgxn-admins@googlegroups.com --errors-from pgxn@pgexperts.com", :hosts => "#{ pgxn_user }@#{ host }"
   end
 
   task :restart do
-    run 'sudo /etc/init.d/pgxn-api restart'
+#    run 'sudo /etc/init.d/pgxn-api restart'
+    stop
+    start
   end
 
   task :stop do
-    run 'sudo /etc/init.d/pgxn-api stop'
+#    run 'sudo /etc/init.d/pgxn-api stop'
+    run <<-CMD, :hosts => "#{ pgxn_user }@#{ host }"
+        if [ -f "#{ run_from }/pids/pgxn_api.pid" ]; then
+            kill `cat "#{ run_from }/pids/pgxn_api.pid"`;
+        fi
+    CMD
   end
 
   task :sync do
-    run 'sudo /etc/cron.hourly/sync_pgxn'
+    run "cd #{ run_from } && blib/script/pgxn_api_sync '#{ mirror_root }'"
   end
 
 end
 
 before 'deploy:start',   'deploy:sync'
 before 'deploy:update',  'deploy:check_branch'
-after  'deploy:update',  'deploy:start_script'
+#after  'deploy:update',  'deploy:start_script'
 after  'deploy:symlink', 'deploy:symlink_production'
