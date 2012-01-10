@@ -50,9 +50,9 @@ namespace :deploy do
       perl Build.PL || exit $?;
       ./Build installdeps || exit $?;
       ./Build || exit $?;
-      ln -fs #{shared_path}/www || exit $?;
-      ln -fs #{shared_path}/log || exit $?;
-      ln -fs #{shared_path}/pids || exit $?;
+      ln -fsn #{shared_path}/www || exit $?;
+      ln -fsn #{shared_path}/log || exit $?;
+      ln -fsn #{shared_path}/pids || exit $?;
     CMD
   end
 
@@ -64,7 +64,7 @@ namespace :deploy do
   end
 
   task :symlink_production do
-    run "ln -fs #{ latest_release } #{ run_from }"
+    run "ln -fsn #{ latest_release } #{ run_from }"
   end
 
   task :migrate do
