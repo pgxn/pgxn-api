@@ -25,7 +25,7 @@ set :run_from,    "/var/virtuals/pgxn/#{application}.#{domain}"
 set :mirror_root, "/var/virtuals/pgxn/master.#{domain}"
 set :user,        "pgxn"
 set :pgxn_user,   "pgxn_api"
-set :host,        "depesz.com"
+set :host,        "pgxn.org"
 
 # Define the shared directories we need.
 set :shared_children, %w(log pids www)
