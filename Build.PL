@@ -50,7 +50,7 @@ my $build = $class->new(
         'Plack::App::File'             => 0,
         'Plack::Middleware::JSONP'     => 0,
         'Plack::Builder'               => 0,
-        'Text::Markup'                 => '0.13',
+        'Text::Markup'                 => '0.15',
         'URI::Template'                => '0.15',
         'XML::LibXML'                  => '1.70',
     },

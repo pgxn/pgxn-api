@@ -189,13 +189,14 @@ sub parse_from_mirror {
     $dst =~ s/[.][^.]+$/.html/;
 
     say "Parsing $src to $dst" if $self->verbose > 1;
-    make_path dirname $dst;
-
-    my $doc = $self->_parse_html_string($mark->parse(
+    my $html = $mark->parse(
         file   => $src,
         format => $format,
-    ));
+    ) or return $self;
 
+    my $doc = $self->_parse_html_string($html);
+
+    make_path dirname $dst;
     open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
     $doc = _clean_html_body($doc->findnodes('/html/body'));
     print $fh $doc->toString, "\n";

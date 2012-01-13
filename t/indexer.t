@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 243;
+use Test::More tests => 245;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -120,6 +120,15 @@ ok $indexer->parse_from_mirror('meta/spec.txt', 'Multimarkdown'),
     'Parse spec.txt as MultiMarkdown';
 file_contents_like $htmlspec, qr{<h1 id="Name">Name</h1>},
     'And it should look like Multimarkdown-generated HTML';
+
+# Try it with an emptyish file.
+my $empty = catfile $api->mirror_root, 'empty.md';
+open my $fh, '>', $empty or die "Cannot open $empty: $!\n";
+print $fh "\n  \n";
+close $fh;
+my $empty_file = catfile $api->doc_root, 'empty.html';
+ok $indexer->parse_from_mirror('empty.md'), 'Parse empty.md';
+file_not_exists_ok $empty_file || unlink $empty_file;
 
 ##############################################################################
 # Let's index pair-0.1.0.

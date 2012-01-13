@@ -1,6 +1,7 @@
 Revision history for Perl extension PGXN::API
 
 0.16.2
+      - Empty Documentation files are no longer indexed or displayed.
 
 0.16.1  2012-01-10T04:30:02Z
       - Added `version_string` class method to PGXN::API. It should always be
