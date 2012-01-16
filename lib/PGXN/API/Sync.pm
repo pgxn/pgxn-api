@@ -7,7 +7,7 @@ use PGXN::API;
 use PGXN::API::Indexer;
 use Digest::SHA1;
 use List::Util qw(first);
-use File::Spec::Functions qw(catfile path rel2abs tmpdir);
+use File::Spec::Functions qw(catfile path rel2abs tmpdir catdir);
 use File::Path qw(make_path);
 use Cwd;
 use Archive::Zip qw(:ERROR_CODES);
@@ -178,7 +178,6 @@ sub digest_for {
     return $sha1->hexdigest;
 }
 
-my $CWD = cwd;
 sub unzip {
     say '  Extracting ', $_[1] if $_[0]->verbose;
     my ($self, $zip_path, $meta) = shift->_rel_to_mirror(@_);
@@ -189,18 +188,21 @@ sub unzip {
         return;
     }
 
-    my $dir = PGXN::API->instance->source_dir;
-    chdir $dir or die "Cannot cd to $dir: $!\n";
-    my $dist_name = lc $meta->{name};
-    make_path $dist_name unless -e $dist_name && -d _;
-    chdir $dist_name;
-    my $ret = $zip->extractTree;
-    chdir $CWD;
+    my $dist_dir = catdir(
+        PGXN::API->instance->source_dir,
+        lc $meta->{name}
+    );
+    make_path $dist_dir unless -e $dist_dir && -d _;
 
-    if ($ret != AZ_OK) {
-        warn "Error extracting $zip_path\n";
-        ## XXX clean up the mess here.
-        return;
+    foreach my $member ($zip->membersMatching('')) {
+        # Make sure the file is readable by everyone
+        $member->unixFileAttributes($member->unixFileAttributes | 0444);
+        my $fn = catfile $dist_dir, split m{/} => $member->fileName;
+        if ($member->extractToFileNamed($fn) != AZ_OK) {
+            warn "Error extracting $zip_path\n";
+            ## XXX clean up the mess here.
+            return;
+        }
     }
 
     return $zip;
@@ -335,9 +337,9 @@ Called by C<validate_distribution()>.
 
 Given a download file for a distribution, and the metadata loaded from the
 C<META.json> describing the download, this method unpacks the download under
-the F<src/>directory under the document root. This provides the browsable file
-interface for the API server to server. Called internally by
-C<validate_distribution()>.
+the F<src/> directory under the document root. Each file will be readable by
+all users. This provides the browsable file interface for the API server to
+serve. Called internally by C<validate_distribution()>.
 
 =head2 Instance Accessors
 
