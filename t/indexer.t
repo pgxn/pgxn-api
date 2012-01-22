@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 245;
+use Test::More tests => 246;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -1047,36 +1047,39 @@ is_deeply \@called, [qw(update_user_lists _commit)],
 
 ##############################################################################
 # Test find_docs().
-$params->{meta}{provides}{pair}{docfile} = 'sql/pair.sql';
+$ENV{FOO} = 1;
+touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(sql hi.mkdn));
+$params->{meta}{provides}{pair}{docfile} = 'sql/hi.mkdn';
 is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/pair.sql
+    sql/hi.mkdn
     doc/pair.md
     README.md
 )], 'find_docs() should find specified and random doc files';
+delete $ENV{FOO};
 
-$params->{meta}{no_index} = { file => ['sql/pair.sql'] };
+$params->{meta}{no_index} = { file => ['sql/hi.mkdn'] };
 is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/pair.sql
+    sql/hi.mkdn
     doc/pair.md
     README.md
 )], 'find_docs() no_index should be ignored for specified doc file';
 
 $params->{meta}{no_index} = { file => ['doc/pair.md'] };
 is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/pair.sql
+    sql/hi.mkdn
     README.md
 )], 'find_docs() should respect no_index for found docs';
 
 $params->{meta}{no_index} = { directory => ['sql'] };
 is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/pair.sql
+    sql/hi.mkdn
     doc/pair.md
     README.md
-)], 'find_docs() shouldignore no_index directory for specified doc';
+)], 'find_docs() should ignore no_index directory for specified doc';
 
 $params->{meta}{no_index} = { directory => ['doc'] };
 is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/pair.sql
+    sql/hi.mkdn
     README.md
 )], 'find_docs() should respect no_index directory for found docs';
 
@@ -1092,3 +1095,17 @@ is_deeply [ $indexer->find_docs($params)], [qw(
     doc/pair.md
     README.md
 )], 'find_docs() should not return dupes';
+
+$params->{meta}{provides}{pair}{docfile} = 'doc/pair.pdf';
+touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(doc pair.pdf));
+
+is_deeply [ $indexer->find_docs($params)], [qw(
+    doc/pair.md
+    README.md
+)], 'find_docs() should ignore doc files it does not know how to parse';
+
+sub touch {
+    my $fn = shift;
+    open my $fh, '>', $fn or die "Cannot open $fn: $!\n";
+    close $fh;
+}

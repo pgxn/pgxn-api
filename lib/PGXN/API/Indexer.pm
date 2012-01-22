@@ -447,8 +447,9 @@ sub find_docs {
     my $prefix = quotemeta lc "$meta->{name}-$meta->{version}";
     my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
     my $markup = Text::Markup->new;
-    my @files  = grep { $_ && -e catfile $dir, $_ } map { $_->{docfile} }
-        values %{ $meta->{provides} };
+    my @files  = grep {
+        $_ && $markup->guess_format($_) && -e catfile $dir, $_
+    } map { $_->{docfile} } values %{ $meta->{provides} };
 
     for my $member ($p->{zip}->members) {
         next if $member->isDirectory;

@@ -6,6 +6,9 @@ Revision history for Perl extension PGXN::API
         directory are now globally readable. This behavior eliminates
         permissions errors when the user that serves the files is different
         than the one that unzipped them.
+      - Files specified in the `docfile` key are now ignored if Text::Markup
+        does not recognize, since the cannot then be parsed for serving as
+        HTML.
 
 0.16.1  2012-01-10T04:30:02Z
       - Added `version_string` class method to PGXN::API. It should always be
