@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 246;
+use Test::More tests => 249;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -769,6 +769,18 @@ is_deeply $docs, {
 }, 'Doc parser should ignore no_index-specified doc directory';
 
 delete $meta->{no_index};
+
+# Try it with an emptyish file.
+$params->{zip}->addString('', 'pair-0.1.0/foo.pl');
+touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), 'foo.pl');
+my $plhtml = catfile $doc_dir, 'foo.html';
+file_not_exists_ok $plhtml, 'dist/pair/pair-0.1.0/foo.html should not exist';
+$docs = $indexer->parse_docs($params);
+file_not_exists_ok $plhtml, 'dist/pair/pair-0.1.0/foo.html still should not exist';
+is_deeply $meta->{docs}, {
+    'README'   => { title => 'pair 0.1.0' },
+    'doc/pair' => { title => 'pair 0.1.0', abstract => 'A key/value pair data type' },
+}, 'Should array of docs excluding file with no docs';
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.

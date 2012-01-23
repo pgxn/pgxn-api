@@ -479,7 +479,7 @@ sub parse_docs {
         my $src = catfile $dir, $fn;
         next unless -e $src;
         say "    Parsing markup in $src" if $self->verbose > 1;
-        my $doc = $self->_parse_html_string($markup->parse(file => $src));
+        my $doc = $self->_parse_html_string($markup->parse(file => $src) or next);
 
         (my $noext = $fn) =~ s{[.][^.]+$}{};
         # XXX Nasty hack until we get + operator in URI Template v4.
@@ -537,7 +537,6 @@ sub _parse_html_string {
         suppress_errors   => 1,
         recover           => 2,
     });
-
 }
 
 sub mirror_file_for {
