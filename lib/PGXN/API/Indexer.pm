@@ -16,6 +16,8 @@ use Lucy::Plan::Schema;
 use Lucy::Analysis::PolyAnalyzer;
 use Lucy::Analysis::RegexTokenizer;
 use Lucy::Index::Indexer;
+use Try::Tiny;
+use Archive::Zip qw(AZ_OK);
 use namespace::autoclean;
 our $VERSION = v0.16.2;
 
@@ -744,7 +746,24 @@ sub _readme {
         qr{^$prefix/(?i:README(?:[.][^.]+)?)$}
     );
     return '' unless $member;
-    my $contents = $member->contents || '';
+
+    my $contents;
+    try {
+        local $SIG{__WARN__} = sub { die @_ };
+        $contents = $member->contents || '';
+    } catch {
+        die $_ unless /CRC or size mismatch/;
+        # Oy. Work around https://rt.cpan.org/Ticket/Display.html?id=74255.
+        my $zip_path = $zip->fileName;
+        warn "CRC or size mismatch error reading from $zip_path; reloading.\n";
+        $zip = Archive::Zip->new;
+        die "Error re-reading $zip_path\n" if $zip->read($zip_path) != AZ_OK;
+        ($member) = $zip->membersMatching(
+            qr{^$prefix/(?i:README(?:[.][^.]+)?)$}
+        );
+        $contents = $member->contents || '';
+    };
+
     utf8::decode $contents;
     # Normalize whitespace.
     $contents =~ s/^\s+//;
