@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.16.2
+0.16.2  2012-02-14T06:46:47Z
       - Empty Documentation files are no longer indexed or displayed.
       - All files extracted from distribution zip files into the source
         directory are now globally readable. This behavior eliminates
