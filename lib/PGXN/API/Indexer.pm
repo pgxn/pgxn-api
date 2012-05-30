@@ -484,12 +484,9 @@ sub parse_docs {
         my $doc = $self->_parse_html_string($markup->parse(file => $src) or next);
 
         (my $noext = $fn) =~ s{[.][^.]+$}{};
-        # XXX Nasty hack until we get + operator in URI Template v4.
-        local $URI::Escape::escapes{'/'} = '/';
         my $dst  = $self->doc_root_file_for(
             htmldoc    => $meta,
             docpath    => $noext,
-            '+docpath' => $noext, # XXX Part of above-mentioned hack.
         );
         make_path dirname $dst;
 

@@ -1,6 +1,9 @@
 Revision history for Perl extension PGXN::API
 
 0.16.3
+      - Updated URI::Template to v0.16 for its support for `{+var}` and
+        dropped a nasty hack required to work around the lack of it in earlier
+        verssions.
 
 0.16.2  2012-02-14T06:46:47Z
       - Empty Documentation files are no longer indexed or displayed.
