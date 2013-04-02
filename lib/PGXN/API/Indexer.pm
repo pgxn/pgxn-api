@@ -954,7 +954,7 @@ sub _clean_html_body {
                         while ($header > $level) {
                             my $newul = XML::LibXML::Element->new('ul');
                             my $li = $ul->find('./li[last()]')->shift || do {
-                                XML::LibXML::Element->new('li');
+                                $ul->appendChild( XML::LibXML::Element->new('li') );
                             };
                             $li->appendText("\n    " . '  ' x (2 * $level));
                             $li->addChild($newul);
