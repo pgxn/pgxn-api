@@ -8,7 +8,7 @@ this space and the [PGXN Blog](http://blog.pgxn.org/) as things develop!
 Copyright and License
 ---------------------
 
-Copyright (c) 2011 David E. Wheeler.
+Copyright (c) 2011-2013 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the [PostgreSQL License](http://www.opensource.org/licenses/postgresql).
