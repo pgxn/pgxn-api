@@ -75,6 +75,7 @@ sub update_index {
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
+        no if $] >= 5.017011, warnings => 'experimental::smartmatch';
         given ($line) {
             when ($meta_re) {
                 if (my $params = $self->validate_distribution($1)) {
