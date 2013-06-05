@@ -75,28 +75,25 @@ sub update_index {
     say 'Parsing the rsync log file' if $self->verbose > 1;
     open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
     while (my $line = <$fh>) {
-        no if $] >= 5.017011, warnings => 'experimental::smartmatch';
-        given ($line) {
-            when ($meta_re) {
-                if (my $params = $self->validate_distribution($1)) {
-                    $indexer->add_distribution($params);
-                }
+        if ($line =~ $meta_re) {
+            if (my $params = $self->validate_distribution($1)) {
+                $indexer->add_distribution($params);
             }
-            when ([$stat_re, $mirr_re]) {
-                $indexer->copy_from_mirror($1);
-            }
-            when ($spec_re) {
-                my $path = $1;
-                $indexer->copy_from_mirror($path);
-                $indexer->parse_from_mirror($path, 'Multimarkdown');
-            }
-            when (/\s>f(?:[+]+|(?:c|.s|..t)[^ ]+)\sindex[.]json$/) {
-                # Always update the index JSON if it's mentioned.
-                $indexer->update_root_json;
-            }
-            when ($user_re) {
-                $indexer->merge_user($2);
-            }
+        }
+        elsif ($line =~ $stat_re || $line =~ $mirr_re) {
+            $indexer->copy_from_mirror($1);
+        }
+        elsif ($line =~ $spec_re) {
+            my $path = $1;
+            $indexer->copy_from_mirror($path);
+            $indexer->parse_from_mirror($path, 'Multimarkdown');
+        }
+        elsif ($line =~ /\s>f(?:[+]+|(?:c|.s|..t)[^ ]+)\sindex[.]json$/) {
+            # Always update the index JSON if it's mentioned.
+            $indexer->update_root_json;
+        }
+        elsif ($line =~ $user_re) {
+            $indexer->merge_user($2);
         }
     }
     close $fh or die "Cannot close $log: $!\n";
