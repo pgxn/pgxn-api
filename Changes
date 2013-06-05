@@ -8,6 +8,7 @@ Revision history for Perl extension PGXN::API
       - Fixed a bug on the HTML documentation table of contents generator
         where it would choke on finding an `h1` after an `h3`.
       - Fixed test failures due to a change in the API of Email::Sender.
+      - Removed the Pod tests from the distribution.
 
 0.16.2  2012-02-14T06:46:47Z
       - Empty Documentation files are no longer indexed or displayed.
