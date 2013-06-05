@@ -16,8 +16,8 @@ Revision history for Perl extension PGXN::API
         permissions errors when the user that serves the files is different
         than the one that unzipped them.
       - Files specified in the `docfile` key are now ignored if Text::Markup
-        does not recognize, since the cannot then be parsed for serving as
-        HTML.
+        does not recognize them, since they cannot then be parsed for serving
+        as HTML.
       - Worked around an [Archive::Zip
         bug](https://rt.cpan.org/Ticket/Display.html?id=74255.) when reading
         the README file for indexing.
