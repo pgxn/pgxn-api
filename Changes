@@ -1,6 +1,9 @@
 Revision history for Perl extension PGXN::API
 
 0.16.4
+      - Fixed a bug where v1.0.0 Semantic Versions were not matched in synced
+        file names and directories.
+      - Fixed a bug that tried to read an extension JSON file case-sentiively.
 
 0.16.3  2013-06-19T06:31:51Z
       - Updated URI::Template to v0.16 for its support for `{+var}` and
