@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.16.4
+
 0.16.3  2013-06-19T06:31:51Z
       - Updated URI::Template to v0.16 for its support for `{+var}` and
         dropped the nasty hack required to work around the lack of it in

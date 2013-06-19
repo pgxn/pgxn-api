@@ -1,5 +1,5 @@
-PGXN/API version 0.16.3
-======================
+PGXN/API version 0.16.4
+=======================
 
 This application provides a REST API for flexible searching of PGXN
 distribution metadata and documentation. It is currently in development. Watch
