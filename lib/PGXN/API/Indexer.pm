@@ -365,6 +365,7 @@ sub update_extensions {
 
     while (my ($ext, $data) = each %{ $meta->{provides} }) {
         say "    $ext" if $self->verbose > 1;
+        $ext = lc $ext;
         # Read in extension metadata from the mirror.
         my $mir_file = $self->mirror_file_for(
             extension => $meta,
