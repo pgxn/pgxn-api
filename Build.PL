@@ -62,7 +62,7 @@ my $build = $class->new(
         resources => {
             homepage   => 'http://api.pgxn.org/',
             bugtracker => 'http://github.com/pgxn/pgxn-api/issues/',
-            repository => 'http://github.com/pgxn/pgxn-api/tree/',
+            repository => 'http://github.com/pgxn/pgxn-api',
         },
     },
 );
