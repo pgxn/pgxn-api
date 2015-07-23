@@ -69,7 +69,7 @@ test_psgi $app => sub {
     is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/javascript', 'Should be text/javascript';
-    like $res->content, qr{\Afoo\(}, 'It should look like a JSONP response';
+    like $res->content, qr{\A(?:/[*]{2}/)?foo\(}, 'It should look like a JSONP response';
 };
 
 # Try a readme file.
@@ -214,7 +214,8 @@ test_psgi $app => sub {
         'Should have API version in the header';
     is $res->content_type, 'text/javascript',
         'Should be application/javascript';
-    is $res->content, 'bar({"foo":1})', 'Content should be JSONP of results';
+    like $res->content, qr{(?:/[*]{2}/)?\Qbar({"foo":1})},
+        'Content should be JSONP of results';
 
     # Now make sure we get the proper 404s.
     for my $uri (qw(
