@@ -915,6 +915,7 @@ sub _clean_html_body {
 
     my %gen_ids;
     my $level = 1;
+    my $pgxnbod;
 
     while ($elem) {
         if ($elem->nodeType == XML_ELEMENT_NODE) {
@@ -926,14 +927,17 @@ sub _clean_html_body {
                 } $elem->attributes;
                 $elem->setNodeName('div');
                 $elem->setAttribute(id => 'pgxnbod');
+                $pgxnbod = $elem;
                 $elem = $elem->firstChild || last;
                 next;
             }
 
             if (my $attrs = $allowed{$name}) {
                 # Keep only allowed attributes.
-                $elem->removeAttribute($_) for grep { !$attrs->{$_} }
-                    map { $_->nodeName } $elem->attributes;
+                if (!$pgxnbod || !$elem->isSameNode($pgxnbod)) {
+                    $elem->removeAttribute($_) for grep { !$attrs->{$_} }
+                        map { $_->nodeName } $elem->attributes;
+                }
 
                 if ($name =~ /^h([123])$/) {
                     my $header = $1;
@@ -997,7 +1001,7 @@ sub _clean_html_body {
 
                     # No sibling, try parent's sibling
                     $next = $next->parentNode;
-                    redo if $next && $next ne $top;
+                    redo if $next && !$next->isSameNode($top);
                 }
                 $parent->removeChild($elem);
                 $elem = $next;
