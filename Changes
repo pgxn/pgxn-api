@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.16.5
+      - Fixed a test failure on systems with a non-English locale, thanks to
+        Slaven Rezić (issue #25).
 
 0.16.4  2016-06-15T16:10:33Z
       - Fixed a bug where v1.0.0 Semantic Versions were not matched in synced

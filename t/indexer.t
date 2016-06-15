@@ -18,6 +18,11 @@ use utf8;
 
 my $CLASS;
 BEGIN {
+    if ($] < 5.022) {
+        # Set the locale to C so testing of error messages works correctly.
+        require POSIX;
+        POSIX::setlocale(&POSIX::LC_ALL, 'C');
+    }
     $File::Copy::Recursive::KeepMode = 0;
     $CLASS = 'PGXN::API::Indexer';
     use_ok $CLASS or die;
