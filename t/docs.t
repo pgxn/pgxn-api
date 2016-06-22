@@ -6,7 +6,7 @@ use Test::More 0.88;
 use PGXN::API::Indexer;
 use Test::File::Contents;
 use File::Basename;
-use File::Spec::Functions qw(catfile catdir);
+use File::Spec::Functions qw(catfile catdir tmpdir);
 use utf8;
 
 my $indexer = new_ok 'PGXN::API::Indexer';
@@ -17,6 +17,12 @@ my $libxml = XML::LibXML->new(
     no_cdata   => 1,
 );
 
+# Unfortunately, we have to write to a file, because file_contents_eq_or_diff
+# doesn't seem to work on Windows.
+my $tmpfile = catfile tmpdir, 'pgxnapi-doctest$$.html';
+
+END { unlink $tmpfile }
+
 for my $in (glob catfile qw(t htmlin *)) {
     my $doc = $libxml->parse_html_file($in, {
         suppress_warnings => 1,
@@ -24,20 +30,18 @@ for my $in (glob catfile qw(t htmlin *)) {
         recover           => 2,
     });
 
-    # my $html = PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body'));
-    # open my $fh, '>:raw', 'tmp.html';
-    # print $fh $html;
+    my $html = PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')) . "\n";
+    open my $fh, '>:raw', $tmpfile or die "Cannot open $tmpfile: $!\n";
+    print $fh $html;
+    close $fh;
     # last if $in =~ /shift/; next;
-    # diag PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')) if $in =~ /head/; next;
-    file_contents_eq_or_diff(
+    # diag $html if $in =~ /head/; next;
+    files_eq_or_diff(
+        $tmpfile,
         catfile(qw(t htmlout), basename $in),
-        PGXN::API::Indexer::_clean_html_body(
-            $doc->findnodes('/html/body')
-        )->toString . "\n",
         "Test HTML from $in",
-        { encoding => 'UTF-8' },
+        { encoding => 'UTF-8' }
     );
-
 }
 
 done_testing;

@@ -10,11 +10,10 @@ if %errorlevel% == 9009 echo You do not have Perl in your PATH.
 if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
 goto endofperl
 @rem ';
-#!/usr/bin/env perl -w
+#!/usr/bin/perl -w
 
-use 5.10.0;
-
-say for @ARGV;
+open my $fh, '>', 'test.tmp' or die "Cannot open test.tmp: $!\n";
+print $fh $_, $/ for @ARGV;
 
 __END__
 :endofperl

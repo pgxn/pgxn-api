@@ -61,7 +61,7 @@ END {
 
 ok $sync->run_rsync, 'Run rsync';
 is do {
-    open my $fh, '<', 'test.tmp';
+    open my $fh, '<', 'test.tmp' or die "Cannot open test.tmp: $!\n";
     local $/;
     <$fh>
 }, "--archive
@@ -88,6 +88,15 @@ my @rsync_out = do {
     <$fh>;
 };
 
+my $sep = catfile '', '';
+if ($sep ne '/') {
+    for (@rsync_out) {
+        my @parts = split /\]/;
+        $parts[-1] =~ s{/}{$sep}g;
+        $_ = join ']', @parts;
+    }
+}
+
 # Test the dist template regex.
 ok my $regex = $sync->regex_for_uri_template('download'),
     'Get distribution regex';
@@ -95,6 +104,7 @@ my @found;
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 is_deeply \@found, [qw(
     dist/pair/0.1.0/pair-0.1.0.zip
     dist/pair/0.1.1/pair-0.1.1.zip
@@ -110,6 +120,7 @@ ok $regex = $sync->regex_for_uri_template('meta'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 
 is_deeply \@found, [qw(
     dist/pair/0.1.0/META.json
@@ -126,6 +137,7 @@ ok $regex = $sync->regex_for_uri_template('user'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 
 is_deeply \@found, [qw(
     user/daamien.json
@@ -140,6 +152,7 @@ ok $regex = $sync->regex_for_uri_template('extension'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 
 is_deeply \@found, [qw(
     extension/pair.json
@@ -154,6 +167,7 @@ ok $regex = $sync->regex_for_uri_template('tag'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 
 is_deeply \@found, [
    "tag/data types.json",
@@ -172,6 +186,7 @@ ok $regex = $sync->regex_for_uri_template('mirrors'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 is_deeply \@found, ['meta/mirrors.json'], 'Should find mirrors.json';
 
 # Test the stats template regex.
@@ -181,6 +196,7 @@ ok $regex = $sync->regex_for_uri_template('stats'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 is_deeply \@found, [qw(
     stats/dist.json
     stats/extension.json
@@ -196,6 +212,7 @@ ok $regex = $sync->regex_for_uri_template('spec'),
 for (@rsync_out) {
     push @found => $1 if $_ =~ $regex;
 }
+if ($sep ne '/') { s{\Q$sep}{/}g for @found }
 is_deeply \@found, ['meta/spec.txt'], 'Should find spec.txt';
 
 ##############################################################################
@@ -223,9 +240,20 @@ $idx_mock->mock(update_mirror_meta => sub {
     pass 'Should update mirror meta';
 });
 
+if ($sep ne '/') {
+    my $tmplog = catfile tmpdir, "pgxnapi-testlog$$.txt";
+    open my $fh, '>', $tmplog or die "Cannot open $tmplog: $!\n";
+    print $fh @rsync_out;
+    close $fh;
+    END { unlink $tmplog if $tmplog }
+    $sync->log_file($tmplog);
+}
+
 ok $sync->update_index, 'Update the index';
 is_deeply \@meths, [qw(update_root_json finalize)],
     'The root index.json should have been updated and the update finalized';
+if ($sep ne '/') { s{\Q$sep}{/}g for @found, @dists, @paths }
+
 is_deeply \@found, [qw(
     dist/pair/0.1.0/META.json
     dist/pair/0.1.1/META.json
@@ -243,7 +271,7 @@ is_deeply \@paths, [qw(
     stats/tag.json
     stats/summary.json
 )], 'And it should have found and copied mirrors, spec, and stats';
-is_deeply \@parsed, [['meta/spec.txt', 'Multimarkdown']],
+is_deeply \@parsed, [["meta${sep}spec.txt", 'Multimarkdown']],
     'And it should have parsed spec.txt';
 is_deeply \@users, [qw(
     daamien
