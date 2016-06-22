@@ -18,10 +18,14 @@ BEGIN {
 }
 
 # Set up the document root.
-my $doc_root = catdir 't', 'test_doc_root';
+my $doc_root = catdir 't', 'test_router_root';
 my $api = PGXN::API->instance;
 $api->doc_root($doc_root);
-END { remove_tree $doc_root }
+# On MSWin32, this somehow gets run before some tests when running under
+# `./Build test`. No idea why, so just avoid it and do it at the end of this
+# test and here on test start, in case stuff is left from a previous run.
+END { remove_tree $doc_root if $^O ne 'MSWin32' }
+remove_tree $doc_root;
 dircopy catdir(qw(t root)), $doc_root;
 $api->mirror_root(catdir 't', 'root');
 
@@ -29,10 +33,12 @@ my $search_mock = Test::MockModule->new('PGXN::API::Searcher');
 my @params;
 $search_mock->mock(new => sub { bless {} => shift });
 
-local $@;
-eval { PGXN::API::Router->app };
-is $@, "Missing required parameters errors_to and errors_from\n",
-    'Should get proper error for missing parameters';
+{
+    local $@;
+    eval { PGXN::API::Router->app };
+    is $@, "Missing required parameters errors_to and errors_from\n",
+        'Should get proper error for missing parameters';
+}
 
 my $app = PGXN::API::Router->app(
     errors_to   => 'alerts@pgxn.org',
@@ -123,8 +129,8 @@ test_psgi $app => sub {
 # Create a src directory.
 my $src = catdir $doc_root, qw(dist/pair);
 my $dst = catdir $doc_root, qw(src pair);
-dircopy $src, $dst or die "Cannot copy dir $src to $dst: $!\n";
-fcopy $html, $dst or die "Cannot copy $html to $dst: $!\n";
+dircopy $src, $dst or die "Cannot copy dir $src to $dst: $!";
+fcopy $html, $dst or die "Cannot copy $html to $doc_root: $!\n";
 
 # Try a src/json file.
 test_psgi $app => sub {
@@ -328,3 +334,5 @@ This is the trace
     Email::Sender::Simple->default_transport->clear_deliveries;
 };
 
+# Just in case (not done above on MSWin32).
+END { remove_tree $doc_root }

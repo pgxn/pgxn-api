@@ -66,7 +66,7 @@ can_ok $CLASS => qw(
 );
 
 my $api = PGXN::API->instance;
-my $doc_root = catdir 't', 'test_doc_root';
+my $doc_root = catdir 't', 'test_indexer_root';
 $api->doc_root($doc_root);
 END { remove_tree $doc_root }
 

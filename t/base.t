@@ -51,7 +51,7 @@ is_deeply $pgxn->read_json_from($tmpfile), $data,
     'It should read back in properly';
 
 # Test doc_root().
-my $doc_root = catdir 't', 'test_doc_root';
+my $doc_root = catdir 't', 'test_base_root';
 file_not_exists_ok $doc_root, 'Doc root should not yet exist';
 $pgxn->doc_root($doc_root);
 END { remove_tree $doc_root }

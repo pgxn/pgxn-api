@@ -32,7 +32,7 @@ can_ok $CLASS => qw(
 );
 
 my $pgxn   = PGXN::API->instance;
-$pgxn->doc_root(catdir 't', 'test_doc_root');
+$pgxn->doc_root(catdir 't', 'test_sync_root');
 END { remove_tree $pgxn->doc_root }
 
 ##############################################################################
