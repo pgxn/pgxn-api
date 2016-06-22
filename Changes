@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.16.5
+0.16.5  2016-06-22T18:03:05Z
       - Fixed a test failure on systems with a non-English locale, thanks to
         Slaven Rezić (issue #25).
       - Fixed test failures on Windows.
