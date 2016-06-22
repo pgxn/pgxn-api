@@ -7,6 +7,7 @@ use PGXN::API::Indexer;
 use Test::File::Contents;
 use File::Basename;
 use File::Spec::Functions qw(catfile catdir tmpdir);
+use Encode qw(encode_utf8);
 use utf8;
 
 my $indexer = new_ok 'PGXN::API::Indexer';
@@ -30,9 +31,9 @@ for my $in (glob catfile qw(t htmlin *)) {
         recover           => 2,
     });
 
-    my $html = PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body')) . "\n";
+    my $html = PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body'));
     open my $fh, '>:raw', $tmpfile or die "Cannot open $tmpfile: $!\n";
-    print $fh $html;
+    print $fh encode_utf8 $html, "\n";
     close $fh;
     # last if $in =~ /shift/; next;
     # diag $html if $in =~ /head/; next;
