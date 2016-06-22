@@ -13,7 +13,7 @@ use Plack::Request;
 use Encode;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
-our $VERSION = v0.16.5;
+our $VERSION = v0.16.6;
 
 sub app {
     my ($class, %params) = @_;
