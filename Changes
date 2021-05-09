@@ -1,6 +1,9 @@
 Revision history for Perl extension PGXN::API
 
 0.16.6
+      - Removed the `Capfile` and `eg` directory from the source (and distribution).
+        Examples for managing PGXN can now be found in the pgxn/pgxn-ops
+        repository on GitHub.
 
 0.16.5  2016-06-22T18:03:05Z
       - Fixed a test failure on systems with a non-English locale, thanks to
