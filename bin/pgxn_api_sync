@@ -4,7 +4,13 @@ use 5.10.0;
 use utf8;
 use PGXN::API::Sync;
 use Getopt::Long;
+use Carp;
 Getopt::Long::Configure( qw(bundling) );
+
+BEGIN {
+    $SIG{__WARN__} = \&Carp::cluck;
+    $SIG{__DIE__}  = \&Carp::confess;
+}
 
 GetOptions(
     'rsync|r=s'  => \my $rsync,
