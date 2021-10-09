@@ -2,7 +2,6 @@
 
 use 5.10.0;
 use utf8;
-use lib 'lib';
 use PGXN::API::Router;
 use Plack::Runner;
 use Getopt::Long;

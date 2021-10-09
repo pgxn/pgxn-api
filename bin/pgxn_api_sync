@@ -2,8 +2,6 @@
 
 use 5.10.0;
 use utf8;
-
-use lib 'lib';
 use PGXN::API::Sync;
 use Getopt::Long;
 Getopt::Long::Configure( qw(bundling) );
