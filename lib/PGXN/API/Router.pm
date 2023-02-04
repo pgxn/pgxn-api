@@ -48,7 +48,7 @@ sub app {
             };
         };
 
-        # Sever most stuff as plain files.
+        # Serve most stuff as plain files.
         my $files = Plack::App::File->new(root => $root)->to_app;
         mount '/' => sub {
             my $env = shift;
