@@ -195,7 +195,7 @@ sub unzip {
 
     foreach my $member ($zip->members) {
         # Make sure the file is readable by everyone
-        $member->unixFileAttributes($member->unixFileAttributes | 0444);
+        $member->unixFileAttributes( $member->isDirectory ? 0755 : 0444 );
         my $fn = catfile $dist_dir, split m{/} => $member->fileName;
         say "    $fn\n" if $self->verbose > 2;
         if ($member->extractToFileNamed($fn) != AZ_OK) {

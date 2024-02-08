@@ -17,6 +17,9 @@ Revision history for Perl extension PGXN::API
         nor testing releases (#2).
       - Updated the SemVer regex when parsing rsync output to the official
         version published in https://regex101.com/r/vkijKf/ (#16).
+      - Fix unzipping of distributions to ensure that all directories are
+        readable and executable but not writeable by all, and that files are
+        only readable by all (#15).
 
 0.16.5  2016-06-22T18:03:05Z
       - Fixed a test failure on systems with a non-English locale, thanks to

@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-#use Test::More tests => 58;
-use Test::More 'no_plan';
+use Test::More tests => 65;
+# use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
 use Test::Output;
@@ -282,7 +282,7 @@ is_deeply \@users, [qw(
 ##############################################################################
 # digest_for()
 my $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.zip);
-is $sync->digest_for($pgz), '703c0c485166636317c3d4bc8a1a36d512761af7',
+is $sync->digest_for($pgz), '443cbcf678a3c2f479c4c069bcb96054d9b25a32',
     'Should get expected digest from digest_for()';
 
 ##############################################################################
@@ -323,19 +323,35 @@ my @files = (qw(
     catfile(qw(test expected base.out)),
 );
 
+my @dirs = (
+    'test',
+    catfile(qw(test expected)),
+    catfile(qw(test sql)),
+    'doc',
+    'sql',
+);
+
 my $src_dir = PGXN::API->instance->source_dir;
 my $base = catdir $src_dir, 'pair', 'pair-0.1.1';
-
-file_not_exists_ok catfile($base, $_), "$_ should not exist" for @files;
+file_not_exists_ok $base, "pair-0.1.1 directory should not exist";
 
 # Unzip it.
 ok my $zip = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 isa_ok $zip, 'Archive::Zip';
 file_exists_ok catfile($base, $_), "$_ should now exist" for @files;
 my $readall = S_IRUSR | S_IRGRP | S_IROTH;
+my $dirall = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+ok(
+    ((stat $base)[2] & $dirall) == $dirall,
+    'Root directory should be writeable by owner and readable and executable by all'
+);
+ok(
+    ((stat catfile $base, $_)[2] & $dirall) == $dirall,
+    "Directory $_ should be writeable by owner and readable and executable by all"
+) for @dirs;
 ok(
     ((stat catfile $base, $_)[2] & $readall) == $readall,
-    "$_ should be readable by all",
+    "File $_ should be readable by all",
 ) for @files;
 
 # Now try a brokenated zip file.

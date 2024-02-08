@@ -1147,57 +1147,57 @@ is_deeply \@called, [qw(update_user_lists _commit)],
 # Test find_docs().
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(sql hi.mkdn));
 $params->{meta}{provides}{pair}{docfile} = 'sql/hi.mkdn';
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-    { filename => 'doc/pair.md' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'doc/pair.md' },
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
 ], 'find_docs() should find specified and random doc files';
 
 $params->{meta}{no_index} = { file => ['sql/hi.mkdn'] };
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-    { filename => 'doc/pair.md' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'doc/pair.md' },
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
 ], 'find_docs() no_index should be ignored for specified doc file';
 
 $params->{meta}{no_index} = { file => ['doc/pair.md'] };
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
 ], 'find_docs() should respect no_index for found docs';
 
 $params->{meta}{no_index} = { directory => ['sql'] };
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-    { filename => 'doc/pair.md' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'doc/pair.md' },
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
 ], 'find_docs() should ignore no_index directory for specified doc';
 
 $params->{meta}{no_index} = { directory => ['doc'] };
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
 ], 'find_docs() should respect no_index directory for found docs';
 
 delete $params->{meta}{no_index};
 $params->{meta}{provides}{pair}{docfile} = 'foo/bar.txt';
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'doc/pair.md' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'doc/pair.md' },
 ], 'find_docs() should ignore non-existent specified file';
 
 $params->{meta}{provides}{pair}{docfile} = 'doc/pair.md';
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'doc/pair.md', extension => 'pair' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'doc/pair.md', extension => 'pair' },
 ], 'find_docs() should not return dupes';
 
 $params->{meta}{provides}{pair}{docfile} = 'doc/pair.pdf';
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(doc pair.pdf));
 
-is_deeply [ $indexer->find_docs($params)], [
-    { filename => 'doc/pair.md' },
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
     { filename => 'README.md' },
+    { filename => 'doc/pair.md' },
 ], 'find_docs() should ignore doc files it does not know how to parse';
 
 sub touch {
