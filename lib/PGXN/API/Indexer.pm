@@ -477,9 +477,9 @@ sub parse_docs {
     my $dir    = $self->doc_root_file_for(source => $meta);
 
     # Find all doc files and write them out.
-    my (%docs, %seen);
-    for my $fn ($self->find_docs($p)) {
-        next if $seen{$fn}++;
+    my @files = $self->find_docs($p);
+    my (%docs, $readme);
+    for my $fn (@files) {
         my $src = catfile $dir, $fn;
         next unless -e $src;
         say "    Parsing markup in $src" if $self->verbose > 1;
@@ -514,8 +514,11 @@ sub parse_docs {
             ($abstract) ? (abstract => $abstract) : ()
         };
 
-        # Add it to the search index.
-        $self->_index(docs => {
+        # Only index stable releases (for the moment);
+        next if $meta->{release_status} ne 'stable';
+
+        # Prepare the index entry.
+        my $to_index = {
             key       => lc "$meta->{name}/$noext",
             docpath   => $noext,
             title     => $title,
@@ -526,9 +529,22 @@ sub parse_docs {
             date      => $meta->{date},
             user_name => $self->_get_user_name($meta),
             user      => $meta->{user},
-        }) if $meta->{release_status} eq 'stable'
-            && $fn !~ qr{^(?i:README(?:[.][^.]+)?)$};
+        };
+
+        if ($fn =~ qr{^(?i:README(?:[.][^.]+)?)$}) {
+            # Hang on to it to use in case there are no other docs.
+            $readme = $to_index;
+        } else {
+            # Add it to the search index.
+            $self->_index(docs => $to_index);
+        }
     }
+
+    # No docs found, just the README. So index it as documentation.
+    if (@files == 1 && $readme) {
+        $self->_index(docs => $readme) if $meta->{release_status} eq 'stable';
+    }
+
     return \%docs;
 }
 
@@ -1286,7 +1302,7 @@ Used internally by C<parse_docs()> to determine what files to parse.
 
   $indexer->parse_docs($params);
 
-Searches the distribution download file fora C<README> and for documentation
+Searches the distribution download file for a C<README> and for documentation
 files in a F<doc> or F<docs> directory, parses them into HTML (using
 L<Text::Markup>), and the runs them through L<XML::LibXML> to remove all
 unsafe HTML, to generate a table of contents, and to save them as partial HTML

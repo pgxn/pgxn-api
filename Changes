@@ -8,6 +8,8 @@ Revision history for Perl extension PGXN::API
         Markdown files (but not MultiMarkdown files). This allows code fences
         to work and generates nicer HTML in general, but is stricter about
         certain things.
+      - The docs indexer now indexes a distribution's README if it is the only
+        documentation it finds in the distribution (#12).
 
 0.16.5  2016-06-22T18:03:05Z
       - Fixed a test failure on systems with a non-English locale, thanks to

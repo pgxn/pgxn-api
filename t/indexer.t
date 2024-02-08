@@ -2,8 +2,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 250;
-#use Test::More 'no_plan';
+use Test::More tests => 254;
+# use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir rel2abs);
@@ -763,12 +763,14 @@ file_contents_unlike $doc, qr{<html}i, 'Doc should have no html element';
 file_contents_unlike $doc, qr{<body}i, 'Doc should have no body element';
 
 # Make sure we skip files that should not be indexed.
+$indexer->to_index->{docs} = [];
 $meta->{no_index} = { file => ['doc/pair.md'] };
 $docs = $indexer->parse_docs($params);
 is_deeply $docs, {
     'README'   => { title => 'pair 0.1.0' },
 }, 'Doc parser should ignore no_index-specified doc file';
 
+$indexer->to_index->{docs} = [];
 $meta->{no_index} = { directory => ['doc']};
 $docs = $indexer->parse_docs($params);
 is_deeply $docs, {
@@ -777,7 +779,21 @@ is_deeply $docs, {
 
 delete $meta->{no_index};
 
+# Try it with a package containing only a README.
+$indexer->to_index->{docs} = [];
+delete $meta->{provides}{pair}{docfile};
+ok $params->{zip}->removeMember('pair-0.1.0/doc/pair.md'),
+    'Remove doc directory';
+$docs = $indexer->parse_docs($params);
+is_deeply $docs, {
+    'README'   => { title => 'pair 0.1.0' },
+}, 'Doc parser should parse the README';
+is @{ $indexer->to_index->{docs} }, 1, 'Should have one doc to index';
+is $indexer->to_index->{docs}[0]{docpath}, 'README',
+    'And it should be the README';
+
 # Try it with an emptyish file.
+$indexer->to_index->{docs} = [];
 $params->{zip}->addString('', 'pair-0.1.0/foo.pl');
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), 'foo.pl');
 my $plhtml = catfile $doc_dir, 'foo.html';
@@ -788,6 +804,7 @@ is_deeply $meta->{docs}, {
     'README'   => { title => 'pair 0.1.0' },
     'doc/pair' => { title => 'pair 0.1.0', abstract => 'A key/value pair data type' },
 }, 'Should array of docs excluding file with no docs';
+
 
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.
