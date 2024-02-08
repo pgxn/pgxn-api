@@ -13,7 +13,7 @@ Revision history for Perl extension PGXN::API
 0.16.4  2016-06-15T16:10:33Z
       - Fixed a bug where v1.0.0 Semantic Versions were not matched in synced
         file names and directories.
-      - Fixed a bug that tried to read an extension JSON file case-sentiively.
+      - Fixed a bug that tried to read an extension JSON file case-sensitively.
       - Fixed test failures due to a change in the generation of JSONP
         responses in Plack 1.0031.
       - Fixed a bug where the "pgxnbod" ID of a cleaned HTML element could be
@@ -84,10 +84,10 @@ Revision history for Perl extension PGXN::API
 
 0.12.9  2011-04-30T20:01:29
       - Fixed a test failure in `t/indexer.t` on case-sensitive file systems.
-      - Removed use of `env perl` in the `t/bin/testrscync` script. Just use
+      - Removed use of `env perl` in the `t/bin/testrsync` script. Just use
         `/usr/bin/perl -w` instead and let it be any Perl, not just 5.12.
         Should prevent failures on systems that don't allow arguments to `env`
-        and where the system Perl is different than the installating Perl.
+        and where the system Perl is different than the installing Perl.
       - Added Data::Dump to list of requirements. Was inadvertently omitted.
 
 0.12.8  2011-04-29T21:21:13
@@ -105,7 +105,7 @@ Revision history for Perl extension PGXN::API
       - Search parameters must be submitted via a GET request.
 
 0.12.6  2011-04-27T18:52:18
-      - Eliminated "Use of uninitialized variable in soubroutine" warning when
+      - Eliminated "Use of uninitialized variable in subroutine" warning when
         indexing extensions with no abstract.
       - Allow an optional trailing backslash on search URLs (since the
         template includes one).
@@ -117,12 +117,12 @@ Revision history for Perl extension PGXN::API
       - Changed tests to use `.zip` ending for downloads instead of `.pgz`.
 
 0.12.5  2011-04-25T18:07:27
-      - The directory name in which browsable distribution source files are
+      - The directory name in which browseable distribution source files are
         unzipped is now always lowercase.
-      - Fixed the primary key in the for distributsions, docs and extension in
+      - Fixed the primary key in the for distributions, docs and extension in
         the search index to always be lowercased.
       - Distribution names and versions are now always lowercase in verbose
-        outout.
+        output.
 
 0.12.4  2011-04-25T16:59:36
       - The prefix in zip files is now assumed to be lowercase, as
@@ -132,7 +132,7 @@ Revision history for Perl extension PGXN::API
       - When searching for "special files", the indexer now looks for files
         ending in ".in" if it doesn't find them without the ".in". Suggested
         by Daniele Varrazzo.
-      - Always user lowercase disttribution names, versions, extension names,
+      - Always user lowercase distribution names, versions, extension names,
         tags, and nicknames in in URI templates. They're still displayed with
         case preserved inside files and the index.
 
@@ -152,7 +152,7 @@ Revision history for Perl extension PGXN::API
         lists to Indexer. It's set off at the end of a sync.
       - Now update user JSON files whenever they're updated on the mirror.
         Previously, a user JSON file was only updated when the user released a
-        distribtion. But now user JSON files can be updated independently, and
+        distribution. But now user JSON files can be updated independently, and
         for users with no distributions at all. So we notice updated user JSON
         files and properly merge them into the doc root and update them in the
         full text index.
@@ -336,7 +336,7 @@ Revision history for Perl extension PGXN::API
         `/src/pair/pair-0.1.1/`.
       - Make sure that the `/by/dist` file has the latest *stable* version
         listed as the version. Only make it a testing version if there is no
-        stable version, and an unstabe version only if there is no stable or
+        stable version, and an unstable version only if there is no stable or
         testing version.
       - Fixed bugs in release data merging in the `/by/user` and `/by/tag`
         files. The old code had relied too much on what was in the
@@ -348,7 +348,7 @@ Revision history for Perl extension PGXN::API
 0.3.2   2011-03-10T21:53:17
       - Updated to work with PGXN::Manager 0.10.0 output. In particular,
         "owners" are now known as "users" and "release_date" is now known as
-        "date". The relevant methods and data have been chagned to reflect
+        "date". The relevant methods and data have been changed to reflect
         this change.
 
 0.3.1 2011-03-10T00:28:36

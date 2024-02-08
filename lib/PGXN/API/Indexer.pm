@@ -221,14 +221,14 @@ sub add_distribution {
 sub copy_files {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Copying \L$meta->{name}-$meta->{version} files" if $self->verbose;
+    say "  Copying \L$meta->{name}-$meta->{version}\E files" if $self->verbose;
 
     # Need to copy the README, zip file, and dist meta file.
     for my $file (qw(download readme)) {
         my $src = $self->mirror_file_for($file => $meta);
         my $dst = $self->doc_root_file_for($file => $meta);
         next if $file eq 'readme' && !-e $src;
-        say "    \L$meta->{name}-$meta->{version}.$file" if $self->verbose > 1;
+        say "    \L$meta->{name}-$meta->{version}\E.$file" if $self->verbose > 1;
         fcopy $src, $dst or die "Cannot copy $src to $dst: $!\n";
     }
     return $self;
@@ -237,7 +237,7 @@ sub copy_files {
 sub merge_distmeta {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Merging \L$meta->{name}-$meta->{version} META.json" if $self->verbose;
+    say "  Merging \L$meta->{name}-$meta->{version}\E META.json" if $self->verbose;
 
     # Merge the list of versions into the meta file.
     my $api = PGXN::API->instance;
@@ -341,7 +341,7 @@ sub update_user {
 sub update_tags {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Updating \L$meta->{name}-$meta->{version} tags" if $self->verbose;
+    say "  Updating \L$meta->{name}-$meta->{version}\E tags" if $self->verbose;
 
     my $tags = $meta->{tags} or return $self;
 
@@ -360,7 +360,7 @@ sub update_extensions {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
     my $api = PGXN::API->instance;
-    say "  Updating \L$meta->{name}-$meta->{version} extensions"
+    say "  Updating \L$meta->{name}-$meta->{version}\E extensions"
         if $self->verbose;
 
     while (my ($ext, $data) = each %{ $meta->{provides} }) {
@@ -470,7 +470,7 @@ sub find_docs {
 sub parse_docs {
     my ($self, $p) = @_;
     my $meta = $p->{meta};
-    say "  Parsing \L$meta->{name}-$meta->{version} docs" if $self->verbose;
+    say "  Parsing \L$meta->{name}-$meta->{version}\E docs" if $self->verbose;
 
     my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
