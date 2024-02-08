@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 254;
+use Test::More tests => 263;
 # use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -180,7 +180,7 @@ my $docs = { 'docs/pair' => {
     title => 'pair',
     abstract => 'Key value pair',
 }};
-$mock->mock(parse_docs => $docs);
+$mock->mock(parse_docs => sub { $docs });
 
 # Set up zip archive.
 my $zip       = Archive::Zip->new;
@@ -226,7 +226,7 @@ is_deeply $meta->{special_files}, [qw(README.md META.json Makefile)],
     'And it should have special files';
 is_deeply $meta->{docs}, $docs, 'Should have docs from parse_docs';
 is $meta->{provides}{pair}{docpath}, 'docs/pair',
-    'Should have extension doc path in provides';
+    'Should have drived extension doc path into provides';
 
 # So have a look at the contents.
 ok my $dist_meta = $api->read_json_from($dist_file),
@@ -244,6 +244,19 @@ my $meta_011 = $api->read_json_from(
 my $zip_011 = Archive::Zip->new;
 $zip_011->read(rel2abs catfile qw(t root dist pair 0.1.1 pair-0.1.1.zip));
 $zip_011->addString('# control file', 'pair-0.1.1/pair.control.in');
+
+# Set up multiple docs to be returned by parse_docs.
+$docs = {
+    'docs/howto' => {
+        extension => 'pair',
+        title     => 'pair Howto',
+        abstract => 'How to use key value pair',
+    },
+    'docs/pair' => {
+        title     => 'pair 0.0.1',
+        abstract => 'Key value pair',
+    },
+};
 
 my $dist_011_file = catfile $api->doc_root, qw(dist pair 0.1.1 META.json);
 file_not_exists_ok $dist_011_file, 'pair/0.1.1/META.json should not yet exist';
@@ -267,6 +280,11 @@ is_deeply $meta_011->{releases}, { stable => [
 is_deeply $meta_011->{special_files},
     [qw(Changes README.md META.json Makefile pair.control.in)],
     'And it should have special files';
+
+delete $docs->{'docs/howto'}{extension};
+is_deeply $meta_011->{docs}, $docs, 'Should have docs without extension key';
+is $meta_011->{provides}{pair}{docpath}, 'docs/howto',
+    'Should have explicit extension doc in provides';
 
 ok $dist_meta = $api->read_json_from($dist_011_file),
     'Read the 0.1.1 merged distmeta';
@@ -584,7 +602,7 @@ is_deeply $indexer->to_index, {
 $exp->{latest} = 'testing';
 $exp->{testing} = {
     abstract => 'A key/value pair dåtå type',
-    docpath  => 'docs/pair',
+    docpath  => 'docs/howto',
     dist     => 'pair',
     version  => '0.1.1',
     sha1     => 'c552c961400253e852250c5d2f3def183c81adb3',
@@ -614,7 +632,7 @@ is_deeply shift @{ $indexer->to_index->{extensions} }, {
     abstract    => 'A key/value pair dåtå type',
     date        => '2010-10-29T22:46:45Z',
     dist        => 'otherdist',
-    docpath     => 'docs/pair',
+    docpath     => 'docs/howto',
     extension   => 'pair',
     key         => 'pair',
     user        => 'theory',
@@ -631,7 +649,7 @@ unshift @{ $exp->{versions}{'0.1.1'} } => {
 };
 $exp->{stable} = {
     abstract => 'A key/value pair dåtå type',
-    docpath  => 'docs/pair',
+    docpath  => 'docs/howto',
     dist     => 'pair',
     sha1     => 'cebefd23151b4b797239646f7ae045b03d028fcf',
     version  => '0.1.2',
@@ -779,15 +797,42 @@ is_deeply $docs, {
 
 delete $meta->{no_index};
 
-# Try it with a package containing only a README.
+# Index the README as docs if it's listed in docfile.
 $indexer->to_index->{docs} = [];
-delete $meta->{provides}{pair}{docfile};
+delete $meta->{provides}{pair}{docpath};
+$meta->{provides}{pair}{docfile} = 'README.md';
+$docs = $indexer->parse_docs($params);
+is_deeply $docs, {
+    'README'   => { title => 'pair 0.1.0', extension => 'pair' },
+    'doc/pair' => { title => 'pair 0.1.0', abstract => 'A key/value pair data type' },
+}, 'Doc parser should parse the README as the pair extension and also the doc/pair docs';
+is @{ $indexer->to_index->{docs} }, 2, 'Should have two docs to index';
+is $indexer->to_index->{docs}[0]{docpath}, 'README',
+    'The first should be the the README listed in docfile';
+is $indexer->to_index->{docs}[1]{docpath}, 'doc/pair',
+    'The second should be the the doc/pair file';
+
+# Try it with a package containing only a README, but keep the named docfile.
+$indexer->to_index->{docs} = [];
+delete $meta->{provides}{pair}{docpath};
 ok $params->{zip}->removeMember('pair-0.1.0/doc/pair.md'),
     'Remove doc directory';
 $docs = $indexer->parse_docs($params);
 is_deeply $docs, {
+    'README'   => { title => 'pair 0.1.0', extension => 'pair' },
+}, 'Doc parser should parse the README as the pair extension doc';
+is @{ $indexer->to_index->{docs} }, 1, 'Should have one doc to index';
+is $indexer->to_index->{docs}[0]{docpath}, 'README',
+    'And it should be the README';
+
+# Now remove the docfile spec.
+$indexer->to_index->{docs} = [];
+delete $meta->{provides}{pair}{docpath};
+delete $meta->{provides}{pair}{docfile};
+$docs = $indexer->parse_docs($params);
+is_deeply $docs, {
     'README'   => { title => 'pair 0.1.0' },
-}, 'Doc parser should parse the README';
+}, 'Doc parser should parse the README with its title as the sole doc';
 is @{ $indexer->to_index->{docs} }, 1, 'Should have one doc to index';
 is $indexer->to_index->{docs}[0]{docpath}, 'README',
     'And it should be the README';
@@ -1085,58 +1130,58 @@ is_deeply \@called, [qw(update_user_lists _commit)],
 # Test find_docs().
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(sql hi.mkdn));
 $params->{meta}{provides}{pair}{docfile} = 'sql/hi.mkdn';
-is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/hi.mkdn
-    doc/pair.md
-    README.md
-)], 'find_docs() should find specified and random doc files';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
+    { filename => 'doc/pair.md' },
+    { filename => 'README.md' },
+], 'find_docs() should find specified and random doc files';
 
 $params->{meta}{no_index} = { file => ['sql/hi.mkdn'] };
-is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/hi.mkdn
-    doc/pair.md
-    README.md
-)], 'find_docs() no_index should be ignored for specified doc file';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
+    { filename => 'doc/pair.md' },
+    { filename => 'README.md' },
+], 'find_docs() no_index should be ignored for specified doc file';
 
 $params->{meta}{no_index} = { file => ['doc/pair.md'] };
-is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/hi.mkdn
-    README.md
-)], 'find_docs() should respect no_index for found docs';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
+    { filename => 'README.md' },
+], 'find_docs() should respect no_index for found docs';
 
 $params->{meta}{no_index} = { directory => ['sql'] };
-is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/hi.mkdn
-    doc/pair.md
-    README.md
-)], 'find_docs() should ignore no_index directory for specified doc';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
+    { filename => 'doc/pair.md' },
+    { filename => 'README.md' },
+], 'find_docs() should ignore no_index directory for specified doc';
 
 $params->{meta}{no_index} = { directory => ['doc'] };
-is_deeply [ $indexer->find_docs($params)], [qw(
-    sql/hi.mkdn
-    README.md
-)], 'find_docs() should respect no_index directory for found docs';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'sql/hi.mkdn', extension => 'pair' },
+    { filename => 'README.md' },
+], 'find_docs() should respect no_index directory for found docs';
 
 delete $params->{meta}{no_index};
 $params->{meta}{provides}{pair}{docfile} = 'foo/bar.txt';
-is_deeply [ $indexer->find_docs($params)], [qw(
-    doc/pair.md
-    README.md
-)], 'find_docs() should ignore non-existent specified file';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'doc/pair.md' },
+    { filename => 'README.md' },
+], 'find_docs() should ignore non-existent specified file';
 
 $params->{meta}{provides}{pair}{docfile} = 'doc/pair.md';
-is_deeply [ $indexer->find_docs($params)], [qw(
-    doc/pair.md
-    README.md
-)], 'find_docs() should not return dupes';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'doc/pair.md', extension => 'pair' },
+    { filename => 'README.md' },
+], 'find_docs() should not return dupes';
 
 $params->{meta}{provides}{pair}{docfile} = 'doc/pair.pdf';
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(doc pair.pdf));
 
-is_deeply [ $indexer->find_docs($params)], [qw(
-    doc/pair.md
-    README.md
-)], 'find_docs() should ignore doc files it does not know how to parse';
+is_deeply [ $indexer->find_docs($params)], [
+    { filename => 'doc/pair.md' },
+    { filename => 'README.md' },
+], 'find_docs() should ignore doc files it does not know how to parse';
 
 sub touch {
     my $fn = shift;

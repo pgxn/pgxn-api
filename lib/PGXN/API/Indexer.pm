@@ -250,12 +250,22 @@ sub merge_distmeta {
     $meta->{special_files} = $self->_source_files($p);
     $meta->{docs}          = $self->parse_docs($p);
 
-    # Add doc paths to provided extensions where possible.
-    while (my ($ext, $data) = each %{ $meta->{provides} }) {
-        $data->{docpath} = first {
-            my ($basename) = m{([^/]+)$};
-            $basename eq $ext;
-        } keys %{ $meta->{docs} };
+    # Add doc paths to provided extensions where appropriate.
+    while (my ($noext_path, $data) = each %{ $meta->{docs} }) {
+        if (my $ext = delete $data->{extension}) {
+            # The extension referenced a docfile. Use it.
+            my $d = $meta->{provides}{$ext}
+                || die "Extension $ext missing from meta spec";
+            $d->{docpath} = $noext_path;
+            next;
+        }
+
+        # No doc specified or it wasn't found. Try to find a likely candidate
+        # where the extension name is the file base name.
+        my ($basename) = $noext_path =~ m{([^/]+)$};
+        if (my $d = $meta->{provides}{$basename}) {
+            $d->{docpath} ||= $noext_path;
+        }
     }
 
     # Write the merge metadata to the file.
@@ -451,21 +461,27 @@ sub find_docs {
     my $prefix = quotemeta lc "$meta->{name}-$meta->{version}";
     my $skip   = { directory => [], file => [], %{ $meta->{no_index} || {} } };
     my $markup = Text::Markup->new;
-    my @files  = grep {
-        $_ && $markup->guess_format($_) && -e catfile $dir, $_
-    } map { $_->{docfile} } values %{ $meta->{provides} };
+    my (%seen, @docs);
+    while (my ($ext, $info) = each %{ $meta->{provides} }) {
+        my $fn = $info->{docfile};
+        next unless $fn && $markup->guess_format($fn) && -e catfile $dir, $fn;
+        push @docs => { extension => $ext, filename => $fn };
+        $seen{$fn}++;
+    }
 
     for my $member ($p->{zip}->members) {
         next if $member->isDirectory;
 
         # Skip files that should not be indexed.
         (my $fn = $member->fileName) =~ s{^$prefix/}{};
+        next if $seen{$fn}++;
         next if first { $fn eq $_ } @{ $skip->{file} };
         next if first { $fn =~ /^\Q$_/ } @{ $skip->{directory} };
-        push @files => $fn if $markup->guess_format($fn)
-            || $fn =~ /^README(?:[.][^.]+)?$/i;
+        next unless $markup->guess_format($fn) || $fn =~ /^README(?:[.][^.]+)?$/i;
+        push @docs => { filename => $fn };
     }
-    return uniq @files;
+
+    return @docs;
 }
 
 sub parse_docs {
@@ -477,9 +493,10 @@ sub parse_docs {
     my $dir    = $self->doc_root_file_for(source => $meta);
 
     # Find all doc files and write them out.
-    my @files = $self->find_docs($p);
     my (%docs, $readme);
-    for my $fn (@files) {
+    my @files = $self->find_docs($p);
+    for my $spec (@files) {
+        my $fn = $spec->{filename};
         my $src = catfile $dir, $fn;
         next unless -e $src;
         say "    Parsing markup in $src" if $self->verbose > 1;
@@ -510,6 +527,7 @@ sub parse_docs {
         close $fh or die "Cannot close $dst: $!\n";
 
         $docs{$noext} = {
+            ($spec->{extension} ? (extension => $spec->{extension}) : ()),
             title => $title,
             ($abstract) ? (abstract => $abstract) : ()
         };
@@ -531,7 +549,8 @@ sub parse_docs {
             user      => $meta->{user},
         };
 
-        if ($fn =~ qr{^(?i:README(?:[.][^.]+)?)$}) {
+        # If $fn is a README and isn't referenced by a docfile field...
+        if (!$spec->{extension} && $fn =~ qr{^(?i:README(?:[.][^.]+)?)$}) {
             # Hang on to it to use in case there are no other docs.
             $readme = $to_index;
         } else {
