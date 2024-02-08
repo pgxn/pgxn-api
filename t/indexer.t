@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 263;
+use Test::More tests => 266;
 # use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -262,11 +262,15 @@ my $dist_011_file = catfile $api->doc_root, qw(dist pair 0.1.1 META.json);
 file_not_exists_ok $dist_011_file, 'pair/0.1.1/META.json should not yet exist';
 $params->{meta} = $meta_011;
 $params->{zip} = $zip_011;
-ok $indexer->merge_distmeta($params), 'Merge the distmeta';
+do {
+    # Don't persist the setting of _index_it by merge_distmeta.
+    local $indexer->{_index_it} = 1;
+    ok $indexer->merge_distmeta($params), 'Merge the distmeta';
+};
 file_exists_ok $dist_011_file, 'pair/0.1.1/META.json should now exist';
 
 is_deeply $indexer->to_index->{dists}, [],
-    'Testing distribution should not be queued for indexing';
+    'Nothing should not be queued for indexing';
 
 files_eq_or_diff $dist_011_file, $dist,
     'pair/0.1.1/META.json and pair.json should be the same';
@@ -416,6 +420,7 @@ file_exists_ok $pairkw_file, "$pairkw_file should now exist";
 file_exists_ok $orderedkw_file, "$orderedkw_file should now exist";
 file_not_exists_ok $keyvalkw_file, "$keyvalkw_file should still not exist";
 
+is @{ $indexer->to_index->{tags} }, 2, 'Should have two tags';
 is_deeply shift @{ $indexer->to_index->{tags} }, {
     key => 'ordered pair',
     tag => 'ordered pair',
@@ -450,16 +455,22 @@ delete $exp->{releases}{pgTAP};
 ok my $ord_data = $api->read_json_from($orderedkw_file),
     "Read JSON from $orderedkw_file";
 is_deeply $ord_data, $exp, "$orderedkw_file should have the release data";
+is @{ $indexer->to_index->{tags} }, 0, 'Should have no tags';
 
 # Now update with 0.1.1.
 $params->{meta} = $meta_011;
 fcopy catfile(qw(t data pair-tag-updated.json)),
       catfile($api->mirror_root, qw(tag pair.json));
-ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
+do {
+    # Tell it not to index.
+    local $indexer->{_index_it} = 0;
+    ok $indexer->update_tags($params), 'Update the tags to 0.1.1';
+};
 file_exists_ok $keyvalkw_file, "$keyvalkw_file should now exist";
 is_deeply $indexer->to_index, {
     map { $_ => [] } qw(docs dists extensions users tags)
-}, 'Should have no index updates for test dist';
+}, 'Should have no index updates for with _index_it false';
+$indexer->to_index->{tags} = [];
 
 # Check the JSON data.
 $exp->{tag} = 'pair';
@@ -593,11 +604,15 @@ is_deeply $doc_data, $exp,
 fcopy catfile(qw(t data pair-ext-updated.json)),
       catfile($api->mirror_root, qw(extension pair.json));
 $params->{meta} = $meta_011;
-ok $indexer->update_extensions($params),
-    'Update the extension metadata to 0.1.1';
+do {
+    # Tell it not to index.
+    local $indexer->{_index_it} = 0;
+    ok $indexer->update_extensions($params),
+        'Update the extension metadata to 0.1.1';
+};
 is_deeply $indexer->to_index, {
     map { $_ => [] } qw(docs dists extensions users tags)
-}, 'Should have no indexed extensions for testing dist';
+}, 'Should have no indexed extensions with _index_it false';
 
 $exp->{latest} = 'testing';
 $exp->{testing} = {
@@ -941,7 +956,6 @@ like $res->{hits}[0]{excerpt}, qr{\Qtwo-value <strong>composite</strong> type},
 is $res->{hits}[0]{dist}, 'pair', 'It should be in dist "pair"';
 is $res->{hits}[0]{version}, '0.1.0', 'It should be in 0.1.0';
 
-
 ##############################################################################
 # Now index 0.1.1 (testing).
 $meta_011 = $api->read_json_from(
@@ -951,8 +965,11 @@ $pgz = catfile qw(dist pair 0.1.1 pair-0.1.1.zip);
 $params->{meta}   = $meta_011;
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 ok $indexer->add_distribution($params), 'Index pair 0.1.1';
+is_deeply $indexer->to_index, {
+    map { $_ => [] } qw(docs dists extensions users tags)
+}, 'Should have no index updates for test dist';
 
-# The previous stable release should still be indxed.
+# The previous stable release should still be indexed.
 ok $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate another searcher';
 ok $res = $searcher->search(query => 'data', in => 'dists'),
     'Search dists for "data" again';

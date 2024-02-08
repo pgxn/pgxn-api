@@ -1,15 +1,20 @@
 Revision history for Perl extension PGXN::API
 
 0.16.6
-      - Removed the `Capfile` and `eg` directory from the source (and distribution).
-        Examples for managing PGXN can now be found in the pgxn/pgxn-ops
-        repository on GitHub.
+      - Removed the `Capfile` and `eg` directory. Examples for managing PGXN
+        can now be found in the pgxn/pgxn-ops GitHub repository.
       - Switched from Text::Markdown to CommonMark for parsing and formatting
         Markdown files (but not MultiMarkdown files). This allows code fences
         to work and generates nicer HTML in general, but is stricter about
         certain things.
       - The docs indexer now indexes a distribution's README if it is the only
         documentation it finds in the distribution (#12).
+      - The docs indexer now strictly links an extension to the doc file
+        specified via the `docfile` key in its `provides` object, even if
+        it's a README (#10).
+      - The indexer will now index a testing release if there are no stable
+        releases, and will index an unstable release if there are neither stable
+        nor testing releases (#2).
 
 0.16.5  2016-06-22T18:03:05Z
       - Fixed a test failure on systems with a non-English locale, thanks to

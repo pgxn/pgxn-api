@@ -22,8 +22,9 @@ use Archive::Zip qw(AZ_OK);
 use namespace::autoclean;
 our $VERSION = v0.16.6;
 
-has verbose  => (is => 'rw', isa => 'Int', default => 0);
-has to_index => (is => 'ro', isa => 'HashRef', default => sub { +{
+has verbose   => (is => 'rw', isa => 'Int', default => 0);
+has _index_it => (is => 'rw', isa => 'Bool', default => 1);
+has to_index  => (is => 'ro', isa => 'HashRef', default => sub { +{
     map { $_ => [] } qw(docs dists extensions users tags)
 } });
 
@@ -211,6 +212,9 @@ sub parse_from_mirror {
 sub add_distribution {
     my ($self, $params) = @_;
 
+    # merge_distmeta will set _index_it, but we don't want it changed after this
+    # method finishes.
+    local $self->{_index_it} = 1;
     $self->copy_files($params)        or return $self->_rollback;
     $self->merge_distmeta($params)    or return $self->_rollback;
     $self->update_user($params)       or return $self->_rollback;
@@ -246,6 +250,16 @@ sub merge_distmeta {
     my $dist_meta = $api->read_json_from($dist_file);
     $meta->{releases} = $dist_meta->{releases};
 
+    # Determine whether to full-text index this distribution.
+    $self->_index_it(
+        # Always index a stable release.
+        $meta->{release_status} eq 'stable'
+        # Index if testing and no stable.
+        || ($meta->{release_status} eq 'testing' && !$meta->{releases}{stable})
+        # Index if there are only unstable releases.
+        || !$meta->{releases}{testing}
+    );
+
     # Add a list of special files and docs.
     $meta->{special_files} = $self->_source_files($p);
     $meta->{docs}          = $self->parse_docs($p);
@@ -273,7 +287,7 @@ sub merge_distmeta {
     make_path dirname $fn;
     $api->write_json_to($fn, $meta);
 
-    $dist_file = $self->doc_root_file_for(dist => $meta );
+    $dist_file = $self->doc_root_file_for(dist => $meta);
     if ($meta->{release_status} eq 'stable') {
         # Copy it to its dist home.
         fcopy $fn, $dist_file or die "Cannot copy $fn to $dist_file: $!\n";
@@ -301,7 +315,7 @@ sub merge_distmeta {
         date        => $meta->{date},
         user_name   => $self->_get_user_name($meta),
         user        => $meta->{user},
-    }) if $meta->{release_status} eq 'stable';
+    });
 
     # Now update all older versions with the complete list of releases.
     for my $releases ( values %{ $meta->{releases} }) {
@@ -359,10 +373,7 @@ sub update_tags {
     for my $tag (@{ $tags }) {
         say "    $tag" if $self->verbose > 1;
         my $data = $self->_update_releases(tag => $meta, tag => lc $tag);
-        $self->_index(tags => {
-            key => lc $tag,
-            tag => $tag,
-        }) if $p->{meta}->{release_status} eq 'stable';
+        $self->_index(tags => { key => lc $tag, tag => $tag });
     }
     return $self;
 }
@@ -448,7 +459,7 @@ sub update_extensions {
             date        => $meta->{date},
             user_name   => $self->_get_user_name($meta),
             user        => $meta->{user},
-        }) if $meta->{release_status} eq 'stable';
+        });
     }
 
     return $self;
@@ -532,9 +543,6 @@ sub parse_docs {
             ($abstract) ? (abstract => $abstract) : ()
         };
 
-        # Only index stable releases (for the moment);
-        next if $meta->{release_status} ne 'stable';
-
         # Prepare the index entry.
         my $to_index = {
             key       => lc "$meta->{name}/$noext",
@@ -560,9 +568,7 @@ sub parse_docs {
     }
 
     # No docs found, just the README. So index it as documentation.
-    if (@files == 1 && $readme) {
-        $self->_index(docs => $readme) if $meta->{release_status} eq 'stable';
-    }
+    $self->_index(docs => $readme) if @files == 1 && $readme;
 
     return \%docs;
 }
@@ -712,7 +718,7 @@ sub _index_user {
 
 sub _index {
     my ($self, $index, $data) = @_;
-    push @{ $self->to_index->{ $index } } => $data;
+    push @{ $self->to_index->{ $index } } => $data if $self->_index_it;
 }
 
 sub _rollback {
