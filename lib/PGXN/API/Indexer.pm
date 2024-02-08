@@ -9,6 +9,7 @@ use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy dircopy);
 use File::Basename;
 use Text::Markup;
+use Text::Markup::CommonMark;
 use XML::LibXML;
 use List::Util qw(first);
 use List::MoreUtils qw(uniq);

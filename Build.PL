@@ -13,10 +13,8 @@ my $build = $class->new(
     module_name        => 'PGXN::API',
     license            => 'postgresql',
     script_files       => 'bin',
-    configure_requires => { 'Module::Build' => '0.30', },
-    build_requires     => {
-        'Module::Build'        => '0.30',
-        'Software::License'    => '0.102340',
+    configure_requires => { 'Module::Build' => '0.4209' },
+    test_requires     => {
         'Test::Exception'      => '0.31',
         'Test::File'           => '1.29',
         'Test::File::Contents' => '0.20',
@@ -27,6 +25,7 @@ my $build = $class->new(
     requires => {
         'Archive::Zip'                 => '1.30',
         'Cwd'                          => '3.33',
+        'CommonMark'                   => '0.290000',
         'Data::Dump'                   => '1.17',
         'Digest::SHA1'                 => '2.13',
         'Email::MIME::Creator'         => '1.905',
@@ -54,15 +53,20 @@ my $build = $class->new(
         'URI::Template'                => '0.16',
         'XML::LibXML'                  => '1.70',
     },
-    recommends => {
-        'Test::Pod'           => '1.41',
-        'Test::Pod::Coverage' => '1.06',
-    },
     meta_merge => {
         resources => {
             homepage   => 'http://api.pgxn.org/',
             bugtracker => 'http://github.com/pgxn/pgxn-api/issues/',
             repository => 'http://github.com/pgxn/pgxn-api/',
+        },
+        prereqs => {
+            develop => {
+                requires => {
+                    'Test::Pod'           => '1.41',
+                    'Test::Pod::Coverage' => '1.06',
+                    'Test::Spelling'      => '0.25',
+                },
+            },
         },
     },
 );

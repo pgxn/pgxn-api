@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 249;
+use Test::More tests => 250;
 #use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -750,9 +750,11 @@ is_deeply $indexer->to_index->{docs}, [], 'Should be no other documents to index
 
 file_exists_ok $doc_dir, 'Directory dist/pair/pair-0.1.0 should now exist';
 file_exists_ok $readme, 'dist/pair/pair/0.1.0/README.html should now exist';
+file_contents_like $readme, qr/<pre><code>make/, 'Fenced code should be a <pre> block';
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
 file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>},
     'README.html should have HTML';
+
 file_contents_unlike $readme, qr{<html}i, 'README.html should have no html element';
 file_contents_unlike $readme, qr{<body}i, 'README.html should have no body element';
 file_contents_like $doc, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0},
@@ -1064,7 +1066,6 @@ is_deeply \@called, [qw(update_user_lists _commit)],
 
 ##############################################################################
 # Test find_docs().
-$ENV{FOO} = 1;
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(sql hi.mkdn));
 $params->{meta}{provides}{pair}{docfile} = 'sql/hi.mkdn';
 is_deeply [ $indexer->find_docs($params)], [qw(
@@ -1072,7 +1073,6 @@ is_deeply [ $indexer->find_docs($params)], [qw(
     doc/pair.md
     README.md
 )], 'find_docs() should find specified and random doc files';
-delete $ENV{FOO};
 
 $params->{meta}{no_index} = { file => ['sql/hi.mkdn'] };
 is_deeply [ $indexer->find_docs($params)], [qw(

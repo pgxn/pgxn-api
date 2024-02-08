@@ -117,7 +117,6 @@ test_psgi $app => sub {
 # Try the root directory.
 test_psgi $app => sub {
     my $cb = shift;
-    local $ENV{FOO} = 1;
     fcopy $html, $doc_root or die "Cannot copy $html to $doc_root: $!\n";
     ok my $res = $cb->(GET '/'), "Fetch /";
     ok $res->is_success, 'It should be a success';
