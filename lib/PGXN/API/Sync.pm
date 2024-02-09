@@ -1,6 +1,6 @@
 package PGXN::API::Sync;
 
-use 5.10.0;
+use v5.14;
 use utf8;
 use Moose;
 use PGXN::API;
@@ -14,7 +14,7 @@ use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
 use Moose::Util::TypeConstraints;
 use namespace::autoclean;
-our $VERSION = v0.16.6;
+our $VERSION = v0.20.0;
 
 subtype Executable => as 'Str', where {
     my $exe = $_;
@@ -389,7 +389,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2013 David E. Wheeler.
+Copyright (c) 2011-2024 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

@@ -6,6 +6,26 @@ my $class = Module::Build->subclass(
     class => 'PGXN::Build',
     code => q{
         sub valid_licenses { { postgresql => 'PostgreSQL' } }
+        sub ACTION_tarball_name { print shift->dist_dir . ".tar.gz\n" }
+        sub ACTION_latest_changes {
+            my $self = shift;
+            (my $dv = $self->dist_version) =~ s/^v//;
+            open my $in, '<:raw', 'Changes' or die "Cannot open Changes: $!\n";
+            open my $out, '>:raw', 'latest_changes.md' or die "Cannot open latest_changes.md: $!\n";
+            while (<$in>) { last if /^\Q$dv\E\b/ }
+            print {$out} "Changes for v$dv\n";
+            while (<$in>) {
+                last if /^\s*$/;
+                chomp;
+                if (s/^\s+-/-  /) {
+                    print {$out} "\n";
+                } else {
+                    s/^\s+/ /;
+                }
+                print {$out} $_;
+            }
+            $self->add_to_cleanup('latest_changes.md');
+        }
     },
 );
 
@@ -14,7 +34,7 @@ my $build = $class->new(
     license            => 'postgresql',
     script_files       => 'bin',
     configure_requires => { 'Module::Build' => '0.4209' },
-    test_requires     => {
+    test_requires      => {
         'Test::Exception'      => '0.31',
         'Test::File'           => '1.29',
         'Test::File::Contents' => '0.20',
@@ -42,8 +62,8 @@ my $build = $class->new(
         'Moose::Util::TypeConstraints' => '1.15',
         'MooseX::Singleton'            => '0.25',
         'namespace::autoclean'         => '0.11',
-        'perl'                         => 5.010,
-        'PGXN::API::Searcher'          => '0.9.4',
+        'perl'                         => 5.014,
+        'PGXN::API::Searcher'          => '0.11.1',
         'Plack'                        => '0.9977',
         'Plack::App::Directory'        => 0,
         'Plack::App::File'             => 0,
@@ -54,6 +74,7 @@ my $build = $class->new(
         'XML::LibXML'                  => '1.70',
     },
     meta_merge => {
+        'meta-spec' => { version => 2 },
         resources => {
             homepage   => 'http://api.pgxn.org/',
             bugtracker => 'http://github.com/pgxn/pgxn-api/issues/',

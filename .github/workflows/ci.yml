@@ -1,0 +1,34 @@
+name: 🧪 CI
+on:
+  push:
+    branches: ['*']
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [[🐧, ubuntu], [🍎, macos]] # [🪟, windows]
+        perl: [ '5.38', '5.36', '5.34', '5.32', '5.30', '5.28', '5.26', '5.24', '5.22', '5.20', '5.18', '5.16', '5.14' ]
+    name: 🧅 Perl ${{ matrix.perl }} on ${{ matrix.os[0] }} ${{ matrix.os[1] }}
+    runs-on: ${{ matrix.os[1] }}-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Perl ${{ matrix.perl }}
+        uses: shogo82148/actions-setup-perl@v1
+        with: { perl-version: "${{ matrix.perl }}" }
+
+      - name: Brew CommonMark
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmark
+          cpanm -v --notest --no-man-pages CommonMark --configure-args="INC=-I'$(brew --prefix)/include' LIBS=-L'$(brew --prefix)/lib -lcmark'"
+
+      - name: Apt CommonMark
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install libcmark-dev
+          cpanm -v --notest --no-man-pages CommonMark
+
+      - name: Install Dependencies
+        run: cpanm -vn Module::Build && cpanm -vn --installdeps --with-recommends --with-develop .
+      - name: Run Tests
+        run: perl Build.PL ./Build && ./Build test

@@ -1,13 +1,13 @@
 package PGXN::API;
 
-use 5.10.0;
+use v5.14;
 use utf8;
 use MooseX::Singleton;
 use File::Spec::Functions qw(catfile catdir);
 use URI::Template;
 use JSON;
 use namespace::autoclean;
-our $VERSION = v0.16.6;
+our $VERSION = v0.20.0;
 
 =head1 Name
 
@@ -308,7 +308,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2013 David E. Wheeler.
+Copyright (c) 2011-2024 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

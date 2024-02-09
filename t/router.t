@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-use 5.10.0;
+use v5.14;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
 use Test::More tests => 196;

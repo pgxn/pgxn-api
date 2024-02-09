@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.16.6
+0.20.0
       - Removed the `Capfile` and `eg` directory. Examples for managing PGXN
         can now be found in the pgxn/pgxn-ops GitHub repository.
       - Switched from Text::Markdown to CommonMark for parsing and formatting
@@ -20,6 +20,7 @@ Revision history for Perl extension PGXN::API
       - Fix unzipping of distributions to ensure that all directories are
         readable and executable but not writeable by all, and that files are
         only readable by all (#15).
+      - Dropped support for Perl 5.10 and 5.12.
 
 0.16.5  2016-06-22T18:03:05Z
       - Fixed a test failure on systems with a non-English locale, thanks to

@@ -1,14 +1,58 @@
-PGXN/API version 0.16.6
-=======================
+PGXN/API
+========
 
-This application provides a REST API for flexible searching of PGXN
-distribution metadata and documentation. It is currently in development. Watch
-this space and the [PGXN Blog](http://blog.pgxn.org/) as things develop!
+This application provides a REST API for flexible searching of PGXN distribution
+metadata and documentation. See [the docs](https://github.com/pgxn/pgxn-api/wiki)
+for details on using the API.
+
+Installation
+------------
+
+To install this module, type the following:
+
+    perl Build.PL
+    ./Build
+    ./Build test
+    ./Build install
+
+Dependencies
+------------
+
+PGXN-API requires Perl 5.14 and the following modules:
+
+*   Archive::Zip
+*   Cwd
+*   CommonMark
+*   Data::Dump
+*   Digest::SHA1
+*   Email::MIME::Creator
+*   Email::Sender::Simple
+*   File::Path
+*   File::Copy::Recursive
+*   File::Spec
+*   JSON
+*   JSON::XS
+*   List::Util
+*   List::MoreUtils
+*   Lucy
+*   Moose
+*   Moose::Util::TypeConstraints
+*   MooseX::Singleton
+*   namespace::autoclean
+*   PGXN::API::Searcher
+*   Plack
+*   Plack::App::Directory
+*   Plack::App::File
+*   Plack::Middleware::JSONP
+*   Plack::Builder
+*   Text::Markup
+*   URI::Template
+*   XML::LibXML
 
 Copyright and License
 ---------------------
 
-Copyright (c) 2011-2013 David E. Wheeler.
+Copyright (c) 2011-2024 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the [PostgreSQL License](http://www.opensource.org/licenses/postgresql).

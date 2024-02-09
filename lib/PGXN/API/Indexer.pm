@@ -1,6 +1,6 @@
 package PGXN::API::Indexer;
 
-use 5.10.0;
+use v5.14;
 use utf8;
 use Moose;
 use PGXN::API;
@@ -20,7 +20,7 @@ use Lucy::Index::Indexer;
 use Try::Tiny;
 use Archive::Zip qw(AZ_OK);
 use namespace::autoclean;
-our $VERSION = v0.16.6;
+our $VERSION = v0.20.0;
 
 has verbose   => (is => 'rw', isa => 'Int', default => 0);
 has _index_it => (is => 'rw', isa => 'Bool', default => 1);
@@ -1515,7 +1515,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2013 David E. Wheeler.
+Copyright (c) 2011-2024 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

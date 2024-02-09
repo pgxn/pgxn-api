@@ -4,6 +4,7 @@
 ,v$
 \B\.svn\b
 \B\.git
+\.vscode
 
 # Avoid Makemaker generated and utility files.
 \bMakefile$
@@ -33,6 +34,3 @@
 
 # Avoid Pod tests.
 t/pod.+
-
-^MYMETA.yml$
-^MYMETA\.json$
