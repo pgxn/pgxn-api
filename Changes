@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
-0.20.0
+0.20.1
+
+0.20.0  2024-02-09T17:36:10Z
       - Removed the `Capfile` and `eg` directory. Examples for managing PGXN
         can now be found in the pgxn/pgxn-ops GitHub repository.
       - Switched from Text::Markdown to CommonMark for parsing and formatting

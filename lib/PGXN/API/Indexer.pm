@@ -20,7 +20,7 @@ use Lucy::Index::Indexer;
 use Try::Tiny;
 use Archive::Zip qw(AZ_OK);
 use namespace::autoclean;
-our $VERSION = v0.20.0;
+our $VERSION = v0.20.1;
 
 has verbose   => (is => 'rw', isa => 'Int', default => 0);
 has _index_it => (is => 'rw', isa => 'Bool', default => 1);
