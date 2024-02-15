@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 266;
+use Test::More tests => 268;
 # use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -64,6 +64,12 @@ can_ok $CLASS => qw(
     _readme
     _clean_html_body
 );
+
+# Make sure Text::Markup recognizes the "none" parser for text files.
+is +Text::Markup->guess_format("foo.text"), "none",
+    'Text::Markup should parse .text files with the "none" parser';
+is +Text::Markup->guess_format("foo.txt"), "none",
+    'Text::Markup should parse .txt files with the "none" parser';
 
 my $api = PGXN::API->instance;
 my $doc_root = catdir 't', 'test_indexer_root';

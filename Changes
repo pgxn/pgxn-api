@@ -7,6 +7,10 @@ Revision history for Perl extension PGXN::API
       - Fixed a bug where a user's JSON file was not updated for a testing
         release when there were no previous stable releases, or for an unstable
         release when there wer not previous testing releases.
+      - The indexer now recognizes plain text files ending in `.txt` or `.text`
+        as documentation files to be indexed. They're parsed by the default
+        Text::Markup::None parser, which wraps their contents in a `<pre>`
+        block (#13).
 
 0.20.0  2024-02-09T17:36:10Z
       - Removed the `Capfile` and `eg` directory. Examples for managing PGXN

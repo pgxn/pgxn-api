@@ -29,7 +29,6 @@ sub app {
     # Identify distribution files as zip files.
     my ($zip_ext) = PGXN::API->instance->uri_templates->{download} =~ /([.][^.]+)$/;
     $Plack::MIME::MIME_TYPES->{$zip_ext} = $Plack::MIME::MIME_TYPES->{'.zip'};
-    my %bys = map { $_ => undef } qw(dist extension user tag);
 
     builder {
         enable 'ErrorDocument', 500, '/error', subrequest => 1;
