@@ -303,7 +303,7 @@ sub merge_distmeta {
         $api->write_json_to($dist_file => $meta);
     }
 
-    # Index it if it's a new stable release.
+    # Index it.
     $self->_index(dists => {
         key         => lc $meta->{name},
         dist        => $meta->{name},
@@ -359,7 +359,7 @@ sub update_user {
     my ($self, $p) = @_;
     say "  Updating user $p->{meta}{user}" if $self->verbose;
     my $user = $self->_update_releases(user => $p->{meta});
-    $self->_index_user($user) if $p->{meta}->{release_status} eq 'stable';
+    $self->_index_user($user);
     return $self;
 }
 
@@ -447,15 +447,20 @@ sub update_extensions {
             delete $ddvers->{$v} unless $mir_vers->{$v};
         }
 
+        # Only index testing if no stable, and unstable if no testing.
+        my $release = $mir_meta->{stable}
+            || $mir_meta->{testing}
+            || $mir_meta->{unstable};
+
         # Write it back out and index it.
         $api->write_json_to($doc_file => $mir_meta);
         $self->_index(extensions => {
             key         => lc $mir_meta->{extension},
             extension   => $mir_meta->{extension},
-            abstract    => $mir_meta->{stable}{abstract} || '',
+            abstract    => $release->{abstract} || '',
             docpath     => $data->{docpath} || '',
             dist        => $meta->{name},
-            version     => $mir_meta->{stable}{version},
+            version     => $release->{version},
             date        => $meta->{date},
             user_name   => $self->_get_user_name($meta),
             user        => $meta->{user},
@@ -1347,7 +1352,7 @@ C<merge_distmeta()>.
 
 Iterates over the list of extensions under the C<provides> key in the metadata
 and updates their respective metadata files (as specified by the "extension"
-URI template) and updates them with additional information.The supported
+URI template) and updates them with additional information. The supported
 parameters are the same as those for C<add_distribution()>, by which this
 method is called internally.
 
