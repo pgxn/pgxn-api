@@ -1,6 +1,6 @@
 Revision history for Perl extension PGXN::API
 
-0.20.1
+0.20.1  2024-02-15T22:18:14Z
       - Fixed a bug where a testing extension's version and abstract was not
         properly indexed when there was no stable extension (and also unstable
         would not be indexed if there was no testing).
