@@ -1,6 +1,8 @@
 Revision history for Perl extension PGXN::API
 
 0.20.2
+      - Fixed symlinks extracted from Zip files and permission errors when
+        re-indexing distributions.
 
 0.20.1  2024-02-15T22:18:14Z
       - Fixed a bug where a testing extension's version and abstract was not

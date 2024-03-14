@@ -194,14 +194,20 @@ sub unzip {
     make_path $dist_dir unless -e $dist_dir && -d _;
 
     foreach my $member ($zip->members) {
-        # Make sure the file is readable by everyone
-        $member->unixFileAttributes( $member->isDirectory ? 0755 : 0444 );
         my $fn = catfile $dist_dir, split m{/} => $member->fileName;
         say "    $fn\n" if $self->verbose > 2;
+
+        if ($member->isSymbolicLink) {
+            # Delete exsting so Archive::Zip won't fail to create it.
+            warn "Cannot unlink $fn: $!\n" if -e $fn && !unlink $fn;
+        } else {
+            # Make sure the member is readable by everyone.
+            $member->unixFileAttributes( $member->isDirectory ? 0755 : 0644 );
+        }
+
         if ($member->extractToFileNamed($fn) != AZ_OK) {
-            warn "Error extracting $zip_path\n";
-            ## XXX clean up the mess here.
-            return;
+            warn "Error extracting $fn from $zip_path\n";
+            next;
         }
     }
 
