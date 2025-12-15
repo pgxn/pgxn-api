@@ -13,7 +13,7 @@ use Plack::Request;
 use Encode;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
-our $VERSION = v0.20.3;
+our $VERSION = v0.21.0;
 
 sub app {
     my ($class, %params) = @_;
@@ -225,7 +225,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2024 David E. Wheeler.
+Copyright (c) 2011-2025 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

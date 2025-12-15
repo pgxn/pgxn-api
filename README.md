@@ -22,7 +22,6 @@ PGXN-API requires Perl 5.14 and the following modules:
 
 *   Archive::Zip
 *   Cwd
-*   CommonMark
 *   Data::Dump
 *   Digest::SHA1
 *   Email::MIME::Creator
@@ -52,7 +51,7 @@ PGXN-API requires Perl 5.14 and the following modules:
 Copyright and License
 ---------------------
 
-Copyright (c) 2011-2024 David E. Wheeler.
+Copyright (c) 2011-2025 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the [PostgreSQL License](http://www.opensource.org/licenses/postgresql).

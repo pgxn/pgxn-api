@@ -9,7 +9,6 @@ use File::Path qw(make_path);
 use File::Copy::Recursive qw(fcopy dircopy);
 use File::Basename;
 use Text::Markup;
-use Text::Markup::CommonMark;
 use Text::Markup::None qr/te?xt/;
 use XML::LibXML;
 use List::Util qw(first);
@@ -21,7 +20,7 @@ use Lucy::Index::Indexer;
 use Try::Tiny;
 use Archive::Zip qw(AZ_OK);
 use namespace::autoclean;
-our $VERSION = v0.20.3;
+our $VERSION = v0.21.0;
 
 has verbose   => (is => 'rw', isa => 'Int', default => 0);
 has _index_it => (is => 'rw', isa => 'Bool', default => 1);
@@ -1521,7 +1520,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2024 David E. Wheeler.
+Copyright (c) 2011-2025 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

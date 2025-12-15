@@ -7,7 +7,7 @@ use File::Spec::Functions qw(catfile catdir);
 use URI::Template;
 use JSON;
 use namespace::autoclean;
-our $VERSION = v0.20.3;
+our $VERSION = v0.21.0;
 
 =head1 Name
 
@@ -308,7 +308,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2024 David E. Wheeler.
+Copyright (c) 2011-2025 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.
