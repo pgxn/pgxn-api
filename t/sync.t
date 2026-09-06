@@ -218,15 +218,18 @@ is_deeply \@found, ['meta/spec.txt'], 'Should find spec.txt';
 ##############################################################################
 # Reset the rsync output and have it do its thing.
 my $mock = Test::MockModule->new($CLASS);
+$CLASS->meta->make_mutable;
 $mock->mock(validate_distribution => sub { push @found => $_[1]; $_[1] });
 @found = ();
 
 my $api_mock = Test::MockModule->new('PGXN::API');
+PGXN::API->meta->make_mutable;
 $api_mock->mock(uri_templates => sub {
     fail 'Should not get URI templates before updating the mirror meta';
 });
 
 my $idx_mock = Test::MockModule->new('PGXN::API::Indexer');
+PGXN::API::Indexer->meta->make_mutable;
 my @dists;
 $idx_mock->mock(add_distribution => sub { push @dists => $_[1] });
 my (@paths, @meths, @parsed, @users);

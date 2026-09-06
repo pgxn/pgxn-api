@@ -818,8 +818,7 @@ sub _readme {
 }
 
 # List of allowed elements and attributes.
-# http://www.w3schools.com/tags/default.asp
-# http://www.w3schools.com/html5/html5_reference.asp
+# https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements
 my %allowed = do {
     my $attrs = { title => 1, dir => 1, lang => 1 };
     map { $_ => $attrs } qw(
@@ -832,6 +831,7 @@ my %allowed = do {
         aside
         audio
         b
+        bdi
         bdo
         big
         blockquote
@@ -842,6 +842,7 @@ my %allowed = do {
         code
         col
         colgroup
+        data
         dd
         del
         details
@@ -874,6 +875,7 @@ my %allowed = do {
         ol
         output
         p
+        picture
         pre
         q
         rp

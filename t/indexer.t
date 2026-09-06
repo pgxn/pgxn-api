@@ -80,6 +80,7 @@ END { remove_tree $doc_root }
 dircopy catdir(qw(t root)), $api->mirror_root;
 
 # Mock indexing stuff.
+$CLASS->meta->make_mutable;
 my $mock = Test::MockModule->new($CLASS);
 $mock->mock(_commit => sub { shift });
 
