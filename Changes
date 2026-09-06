@@ -1,5 +1,7 @@
 Revision history for Perl extension PGXN::API
 
+0.21.2  Unreleased
+
 0.21.1  2026-09-06T19:35:24Z
       - Added `bdi`, `data`, and `picture` to the list of allowed HTML
         elements.

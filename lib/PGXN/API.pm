@@ -7,7 +7,7 @@ use File::Spec::Functions qw(catfile catdir);
 use URI::Template;
 use JSON;
 use namespace::autoclean;
-our $VERSION = v0.21.1;
+our $VERSION = v0.21.2;
 
 =head1 Name
 
