@@ -10,7 +10,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - name: Check out the repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Setup Perl
       uses: shogo82148/actions-setup-perl@v1
     - name: Install Release Dependencies
@@ -26,7 +26,7 @@ jobs:
         CPANPASS: ${{ secrets.CPAN_PASSWORD }}
       run: cpan-upload --user "$CPANUSER" --password "$CPANPASS" '${{ steps.package.outputs.tarball }}'
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         name: Release ${{ github.ref_name }}
         body_path: latest_changes.md

@@ -13,12 +13,13 @@ BEGIN {
 }
 
 GetOptions(
-    'rsync|r=s'  => \my $rsync,
-    'root|d=s'   => \my $root,
-    'verbose|V+' => \my $verbose,
-    'help|h'     => \my $help,
-    'man|m'      => \my $man,
-    'version|v'  => \my $version,
+    'rsync|r=s'    => \my $rsync,
+    'root|d=s'     => \my $root,
+    'base-url|u=s' => \my $url,
+    'verbose|V+'   => \my $verbose,
+    'help|h'       => \my $help,
+    'man|m'        => \my $man,
+    'version|v'    => \my $version,
 ) or _pod2usage();
 
 _pod2usage(
@@ -37,7 +38,8 @@ my $source = shift or _pod2usage();
 PGXN::API->instance->doc_root($root) if $root;
 
 PGXN::API::Sync->new(
-    source => $source,
+    source   => $source,
+    base_url => $url,
     ($rsync ? (rsync_path => $rsync) : ()),
     verbose => $verbose || 0,
 )->run;
@@ -76,6 +78,7 @@ hour, put this in your crontab:
 
   -r --rsync          Location of rsync if it's not in your path.
   -d --root           Directory to use for the API doc root.
+  -u --base-url       Base URL from which the API is served.
   -V --verbose        Incremental verbosity to STDOUT.
   -h --help           Print a usage statement and exit.
   -m --man            Print the complete documentation and exit.
@@ -87,7 +90,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2025 David E. Wheeler.
+Copyright (c) 2011-2026 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

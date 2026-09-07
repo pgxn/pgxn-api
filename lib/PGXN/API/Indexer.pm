@@ -20,7 +20,7 @@ use Lucy::Index::Indexer;
 use Try::Tiny;
 use Archive::Zip qw(AZ_OK);
 use namespace::autoclean;
-our $VERSION = v0.21.2;
+our $VERSION = v0.22.0;
 
 has verbose   => (is => 'rw', isa => 'Int', default => 0);
 has _index_it => (is => 'rw', isa => 'Bool', default => 1);
@@ -202,7 +202,7 @@ sub parse_from_mirror {
 
     make_path dirname $dst;
     open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
-    $doc = _clean_html_body($doc->findnodes('/html/body'));
+    $doc = $self->_clean_html_body($doc->findnodes('/html/body'));
     print $fh $doc->toString, "\n";
     close $fh or die "Cannot close $dst: $!\n";
 
@@ -470,6 +470,20 @@ sub update_extensions {
     return $self;
 }
 
+sub _start_doc {
+    my ($self, $meta, $fn, $ext) = @_;
+    (my $noext = $fn) =~ s{[.][^.]+$}{};
+    return {
+        filename  => $fn,
+        extension => $ext,
+        noext     => $noext,
+        dest      => $self->doc_root_file_for(
+            htmldoc => $meta,
+            docpath => $noext,
+        ),
+    };
+}
+
 sub find_docs {
     my ($self, $p) = @_;
     my $meta   = $p->{meta};
@@ -481,7 +495,7 @@ sub find_docs {
     while (my ($ext, $info) = each %{ $meta->{provides} }) {
         my $fn = $info->{docfile};
         next unless $fn && $markup->guess_format($fn) && -e catfile $dir, $fn;
-        push @docs => { extension => $ext, filename => $fn };
+        push @docs => $self->_start_doc($meta, $fn, $ext);
         $seen{$fn}++;
     }
 
@@ -494,7 +508,7 @@ sub find_docs {
         next if first { $fn eq $_ } @{ $skip->{file} };
         next if first { $fn =~ /^\Q$_/ } @{ $skip->{directory} };
         next unless $markup->guess_format($fn) || $fn =~ /^README(?:[.][^.]+)?$/i;
-        push @docs => { filename => $fn };
+        push @docs => $self->_start_doc($meta, $fn);
     }
 
     return @docs;
@@ -508,21 +522,17 @@ sub parse_docs {
     my $markup = Text::Markup->new(default_encoding => 'UTF-8');
     my $dir    = $self->doc_root_file_for(source => $meta);
 
-    # Find all doc files and write them out.
-    my (%docs, $readme);
+    # Find all doc files.
     my @files = $self->find_docs($p);
+
+    my (%docs, $readme);
     for my $spec (@files) {
-        my $fn = $spec->{filename};
+        my ($fn, $dst, $noext) = @{$spec}{qw(filename dest noext)};
         my $src = catfile $dir, $fn;
         next unless -e $src;
+
         say "    Parsing markup in $src" if $self->verbose > 1;
         my $doc = $self->_parse_html_string($markup->parse(file => $src) or next);
-
-        (my $noext = $fn) =~ s{[.][^.]+$}{};
-        my $dst  = $self->doc_root_file_for(
-            htmldoc    => $meta,
-            docpath    => $noext,
-        );
         make_path dirname $dst;
 
         # Determine the title before we mangle the HTML.
@@ -538,7 +548,7 @@ sub parse_docs {
 
         # Clean up the HTML and write it out.
         open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
-        $doc = _clean_html_body($doc->findnodes('/html/body'));
+        $doc = $self->_clean_html_body($doc->findnodes('/html/body'), \@files, $p);
         print $fh $doc->toString, "\n";
         close $fh or die "Cannot close $dst: $!\n";
 
@@ -616,7 +626,6 @@ sub update_user_lists {
         my $letter = lc substr $nick, 0, 1;
         push @{ $users_for{$letter} ||= [] } => { user => $nick, name => $name };
     }
-
 
     while (my ($letter, $users) = each %users_for ) {
         say "  Updating $letter.json" if $self->verbose > 1;
@@ -785,7 +794,7 @@ sub _source_files {
 
 sub _readme {
     my ($self, $p) = @_;
-     my $zip = $p->{zip};
+    my $zip = $p->{zip};
     my $prefix  = quotemeta lc "$p->{meta}{name}-$p->{meta}{version}";
     my ($member) = $zip->membersMatching(
         qr{^$prefix/(?i:README(?:[.][^.]+)?)$}
@@ -925,11 +934,11 @@ $allowed{ins}      = $allowed{del};
 $allowed{li}       = { %{ $allowed{li} }, value  => 1 };
 $allowed{map}      = { %{ $allowed{map} }, name  => 1 };
 $allowed{meter}    = { %{ $allowed{meter} }, map { $_  => 1 } qw(high low min max optimum value) };
-$allowed{source}   = { %{ $allowed{source} }, map { $_  => 1 } qw(media src type) };
+$allowed{source}   = { %{ $allowed{source} }, map { $_  => 1 } qw(media src srcset type) };
 $allowed{ol}       = { %{ $allowed{ol} }, revese  => 1, start  => 1 };
 $allowed{q}        = { %{ $allowed{q} }, cite  => 1 };
 $allowed{section}  = $allowed{q};
-$allowed{table}    = { %{ $allowed{table} }, map { $_  => 1 } qw(sumary width) };
+$allowed{table}    = { %{ $allowed{table} }, map { $_  => 1 } qw(summary width) };
 $allowed{tbody}    = { %{ $allowed{tbody} }, map { $_  => 1 } qw(align valign) };
 $allowed{td}       = { %{ $allowed{td} }, map { $_  => 1 } qw(align colspan headers height nowrap rowspan scope valign width) };
 $allowed{tfoot}    = $allowed{tbody};
@@ -947,7 +956,8 @@ my %keep_children = map { $_ => 1 } qw(
 );
 
 sub _clean_html_body {
-    my $top = my $elem = shift;
+    my ($self, $elem, $files, $p) = @_;
+    my $top = $elem;
 
     # Create an element for the table of contents.
     my $toc = XML::LibXML::Element->new('div');
@@ -986,6 +996,55 @@ sub _clean_html_body {
                 if (!$pgxnbod || !$elem->isSameNode($pgxnbod)) {
                     $elem->removeAttribute($_) for grep { !$attrs->{$_} }
                         map { $_->nodeName } $elem->attributes;
+                }
+
+                # Map links.
+                if ($files) {
+                    my $prefix = lc "$p->{meta}{name}-$p->{meta}{version}";
+                    if ($attrs->{href}) {
+                        my $href = $elem->getAttribute('href');
+                        if ($href && $href !~ /\A(?:[a-z]+:|\.\.)/) {
+                            # Relative URL.
+                            $href =~ s{\A\./}{};
+                            if (my $dst = first { $_->{filename} eq $href } @{ $files }) {
+                                # Doc in the API; use relative link to it.
+                                $elem->setAttribute(href => "$dst->{noext}.html");
+                            } else {
+                                # Link to the mirror if it's in the archive.
+                                if ($p->{zip}->memberNamed("$prefix/$href")) {
+                                    $elem->setAttribute(href => "$p->{src_url}$href");
+                                }
+                            }
+                        }
+                    }
+
+                    if ($attrs->{src}) {
+                        my $src = $elem->getAttribute('src');
+                        if ($src && $src !~ /\A(?:[a-z]+:|\.\.)/) {
+                            $src =~ s{\A\./}{};
+                            # Link to the mirror if it's in the archive.
+                            if ($p->{zip}->memberNamed("$prefix/$src")) {
+                                $elem->setAttribute(src => "$p->{src_url}$src");
+                            }
+                        }
+                    }
+
+                    if ($attrs->{srcset}) {
+                        if (my $set = $elem->getAttribute('srcset')) {
+                            my @srcset;
+                            for my $src (split /\s*,\s*/, $set) {
+                                if ($src && $src !~ /\A(?:[a-z]+:|\.\.)/) {
+                                    $src =~ s{\A\./}{};
+                                    # Link to the mirror if it's in the archive.
+                                    if ($p->{zip}->memberNamed("$prefix/$src")) {
+                                        $src = "$p->{src_url}$src";
+                                    }
+                                }
+                                push @srcset => $src;
+                            }
+                            $elem->setAttribute(srcset => join ', ' => @srcset);
+                        }
+                    }
                 }
 
                 if ($name =~ /^h([123])$/) {
@@ -1230,6 +1289,12 @@ The metadata file loaded from a distribution F<META.json> file.
 =item c<zip>
 
 An L<Archive::Zip> object loaded up with the distribution download file.
+
+=item C<src_url>
+
+Source URL for the distribution. Should be the concatenation of the API base
+URL and the output of the C<source> template. Used to update relative links
+to files in the docs.
 
 =back
 
@@ -1522,7 +1587,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2025 David E. Wheeler.
+Copyright (c) 2011-2026 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

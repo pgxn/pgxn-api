@@ -1,6 +1,17 @@
 Revision history for Perl extension PGXN::API
 
-0.21.2  Unreleased
+0.22.0  Unreleased
+      - Added `srcset` to the list of allowed attributes of `source` HTML
+        elements.
+      - Switched from MultiMarkdown to Text::Markdown::Discount for parsing
+        and formatting the PGXN Spec.
+      - Refactored the return value from `PGXN::API::Indexer->find_docs` to
+        include the file name, the extension it corresponds to, the file name
+        without a suffix, and the destination file name.
+      - Added detection of relative URLs in allowed `href`, `src`, and
+        `srcset` attributes to link to documentation destinations or, for
+        other files in a distribution, to the source API. This will allow
+        relative links on docs to work properly on pgxn.org.
 
 0.21.1  2026-09-06T19:35:24Z
       - Added `bdi`, `data`, and `picture` to the list of allowed HTML

@@ -14,7 +14,7 @@ use Archive::Zip qw(:ERROR_CODES);
 use constant WIN32 => $^O eq 'MSWin32';
 use Moose::Util::TypeConstraints;
 use namespace::autoclean;
-our $VERSION = v0.21.2;
+our $VERSION = v0.22.0;
 
 subtype Executable => as 'Str', where {
     my $exe = $_;
@@ -23,10 +23,12 @@ subtype Executable => as 'Str', where {
 
 has rsync_path   => (is => 'rw', isa => 'Executable', default => 'rsync', required => 1);
 has source       => (is => 'rw', isa => 'Str', required => 1);
+has base_url     => (is => 'rw', isa => 'Str', default => 'https://api.pgxn.org', required => 1);
 has verbose      => (is => 'rw', isa => 'Int', default => 0);
 has log_file     => (is => 'rw', isa => 'Str', required => 1, default => sub {
     catfile tmpdir, "pgxn-api-sync-$$.txt"
 });
+
 has mirror_uri_templates => (is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
     my $self = shift;
     my $api  = PGXN::API->instance;
@@ -73,7 +75,7 @@ sub update_index {
     my $log     = $self->log_file;
 
     say 'Parsing the rsync log file' if $self->verbose > 1;
-    open my $fh, '<:encoding(UTF-8)', $log or die "Canot open $log: $!\n";
+    open my $fh, '<:encoding(UTF-8)', $log or die "Cannot open $log: $!\n";
     while (my $line = <$fh>) {
         if ($line =~ $meta_re) {
             if (my $params = $self->validate_distribution($1)) {
@@ -86,7 +88,7 @@ sub update_index {
         elsif ($line =~ $spec_re) {
             my $path = $1;
             $indexer->copy_from_mirror($path);
-            $indexer->parse_from_mirror($path, 'Multimarkdown');
+            $indexer->parse_from_mirror($path, 'Markdown');
         }
         elsif ($line =~ /\s>f(?:[+]+|(?:c|.s|..t)[^ ]+)\sindex[.]json$/) {
             # Always update the index JSON if it's mentioned.
@@ -140,10 +142,10 @@ sub regex_for_uri_template {
     # +++++++: New item
 }
 
-
 sub validate_distribution {
     my ($self, $fn) = shift->_rel_to_mirror(@_);
-    my $meta     = PGXN::API->instance->read_json_from($fn);
+    my $api      = PGXN::API->instance;
+    my $meta     = $api->read_json_from($fn);
     my $zip_path = $self->download_for($meta);
 
     # Validate it against the SHA1 checksum.
@@ -155,7 +157,14 @@ sub validate_distribution {
 
     # Unpack the distribution.
     my $zip = $self->unzip($zip_path, $meta) or return;
-    return { meta => $meta, zip => $zip };
+    return {
+        meta    => $meta,
+        zip     => $zip,
+        src_url => $self->{base_url} . $api->uri_templates->{source}->process(
+            dist    => lc $meta->{name},
+            version => lc $meta->{version},
+        ),
+    };
 }
 
 sub download_for {
@@ -395,7 +404,7 @@ David E. Wheeler <david.wheeler@pgexperts.com>
 
 =head1 Copyright and License
 
-Copyright (c) 2011-2025 David E. Wheeler.
+Copyright (c) 2011-2026 David E. Wheeler.
 
 This module is free software; you can redistribute it and/or modify it under
 the L<PostgreSQL License|http://www.opensource.org/licenses/postgresql>.

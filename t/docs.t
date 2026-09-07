@@ -31,7 +31,7 @@ for my $in (glob catfile qw(t htmlin *)) {
         recover           => 2,
     });
 
-    my $html = PGXN::API::Indexer::_clean_html_body($doc->findnodes('/html/body'));
+    my $html = $indexer->_clean_html_body($doc->findnodes('/html/body'));
     open my $fh, '>:raw', $tmpfile or die "Cannot open $tmpfile: $!\n";
     print $fh encode_utf8 $html, "\n";
     close $fh;

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 65;
+use Test::More tests => 66;
 # use Test::More 'no_plan';
 use File::Spec::Functions qw(catfile catdir tmpdir);
 use Test::MockModule;
@@ -79,7 +79,7 @@ $mirror_root
 # Rsync our "mirror" to the mirror root.
 remove_tree $mirror_root;
 dircopy catdir(qw(t root)), $mirror_root;
-fcopy catfile(qw(t root index.json)), $pgxn->doc_root;
+PGXN::API::Indexer->new->update_root_json;
 
 ##############################################################################
 # Test the regular expression for finding distributions.
@@ -274,7 +274,7 @@ is_deeply \@paths, [qw(
     stats/tag.json
     stats/summary.json
 )], 'And it should have found and copied mirrors, spec, and stats';
-is_deeply \@parsed, [["meta${sep}spec.txt", 'Multimarkdown']],
+is_deeply \@parsed, [["meta${sep}spec.txt", 'Markdown']],
     'And it should have parsed spec.txt';
 is_deeply \@users, [qw(
     daamien
@@ -291,12 +291,22 @@ is $sync->digest_for($pgz), '443cbcf678a3c2f479c4c069bcb96054d9b25a32',
 ##############################################################################
 # Test validate_distribution().
 $mock->unmock('validate_distribution');
+$api_mock->unmock('uri_templates');
 
 my $json = catfile qw(dist pair 0.1.1 META.json);
 $mock->mock(unzip => sub {
     is $_[1], $pgz, "unzip should be passed $pgz";
 });
-ok $sync->validate_distribution($json), "Process $json";
+my $meta = $pgxn->read_json_from([$sync->_rel_to_mirror($json)]->[1]);
+ok my $params = $sync->validate_distribution($json), "Process $json";
+is_deeply $params, {
+    zip => 1,
+    meta    => $meta,
+    src_url => $sync->base_url . $pgxn->uri_templates->{source}->process(
+        dist    => 'pair',
+        version => '0.1.1',
+    ),
+}, "Should have the distribution params";
 
 # It should fail for an invalid checksum.
 CHECKSUM: {

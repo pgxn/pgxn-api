@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 268;
+use Test::More tests => 273;
 # use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -63,6 +63,7 @@ can_ok $CLASS => qw(
     _source_files
     _readme
     _clean_html_body
+    _start_doc
 );
 
 # Make sure Text::Markup recognizes the "none" parser for text files.
@@ -128,10 +129,10 @@ file_exists_ok $htmlspec, 'Doc root spec.html should now exist';
 file_contents_like $htmlspec, qr{<pre>Name}, 'And it should look like HTML';
 
 # Try it with a format.
-ok $indexer->parse_from_mirror('meta/spec.txt', 'Multimarkdown'),
-    'Parse spec.txt as MultiMarkdown';
+ok $indexer->parse_from_mirror('meta/spec.txt', 'Markdown'),
+    'Parse spec.txt as Markdown';
 file_contents_like $htmlspec, qr{<h1 id="Name">Name</h1>},
-    'And it should look like Multimarkdown-generated HTML';
+    'And it should look like Markdown-generated HTML';
 
 # Try it with an emptyish file.
 my $empty = catfile $api->mirror_root, 'empty.md';
@@ -758,6 +759,11 @@ my $sync = PGXN::API::Sync->new(
 my $pgz = catfile qw(dist pair 0.1.0 pair-0.1.0.zip);
 
 $params->{meta}   = $meta;
+my $base_url       = $sync->base_url;
+$params->{src_url} = $base_url . $api->uri_templates->{source}->process(
+    dist    => $meta->{name},
+    version => $meta->{version},
+);
 ok $params->{zip} = $sync->unzip($pgz, {name => 'pair'}), "Unzip $pgz";
 
 my $doc_dir = catdir $doc_root, qw(dist pair 0.1.0);
@@ -807,6 +813,16 @@ file_contents_like $readme, qr/<pre><code>make/, 'Fenced code should be a <pre> 
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
 file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>},
     'README.html should have HTML';
+file_contents_like $readme, qr{\Q<a href="doc/pair.html">docs</a>},
+    'README.html should resolve relative doc link';
+file_contents_like $readme, qr{\Q<a href="doc/nonesuch.md">This</a>},
+    'README.html should not resolve unknown href';
+file_contents_like $readme, qr{\Q<a href="$base_url/src/pair/pair-0.1.0/sql/pair.sql">SQL</a>},
+    'README.html should link to source URL for non-doc href';
+file_contents_like $readme, qr{<img src="$base_url/src/pair/pair-0.1.0/test/sql/base.sql" alt="Fake Image"/>},
+    'README.html should link to source URL for img src';
+file_contents_like $readme, qr{srcset="$base_url/src/pair/pair-0.1.0/test/sql/base.sql, $base_url/src/pair/pair-0.1.0/test/expected/base.out, nope.png"><img src="$base_url/src/pair/pair-0.1.0/doc/pair.md"/><img src="doc/nonesuch.md"/>},
+    'README.html should handle srcset and img src in picture';
 
 file_contents_unlike $readme, qr{<html}i, 'README.html should have no html element';
 file_contents_unlike $readme, qr{<body}i, 'README.html should have no body element';
@@ -885,7 +901,6 @@ is_deeply $meta->{docs}, {
     'doc/pair' => { title => 'pair 0.1.0', abstract => 'A key/value pair data type' },
 }, 'Should array of docs excluding file with no docs';
 
-
 ##############################################################################
 # Make sure that add_document() calls all the necessary methods.
 my @called;
@@ -952,7 +967,14 @@ is $indexer->_get_user_name({user => 'fred'}), 'Fred Flintstone',
 # Time to actually add some stuff to the index.
 $mock->unmock_all;
 
-$params = { meta => $meta, zip => $zip };
+$params = {
+    meta    => $meta,
+    zip     => $zip,
+    src_url => $base_url . $api->uri_templates->{source}->process(
+        dist    => $meta->{name},
+        version =>  $meta->{version},
+    ),
+};
 ok $indexer->add_distribution($params), 'Index pair 0.1.0';
 
 ok my $searcher = PGXN::API::Searcher->new($doc_root), 'Instantiate a searcher';
@@ -1167,58 +1189,66 @@ is_deeply \@called, [qw(update_user_lists _commit)],
 # Test find_docs().
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(sql hi.mkdn));
 $params->{meta}{provides}{pair}{docfile} = 'sql/hi.mkdn';
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'doc/pair.md' },
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-], 'find_docs() should find specified and random doc files';
+my $expected_specs = [
+    {
+        filename  => 'README.md',
+        noext     => 'README',
+        extension => undef,
+        dest      => $indexer->doc_root_file_for(htmldoc => $params->{meta}, docpath => 'README'),
+    },
+    {
+        filename  => 'doc/pair.md',
+        noext     => 'doc/pair',
+        extension => undef,
+        dest      => $indexer->doc_root_file_for(htmldoc => $params->{meta}, docpath => 'doc/pair'),
+    },
+    {
+        filename  => 'sql/hi.mkdn',
+        noext     => 'sql/hi',
+        extension => 'pair',
+        dest      => $indexer->doc_root_file_for(htmldoc => $params->{meta}, docpath => 'sql/hi'),
+    },
+];
+
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    $expected_specs, 'find_docs() should find specified and random doc files';
 
 $params->{meta}{no_index} = { file => ['sql/hi.mkdn'] };
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'doc/pair.md' },
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-], 'find_docs() no_index should be ignored for specified doc file';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    $expected_specs, 'find_docs() no_index should be ignored for specified doc file';
 
 $params->{meta}{no_index} = { file => ['doc/pair.md'] };
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-], 'find_docs() should respect no_index for found docs';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    [$expected_specs->[0], $expected_specs->[2]],
+    'find_docs() should respect no_index for found docs';
 
 $params->{meta}{no_index} = { directory => ['sql'] };
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'doc/pair.md' },
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-], 'find_docs() should ignore no_index directory for specified doc';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    $expected_specs, 'find_docs() should ignore no_index directory for specified doc';
 
 $params->{meta}{no_index} = { directory => ['doc'] };
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'sql/hi.mkdn', extension => 'pair' },
-], 'find_docs() should respect no_index directory for found docs';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    [$expected_specs->[0], $expected_specs->[2]],
+    'find_docs() should respect no_index directory for found docs';
 
 delete $params->{meta}{no_index};
 $params->{meta}{provides}{pair}{docfile} = 'foo/bar.txt';
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'doc/pair.md' },
-], 'find_docs() should ignore non-existent specified file';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    [$expected_specs->[0], $expected_specs->[1]],
+    'find_docs() should ignore non-existent specified file';
 
+$expected_specs->[1]{extension} = 'pair';
 $params->{meta}{provides}{pair}{docfile} = 'doc/pair.md';
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'doc/pair.md', extension => 'pair' },
-], 'find_docs() should not return dupes';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    [$expected_specs->[0], $expected_specs->[1]],
+    'find_docs() should not return dupes';
 
+$expected_specs->[1]{extension} = undef;
 $params->{meta}{provides}{pair}{docfile} = 'doc/pair.pdf';
 touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(doc pair.pdf));
-
-is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)], [
-    { filename => 'README.md' },
-    { filename => 'doc/pair.md' },
-], 'find_docs() should ignore doc files it does not know how to parse';
+is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
+    [$expected_specs->[0], $expected_specs->[1]],
+    'find_docs() should ignore doc files it does not know how to parse';
 
 sub touch {
     my $fn = shift;

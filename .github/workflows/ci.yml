@@ -12,11 +12,10 @@ jobs:
     name: 🧅 Perl ${{ matrix.perl }} on ${{ matrix.os[0] }} ${{ matrix.os[1] }}
     runs-on: ${{ matrix.os[1] }}-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup Perl ${{ matrix.perl }}
         uses: shogo82148/actions-setup-perl@v1
         with: { perl-version: "${{ matrix.perl }}" }
-
       - name: Install Dependencies
         run: cpanm -vn Module::Build && cpanm -vn --installdeps --with-recommends --with-develop .
       - name: Run Tests
