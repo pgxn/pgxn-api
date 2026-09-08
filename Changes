@@ -11,7 +11,8 @@ Revision history for Perl extension PGXN::API
       - Added detection of relative URLs in allowed `href`, `src`, and
         `srcset` attributes to link to documentation destinations or, for
         other files in a distribution, to the source API. This will allow
-        relative links on docs to work properly on pgxn.org.
+        relative links on docs to work properly on pgxn.org. Remove attributes
+        that use one or more `..`s to link files outside a distribution.
 
 0.21.1  2026-09-06T19:35:24Z
       - Added `bdi`, `data`, and `picture` to the list of allowed HTML

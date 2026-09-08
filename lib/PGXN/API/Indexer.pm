@@ -548,7 +548,7 @@ sub parse_docs {
 
         # Clean up the HTML and write it out.
         open my $fh, '>:utf8', $dst or die "Cannot open $dst: $!\n";
-        $doc = $self->_clean_html_body($doc->findnodes('/html/body'), \@files, $p);
+        $doc = $self->_clean_html_body($doc->findnodes('/html/body'), $spec, \@files, $p);
         print $fh $doc->toString, "\n";
         close $fh or die "Cannot close $dst: $!\n";
 
@@ -955,8 +955,59 @@ my %keep_children = map { $_ => 1 } qw(
     font
 );
 
+sub _local_dirname {
+    my $dir = [fileparse($_[0])]->[1];
+    $dir =~ s/\/\z//;
+    Test::More::diag("DIR: $dir") if $ENV{FOO};
+    return $dir eq '.' ? '' : $dir;
+}
+
+# Resolve the path to a relative URI (/foo/bar, ./foo/bar, foo/../../xyz) by
+# normalizing away `.` and `..`. If it resolves to a path above itself,
+# ("escapes containment"), return undef. Otherwise return the normalized path.
+# Ensures that links don't reference things outside a distribution directory,
+# which we consider a vulnerability.
+sub _resolve_file {
+    my ($spec, $uri) = @_;
+
+    # Unadorned root or current dir always okay.
+    return '' if $uri eq '/';
+    return _local_dirname($spec->{filename}) if $uri eq '' || $uri =~ /\A.\/?\z/;
+
+    # Assemble a prefix that doesn't appear in the URI.
+    my $i = 0;
+    $i++ while $uri =~ /root$i/;
+    my $prefix = "/root$i/";
+
+    my $path = File::Spec->canonpath(
+        $prefix . ($uri =~ s/\A\/// ? $uri : _local_dirname($spec->{filename}) . "/$uri")
+    );
+
+    # https://gist.github.com/denilsonsa/9b433ee8fe548d0388fec4de19e7d8d6
+    # Remove ".." by using a regex.
+    while ($path =~ s{
+        (^|/)              # Either the beginning of the string, or a slash, save as $1
+        (                  # Followed by one of these:
+            [^/]|          #  * Any one character (except slash, obviously)
+            [^./][^/]|     #  * Two characters where
+            [^/][^./]|     #    they are not ".."
+            [^/][^/][^/]+  #  * Three or more characters
+        )                  # Followed by:
+        /\.\./             # "/", followed by "../"
+        }{$1}x
+    ) {
+        # Repeat this substitution until not possible anymore.
+    }
+
+    # Return path if it doesn't escape containment.
+    return $path if $path =~ s{\A$prefix}{};
+
+    # Escaped containment, the link should be removed.
+    return undef;
+}
+
 sub _clean_html_body {
-    my ($self, $elem, $files, $p) = @_;
+    my ($self, $elem, $spec, $files, $p) = @_;
     my $top = $elem;
 
     # Create an element for the table of contents.
@@ -999,32 +1050,36 @@ sub _clean_html_body {
                 }
 
                 # Map links.
-                if ($files) {
+                if ($spec) {
                     my $prefix = lc "$p->{meta}{name}-$p->{meta}{version}";
                     if ($attrs->{href}) {
                         my $href = $elem->getAttribute('href');
-                        if ($href && $href !~ /\A(?:[a-z]+:|\.\.)/) {
+                        if ($href && $href !~ /\A[a-z]+:/) {
                             # Relative URL.
-                            $href =~ s{\A\./}{};
-                            if (my $dst = first { $_->{filename} eq $href } @{ $files }) {
+                            my $path = _resolve_file($spec, $href);
+                            if (!defined $path) {
+                                # Escaped containment, remove the attribute.
+                                $elem->removeAttribute('href');
+                            } elsif (first { $_->{filename} eq $path } @{ $files }) {
                                 # Doc in the API; use relative link to it.
-                                $elem->setAttribute(href => "$dst->{noext}.html");
+                                $href =~ s{[.][^.]+$}{};
+                                $elem->setAttribute(href => "$href.html");
                             } else {
-                                # Link to the mirror if it's in the archive.
-                                if ($p->{zip}->memberNamed("$prefix/$href")) {
-                                    $elem->setAttribute(href => "$p->{src_url}$href");
-                                }
+                                # Link to the mirror.
+                                $elem->setAttribute(href => "$p->{src_url}$path");
                             }
                         }
                     }
 
                     if ($attrs->{src}) {
                         my $src = $elem->getAttribute('src');
-                        if ($src && $src !~ /\A(?:[a-z]+:|\.\.)/) {
-                            $src =~ s{\A\./}{};
-                            # Link to the mirror if it's in the archive.
-                            if ($p->{zip}->memberNamed("$prefix/$src")) {
+                        if ($src && $src !~ /\A[a-z]+:/) {
+                            if (defined ($src = _resolve_file($spec, $src))) {
+                                # Link to the mirror.
                                 $elem->setAttribute(src => "$p->{src_url}$src");
+                            } else {
+                                # Escaped containment, remove the attribute.
+                                $elem->removeAttribute('src');
                             }
                         }
                     }
@@ -1033,16 +1088,22 @@ sub _clean_html_body {
                         if (my $set = $elem->getAttribute('srcset')) {
                             my @srcset;
                             for my $src (split /\s*,\s*/, $set) {
-                                if ($src && $src !~ /\A(?:[a-z]+:|\.\.)/) {
-                                    $src =~ s{\A\./}{};
-                                    # Link to the mirror if it's in the archive.
-                                    if ($p->{zip}->memberNamed("$prefix/$src")) {
-                                        $src = "$p->{src_url}$src";
+                                if ($src && $src !~ /\A[a-z]+:/) {
+                                    if (defined ($src = _resolve_file($spec, $src))) {
+                                        # Link to the mirror.
+                                        push @srcset => "$p->{src_url}$src";
                                     }
+                                } else {
+                                    push @srcset => $src;
                                 }
-                                push @srcset => $src;
                             }
-                            $elem->setAttribute(srcset => join ', ' => @srcset);
+                            if (@srcset) {
+                                # Valid srset, rewrite it.
+                                $elem->setAttribute(srcset => join ', ' => @srcset);
+                            } else {
+                                # No valid src, remove it.
+                                $elem->removeAttribute('srcset');
+                            }
                         }
                     }
                 }

@@ -24,6 +24,16 @@ my $tmpfile = catfile tmpdir, 'pgxnapi-doctest$$.html';
 
 END { unlink $tmpfile }
 
+my $spec = { filename => 'doc/pair.md' };
+my $files = [
+    { filename => 'README.md', noext => 'README' },
+    { filename => 'doc/pair.md', noext => 'doc/pair' },
+];
+my $params = {
+    meta => { name => 'pair', version => '0.1.2' },
+    src_url => 'https://pgxn.api/dist/pair/0.1.2/', # always ends with /
+};
+
 for my $in (glob catfile qw(t htmlin *)) {
     my $doc = $libxml->parse_html_file($in, {
         suppress_warnings => 1,
@@ -31,7 +41,9 @@ for my $in (glob catfile qw(t htmlin *)) {
         recover           => 2,
     });
 
-    my $html = $indexer->_clean_html_body($doc->findnodes('/html/body'));
+    my $html = $indexer->_clean_html_body(
+        $doc->findnodes('/html/body'), $spec, $files, $params,
+    );
     open my $fh, '>:raw', $tmpfile or die "Cannot open $tmpfile: $!\n";
     print $fh encode_utf8 $html, "\n";
     close $fh;

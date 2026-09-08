@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 273;
+use Test::More tests => 302;
 # use Test::More 'no_plan';
 use File::Copy::Recursive qw(dircopy fcopy);
 use File::Path qw(remove_tree);
@@ -758,7 +758,7 @@ my $sync = PGXN::API::Sync->new(
 );
 my $pgz = catfile qw(dist pair 0.1.0 pair-0.1.0.zip);
 
-$params->{meta}   = $meta;
+$params->{meta}    = $meta;
 my $base_url       = $sync->base_url;
 $params->{src_url} = $base_url . $api->uri_templates->{source}->process(
     dist    => $meta->{name},
@@ -813,16 +813,17 @@ file_contents_like $readme, qr/<pre><code>make/, 'Fenced code should be a <pre> 
 file_exists_ok $doc, 'dist/pair/pair-0.1.0/doc/pair.html should now exist';
 file_contents_like $readme, qr{\Q<h1 id="pair.0.1.0">pair 0.1.0</h1>},
     'README.html should have HTML';
+my $dist_url = "$base_url/src/pair/pair-0.1.0";
 file_contents_like $readme, qr{\Q<a href="doc/pair.html">docs</a>},
     'README.html should resolve relative doc link';
-file_contents_like $readme, qr{\Q<a href="doc/nonesuch.md">This</a>},
-    'README.html should not resolve unknown href';
-file_contents_like $readme, qr{\Q<a href="$base_url/src/pair/pair-0.1.0/sql/pair.sql">SQL</a>},
+file_contents_like $readme, qr{\Q<a href="$dist_url/doc/nonesuch.md">This</a>},
+    'README.html should resolve unknown href';
+file_contents_like $readme, qr{\Q<a href="$dist_url/sql/pair.sql">SQL</a>},
     'README.html should link to source URL for non-doc href';
-file_contents_like $readme, qr{<img src="$base_url/src/pair/pair-0.1.0/test/sql/base.sql" alt="Fake Image"/>},
+file_contents_like $readme, qr{\Q<img src="$dist_url/test/sql/base.sql" alt="Fake Image"/>},
     'README.html should link to source URL for img src';
-file_contents_like $readme, qr{srcset="$base_url/src/pair/pair-0.1.0/test/sql/base.sql, $base_url/src/pair/pair-0.1.0/test/expected/base.out, nope.png"><img src="$base_url/src/pair/pair-0.1.0/doc/pair.md"/><img src="doc/nonesuch.md"/>},
-    'README.html should handle srcset and img src in picture';
+file_contents_like $readme, qr{\Qsrcset="$dist_url/test/sql/base.sql, $dist_url/test/expected/base.out, $dist_url/nope.png"><img src="$dist_url/doc/pair.md"/><img src="$dist_url/doc/nonesuch.md"/},
+    'README.html should handle srcset and img src in picture element';
 
 file_contents_unlike $readme, qr{<html}i, 'README.html should have no html element';
 file_contents_unlike $readme, qr{<body}i, 'README.html should have no body element';
@@ -1249,6 +1250,46 @@ touch(catfile $indexer->doc_root_file_for(source => $params->{meta}), qw(doc pai
 is_deeply [ sort { $a->{filename} cmp $b->{filename} } $indexer->find_docs($params)],
     [$expected_specs->[0], $expected_specs->[1]],
     'find_docs() should ignore doc files it does not know how to parse';
+
+##############################################################################
+# Test _resolve_file().
+my $relative_to = { filename => 'README.md' };
+my $resolve = \&PGXN::API::Indexer::_resolve_file;
+is $resolve->($relative_to, ''), '', 'Empty string valid';
+is $resolve->($relative_to, './'), '', 'Empty string valid';
+is $resolve->($relative_to, '/'), '', 'Root dir valid';
+is $resolve->($relative_to, 'foo'), 'foo', 'Single file valid';
+is $resolve->($relative_to, 'foo/../a.b'), 'a.b', 'foo/../a.b valid';
+is $resolve->($relative_to, 'foo/../../hi'), undef, 'Double .. invalid';
+is $resolve->($relative_to, 'foo/../a.b/../../hi'), undef, 'Nested double .. invalid';
+is $resolve->($relative_to, '/root/../../hi'), undef, 'Leading /root fails';
+is $resolve->($relative_to, '/root0/../../hi'), undef, 'Leading /root0 fails';
+is $resolve->($relative_to, '/root1/../../hi'), undef, 'Leading /root1 fails';
+is $resolve->($relative_to, 'root/../../hi'), undef, 'Leading root fails';
+is $resolve->($relative_to, 'root0/../../hi'), undef, 'Leading root0 fails';
+is $resolve->($relative_to, 'root1/../../hi'), undef, 'Leading root1 fails';
+is $resolve->($relative_to, 'foo/../root0'), 'root0', 'Nested /root doesn\'t fool';
+
+# Relatve to one dir deep.
+$relative_to = { filename => 'doc/pair.md' };
+is $resolve->($relative_to, ''), 'doc', 'Empty string okay';
+is $resolve->($relative_to, './'), 'doc', 'Local dir';
+is $resolve->($relative_to, '/'), '', 'Root dir okay';
+is $resolve->($relative_to, '/hi.txt'), 'hi.txt', 'Root file okay';
+is $resolve->($relative_to, 'foo.md'), 'doc/foo.md', 'Single file okay';
+is $resolve->($relative_to, './foo.md'), 'doc/foo.md', 'Single dot slash file okay';
+is $resolve->($relative_to, '../README.md'), 'README.md', 'One updir okay';
+is $resolve->($relative_to, '../../README.md'), undef, 'Two updirs invalid';
+is $resolve->($relative_to, '../../root0/lol'), undef, 'Nested /root fails';
+
+# Relatve to msultiple dirs deep.
+$relative_to = { filename => 'foo/bar/root/sleep.html' };
+is $resolve->($relative_to, ''), 'foo/bar/root', 'Empty string okay';
+is $resolve->($relative_to, '/hi.txt'), 'hi.txt', 'Root file okay';
+is $resolve->($relative_to, 'xyz.md'), 'foo/bar/root/xyz.md', 'Same dir okay';
+is $resolve->($relative_to, './xyz.md'), 'foo/bar/root/xyz.md', 'Same dir dot okay';
+is $resolve->($relative_to, './xyz/../../../../lol'), 'lol', 'Okay for contained ..s';
+is $resolve->($relative_to, './xyz/../../../../../lol'), undef, 'Escaping containment invalid';
 
 sub touch {
     my $fn = shift;
