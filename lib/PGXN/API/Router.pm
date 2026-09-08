@@ -13,7 +13,7 @@ use Plack::Request;
 use Encode;
 use File::Spec::Functions qw(catdir);
 use namespace::autoclean;
-our $VERSION = v0.22.0;
+our $VERSION = v0.22.1;
 
 sub app {
     my ($class, %params) = @_;
@@ -105,7 +105,8 @@ sub app {
         my $mimes = { %{ $Plack::MIME::MIME_TYPES } };
         for my $ext (keys %{ $mimes }) {
             $mimes->{$ext} = 'text/plain'
-                if $mimes->{$ext} =~ /html|x-c|xml|calendar|vcard/
+                if $mimes->{$ext} =~ /html|x-c|calendar|vcard/
+                || ($mimes->{$ext} =~ /xml/ && $mimes->{$ext} !~ /\Aimage\//)
                 || any { $ext eq $_ } qw(.bat .css .eml .js .json .mime .swf);
         }
         my $src_dir = Plack::App::Directory->new(

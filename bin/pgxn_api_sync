@@ -39,7 +39,7 @@ PGXN::API->instance->doc_root($root) if $root;
 
 PGXN::API::Sync->new(
     source   => $source,
-    base_url => $url,
+    ($url ? (base_url => $url) : ()),
     ($rsync ? (rsync_path => $rsync) : ()),
     verbose => $verbose || 0,
 )->run;

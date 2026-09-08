@@ -1,5 +1,12 @@
 Revision history for Perl extension PGXN::API
 
+0.22.0  2026-09-08T25:36:58Z
+      - Fixed bug in `pgxn_api_sync` where an undefined URL was passed for
+        `base_url`, which may not be undefined.
+      - Changed the media type returned for `.svg` files in the source
+        directory from `text/plain` to `image/svg+xml` so that they render
+        properly in browsers.
+
 0.22.0  2026-09-08T20:23:24Z
       - Added `srcset` to the list of allowed attributes of `source` HTML
         elements.

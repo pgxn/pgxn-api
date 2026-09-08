@@ -3,7 +3,7 @@
 use v5.14;
 use utf8;
 BEGIN { $ENV{EMAIL_SENDER_TRANSPORT} = 'Test' }
-use Test::More tests => 196;
+use Test::More tests => 200;
 #use Test::More 'no_plan';
 use Plack::Test;
 use Test::MockModule;
@@ -151,6 +151,17 @@ test_psgi $app => sub {
     is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
         'Should have API version in the header';
     is $res->content_type, 'text/plain', 'Should be text/plain';
+};
+
+# Try a src/svg file.
+test_psgi $app => sub {
+    my $cb = shift;
+    my $uri = 'src/pair/0.1.2/icon.svg';
+    ok my $res = $cb->(GET $uri), "Fetch $uri";
+    ok $res->is_success, 'It should be a success';
+    is $res->header('X-PGXN-API-Version'), PGXN::API->version_string,
+        'Should have API version in the header';
+    is $res->content_type, 'image/svg+xml', 'Should be image/svg+xml';
 };
 
 # Try a src/html file.
